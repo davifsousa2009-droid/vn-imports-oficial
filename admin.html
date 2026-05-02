@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — VN IMPORTS</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:100vh}
+
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{background:#111;color:#F7F4F0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sb-logo{padding:22px 18px;border-bottom:1px solid #222;font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;letter-spacing:.1em;color:#C4A55A}
+.sb-logo span{display:block;font-family:'Barlow',sans-serif;font-size:10px;color:#444;letter-spacing:.15em;text-transform:uppercase;margin-top:3px}
+.sb-nav{padding:14px 0;flex:1}
+.sb-item{display:flex;align-items:center;gap:12px;padding:12px 18px;font-size:13px;font-weight:500;color:#555;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+.sb-item:hover{color:#F7F4F0;background:#1a1a1a}
+.sb-item.on{color:#F7F4F0;border-left-color:#C4A55A;background:#1a1a1a}
+.sb-foot{padding:14px 18px;border-top:1px solid #1a1a1a;font-size:11px;color:#444}
+.sb-foot a{color:#C4A55A;text-decoration:none}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #E0DBD4;padding:15px 26px;display:flex;justify-content:space-between;align-items:center}
+.topbar-title{font-family:'Libre Baskerville',serif;font-size:17px;font-weight:400}
+.status-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc}
+.dot.on{background:#27AE60}
+
+.content{padding:26px;flex:1;overflow-y:auto}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+.stat{background:#fff;border:1px solid #E0DBD4;padding:18px 20px}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#999;margin-bottom:7px}
+.stat-val{font-family:'Libre Baskerville',serif;font-size:30px;font-weight:400}
+.stat-sub{font-size:12px;color:#bbb;margin-top:3px}
+
+/* PANELS */
+.panel{display:none}
+.panel.on{display:block}
+
+/* CARD */
+.card{background:#fff;border:1px solid #E0DBD4;padding:26px;margin-bottom:18px}
+.card-title{font-family:'Libre Baskerville',serif;font-size:15px;font-weight:400;margin-bottom:20px;padding-bottom:13px;border-bottom:1px solid #F0EDE8}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.fg:last-child{margin-bottom:0}
+.fl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#888}
+.fi,.fsel,.fta{width:100%;background:#F7F4F0;border:1px solid #E0DBD4;padding:10px 12px;font-size:14px;font-family:'Barlow',sans-serif;color:#111;outline:none;transition:border-color .2s}
+.fi:focus,.fsel:focus,.fta:focus{border-color:#9A7A3A;background:#fff}
+.fi::placeholder,.fta::placeholder{color:#ccc}
+.fta{resize:vertical;min-height:80px;line-height:1.6}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fw{grid-column:1/-1}
+
+.img-preview{display:none;align-items:center;gap:12px;margin-top:8px;padding:10px;background:#F7F4F0;border:1px solid #E0DBD4}
+.img-preview.on{display:flex}
+.img-preview img{width:52px;height:66px;object-fit:cover;border:1px solid #E0DBD4}
+.img-url{font-size:11px;color:#999;word-break:break-all}
+
+.form-btns{display:flex;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid #F0EDE8}
+
+/* BUTTONS */
+.btn{padding:10px 22px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .2s}
+.btn-p{background:#111;color:#F7F4F0}
+.btn-p:hover{background:#222}
+.btn-d{background:#A0391E;color:#fff}
+.btn-d:hover{background:#8a2f18}
+.btn-g{background:transparent;color:#888;border:1px solid #E0DBD4}
+.btn-g:hover{border-color:#111;color:#111}
+.btn-e{background:#9A7A3A;color:#fff}
+.btn-e:hover{background:#7d6330}
+.btn-sm{padding:6px 14px;font-size:11px}
+
+/* TABLE */
+.tbl-wrap{background:#fff;border:1px solid #E0DBD4}
+.tbl-head{padding:14px 18px;border-bottom:1px solid #E0DBD4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.tbl-head-title{font-size:13px;font-weight:600}
+.search-inp{background:#F7F4F0;border:1px solid #E0DBD4;padding:7px 13px;font-size:13px;font-family:'Barlow',sans-serif;outline:none;width:200px;transition:border-color .2s}
+.search-inp:focus{border-color:#9A7A3A}
+table{width:100%;border-collapse:collapse}
+thead{background:#F7F4F0}
+th{padding:10px 15px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;border-bottom:1px solid #E0DBD4}
+td{padding:13px 15px;font-size:13px;border-bottom:1px solid #F5F2EE;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF8}
+.td-img{width:42px;height:52px;object-fit:cover;border:1px solid #E0DBD4}
+.td-name{font-weight:500}
+.td-price{font-weight:600;color:#9A7A3A}
+.td-cat{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;background:#F0EDE8;color:#888;display:inline-block}
+.td-actions{display:flex;gap:6px}
+.empty{padding:44px;text-align:center;color:#bbb;font-size:13px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px)}
+.modal-bg.on{opacity:1;pointer-events:all}
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);background:#fff;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;z-index:501;transition:transform .25s;border:1px solid #E0DBD4}
+.modal-bg.on .modal{transform:translate(-50%,-50%) scale(1)}
+.modal-head{padding:18px 22px;border-bottom:1px solid #F0EDE8;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.modal-head h3{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:400}
+.modal-x{background:transparent;border:1px solid #E0DBD4;width:30px;height:30px;font-size:16px;color:#888;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.modal-x:hover{background:#111;color:#fff;border-color:#111}
+.modal-body{padding:22px}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:#111;color:#F7F4F0;padding:12px 18px;font-size:13px;font-weight:500;z-index:600;transform:translateY(60px);opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s;display:flex;align-items:center;gap:8px;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.toast.on{transform:translateY(0);opacity:1}
+
+/* MSG */
+.fmsg{font-size:13px;font-weight:500;margin-top:12px;display:none}
+.fmsg.ok{color:#27AE60}
+.fmsg.er{color:#A0391E}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .fg2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">VN IMPORTS<span>Painel Admin</span></div>
+    <nav class="sb-nav">
+      <div class="sb-item on" onclick="showPanel('dash',this)"><span>📊</span> Dashboard</div>
+      <div class="sb-item" onclick="showPanel('cadastrar',this)"><span>➕</span> Cadastrar Produto</div>
+      <div class="sb-item" onclick="showPanel('produtos',this);loadTable()"><span>📦</span> Gerenciar Produtos</div>
+    </nav>
+    <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">🛍️ Ver loja →</a></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="panelTitle">Dashboard</div>
+      <div class="status-row">
+        <span class="dot" id="sDot"></span>
+        <span id="sTxt">Verificando…</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="panel on" id="panel-dash">
+        <div class="stats">
+          <div class="stat"><div class="stat-lbl">Total de Produtos</div><div class="stat-val" id="sTotal">—</div><div class="stat-sub">cadastrados</div></div>
+          <div class="stat"><div class="stat-lbl">Menor Preço</div><div class="stat-val" id="sMin">—</div><div class="stat-sub">no catálogo</div></div>
+          <div class="stat"><div class="stat-lbl">Maior Preço</div><div class="stat-val" id="sMax">—</div><div class="stat-sub">no catálogo</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bem-vindo ao Painel VN IMPORTS</div>
+          <p style="font-size:14px;color:#888;line-height:1.75">Use o menu lateral para <strong style="color:#111">cadastrar</strong> novos produtos ou <strong style="color:#111">gerenciar</strong> os existentes. Tudo que você salvar aqui aparece automaticamente na vitrine da loja.</p>
+          <div style="margin-top:18px;padding:13px 15px;background:#F7F4F0;border:1px solid #E0DBD4;font-size:12px;color:#888;line-height:1.65">🔒 <strong style="color:#111">Segurança:</strong> Nunca compartilhe seu arquivo <code>.env</code> — sua senha do banco está protegida lá.</div>
+        </div>
+      </div>
+
+      <!-- CADASTRAR -->
+      <div class="panel" id="panel-cadastrar">
+        <div class="card">
+          <div class="card-title">Cadastrar Novo Produto</div>
+          <div class="fg2">
+            <div class="fg fw"><label class="fl">Nome do Produto *</label><input class="fi" id="f-nome" placeholder="Ex: Vestido Midi Floral" type="text"></div>
+            <div class="fg"><label class="fl">Preço (R$) *</label><input class="fi" id="f-preco" placeholder="Ex: 299.90" type="number" step="0.01" min="0"></div>
+            <div class="fg"><label class="fl">Categoria</label>
+              <select class="fsel" id="f-cat">
+                <option value="geral">Geral</option>
+                <option value="vestidos">Vestidos</option>
+                <option value="casacos">Casacos</option>
+                <option value="calcados">Calçados</option>
+                <option value="acessorios">Acessórios</option>
+                <option value="camisas">Camisas</option>
+                <option value="calcas">Calças</option>
+              </select>
+            </div>
+            <div class="fg fw">
+              <label class="fl">URL da Imagem</label>
+              <input class="fi" id="f-img" placeholder="https://..." type="url" oninput="previewImg(this,'fprev')">
+              <div class="img-preview" id="fprev"><img src="" id="fprev-img" alt=""><span class="img-url" id="fprev-url"></span></div>
+            </div>
+            <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="f-desc" placeholder="Descreva o produto…"></textarea></div>
+            <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
+          </div>
+          <div class="form-btns">
+            <button class="btn btn-p" onclick="salvar()">✓ &nbsp;Salvar Produto</button>
+            <button class="btn btn-g" onclick="limpar()">Limpar</button>
+          </div>
+          <div class="fmsg" id="fmsg"></div>
+        </div>
+      </div>
+
+      <!-- PRODUTOS -->
+      <div class="panel" id="panel-produtos">
+        <div class="tbl-wrap">
+          <div class="tbl-head">
+            <span class="tbl-head-title">Todos os Produtos</span>
+            <input class="search-inp" placeholder="🔍  Buscar…" oninput="filtrar(this.value)">
+          </div>
+          <div id="tblBody"><div class="empty">Carregando…</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIÇÃO -->
+<div class="modal-bg" id="modalBg" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3>Editar Produto</h3>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eid">
+      <div class="fg2">
+        <div class="fg fw"><label class="fl">Nome *</label><input class="fi" id="enome" type="text"></div>
+        <div class="fg"><label class="fl">Preço (R$) *</label><input class="fi" id="epreco" type="number" step="0.01"></div>
+        <div class="fg"><label class="fl">Categoria</label>
+          <select class="fsel" id="ecat">
+            <option value="geral">Geral</option>
+            <option value="vestidos">Vestidos</option>
+            <option value="casacos">Casacos</option>
+            <option value="calcados">Calçados</option>
+            <option value="acessorios">Acessórios</option>
+            <option value="camisas">Camisas</option>
+            <option value="calcas">Calças</option>
+          </select>
+        </div>
+        <div class="fg fw">
+          <label class="fl">URL da Imagem</label>
+          <input class="fi" id="eimg" type="url" oninput="previewImg(this,'eprev')">
+          <div class="img-preview" id="eprev"><img src="" id="eprev-img" alt=""><span class="img-url" id="eprev-url"></span></div>
+        </div>
+        <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="edesc"></textarea></div>
+        <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
+      </div>
+      <div class="form-btns">
+        <button class="btn btn-p" onclick="salvarEdicao()">✓ &nbsp;Salvar Alterações</button>
+        <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────
+const API = 'http://localhost:3000/api';  // ✅ URL da API correta
+const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+let todosProdutos = [];
+
+// ── SENHA DO ADMIN ────────────────────────────────────
+// A senha deve ser a mesma que está no seu .env como ADMIN_PASSWORD
+function obterSenha() {
+  let s = localStorage.getItem('vni_pass');
+  if (!s) {
+    s = prompt('🔐 ACESSO RESTRITO\nDigite a Senha Mestra:');
+    if (s) localStorage.setItem('vni_pass', s);
+  }
+  return s;
+}
+
+function relogar() {
+  localStorage.removeItem('vni_pass');
+  location.reload();
+}
+
+// ── PANELS ────────────────────────────────────────────
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('on'));
+  document.getElementById('panel-' + name).classList.add('on');
+  if (el) el.classList.add('on');
+  const titles = { dash: 'Dashboard', cadastrar: 'Cadastrar Produto', produtos: 'Gerenciar Produtos' };
+  document.getElementById('panelTitle').textContent = titles[name] || name;
+}
+
+// ── STATUS ────────────────────────────────────────────
+async function checkStatus() {
+  try {
+    const r = await fetch(API + '/status');
+    const d = await r.json();
+    const ok = d.banco === 'conectado';
+    document.getElementById('sDot').classList.toggle('on', ok);
+    document.getElementById('sTxt').textContent = ok
+      ? 'Online · MongoDB conectado'
+      : 'Online · Banco desconectado';
+  } catch {
+    document.getElementById('sDot').classList.remove('on');
+    document.getElementById('sTxt').textContent = 'Servidor offline';
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch(API + '/produtos');
+    const ps = await r.json();
+    document.getElementById('sTotal').textContent = ps.length;
+    if (ps.length) {
+      const pr = ps.map(p => p.preco);
+      document.getElementById('sMin').textContent = fmt(Math.min(...pr));
+      document.getElementById('sMax').textContent = fmt(Math.max(...pr));
+    }
+  } catch { /* silencioso no dashboard */ }
+}
+
+// ── CADASTRAR ─────────────────────────────────────────
+async function salvar() {
+  const nome      = document.getElementById('f-nome').value.trim();
+  const preco     = parseFloat(document.getElementById('f-preco').value);
+  const imagem    = document.getElementById('f-img').value.trim();
+  const descricao = document.getElementById('f-desc').value.trim();
+  const categoria = document.getElementById('f-cat').value;
+  const estoque   = parseInt(document.getElementById('f-est').value) || 0;
+  const msg       = document.getElementById('fmsg');
+
+  if (!nome)             { showMsg(msg, '⚠️ Nome é obrigatório.', 'er'); return; }
+  if (!preco || preco <= 0) { showMsg(msg, '⚠️ Informe um preço válido.', 'er'); return; }
+
+  try {
+    const r = await fetch(API + '/produtos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': obterSenha()
+      },
+      body: JSON.stringify({ nome, preco, imagem, descricao, categoria, estoque })
+    });
+
+    const d = await r.json();
+
+    if (r.ok) {
+      showMsg(msg, '✅ Produto salvo!', 'ok');
+      toast('✅ ' + nome + ' cadastrado!');
+      limpar();
+      loadStats();
+    } else {
+      showMsg(msg, '❌ ' + (d.erro || 'Senha incorreta.'), 'er');
+      if (r.status === 401) relogar(); // Limpa senha errada e pede de novo
+    }
+  } catch {
+    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+  }
+}
+
+function limpar() {
+  ['f-nome', 'f-preco', 'f-img', 'f-desc', 'f-est'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-cat').value = 'geral';
+  document.getElementById('fprev').classList.remove('on');
+  const m = document.getElementById('fmsg');
+  m.style.display = 'none';
+  m.className = 'fmsg';
+}
+
+// ── TABELA ────────────────────────────────────────────
+async function loadTable() {
+  document.getElementById('tblBody').innerHTML = '<div class="empty">Carregando…</div>';
+  try {
+    const r = await fetch(API + '/produtos');
+    todosProdutos = await r.json();
+    renderTable(todosProdutos);
+  } catch {
+    document.getElementById('tblBody').innerHTML =
+      '<div class="empty">⚠️ Servidor offline. Rode: node server.js</div>';
+  }
+}
+
+function renderTable(list) {
+  if (!list.length) {
+    document.getElementById('tblBody').innerHTML =
+      '<div class="empty">📦 Nenhum produto cadastrado ainda.</div>';
+    return;
+  }
+  document.getElementById('tblBody').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Imagem</th><th>Nome</th><th>Preço</th>
+          <th>Categoria</th><th>Estoque</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(p => `
+          <tr>
+            <td>${p.imagem
+              ? `<img class="td-img" src="${p.imagem}" onerror="this.style.display='none'">`
+              : '📦'}</td>
+            <td class="td-name">${p.nome}</td>
+            <td class="td-price">${fmt(p.preco)}</td>
+            <td><span class="td-cat">${p.categoria || 'geral'}</span></td>
+            <td>${p.estoque ?? '—'}</td>
+            <td>
+              <div class="td-actions">
+                <button class="btn btn-e btn-sm" onclick='editar(${JSON.stringify(p)})'>✏️ Editar</button>
+                <button class="btn btn-d btn-sm" onclick="deletar('${p._id}','${p.nome}')">🗑️ Remover</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filtrar(q) {
+  renderTable(todosProdutos.filter(p =>
+    p.nome.toLowerCase().includes(q.toLowerCase()) ||
+    (p.categoria || '').toLowerCase().includes(q.toLowerCase())
+  ));
+}
+
+// ── EDITAR ────────────────────────────────────────────
+function editar(p) {
+  document.getElementById('eid').value    = p._id;
+  document.getElementById('enome').value  = p.nome;
+  document.getElementById('epreco').value = p.preco;
+  document.getElementById('ecat').value   = p.categoria || 'geral';
+  document.getElementById('eimg').value   = p.imagem || '';
+  document.getElementById('edesc').value  = p.descricao || '';
+  document.getElementById('eest').value   = p.estoque || 0;
+
+  if (p.imagem) {
+    document.getElementById('eprev-img').src = p.imagem;
+    document.getElementById('eprev-url').textContent = p.imagem;
+    document.getElementById('eprev').classList.add('on');
+  } else {
+    document.getElementById('eprev').classList.remove('on');
+  }
+
+  document.getElementById('modalBg').classList.add('on');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('on');
+}
+
+// ── SALVAR EDIÇÃO ─────────────────────────────────────
+async function salvarEdicao() {
+  const id        = document.getElementById('eid').value;
+  const nome      = document.getElementById('enome').value.trim();
+  const preco     = parseFloat(document.getElementById('epreco').value);
+  const categoria = document.getElementById('ecat').value;
+  const imagem    = document.getElementById('eimg').value.trim();
+  const descricao = document.getElementById('edesc').value.trim();
+  const estoque   = parseInt(document.getElementById('eest').value) || 0;
+
+  if (!nome || !preco) { toast('⚠️ Nome e preço são obrigatórios'); return; }
+
+  try {
+    const r = await fetch(`${API}/produtos/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': obterSenha()
+      },
+      body: JSON.stringify({ nome, preco, categoria, imagem, descricao, estoque })
+    });
+
+    if (r.ok) {
+      toast('✅ ' + nome + ' atualizado!');
+      closeModal();
+      loadTable();
+      loadStats();
+    } else {
+      const d = await r.json();
+      toast('❌ ' + (d.erro || 'Senha incorreta.'));
+      if (r.status === 401) relogar();
+    }
+  } catch {
+    toast('❌ Servidor offline');
+  }
+}
+
+// ── DELETAR ───────────────────────────────────────────
+async function deletar(id, nome) {
+  if (!confirm(`Remover "${nome}"?\nEssa ação não pode ser desfeita.`)) return;
+
+  try {
+    const r = await fetch(`${API}/produtos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-admin-password': obterSenha()
+      }
+    });
+
+    if (r.ok) {
+      toast('🗑️ ' + nome + ' removido');
+      loadTable();
+      loadStats();
+    } else {
+      const d = await r.json();
+      toast('❌ ' + (d.erro || 'Senha incorreta.'));
+      if (r.status === 401) relogar();
+    }
+  } catch {
+    toast('❌ Servidor offline');
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function previewImg(input, boxId) {
+  const url = input.value.trim();
+  const box = document.getElementById(boxId);
+  if (url) {
+    document.getElementById(boxId + '-img').src = url;
+    document.getElementById(boxId + '-url').textContent = url;
+    box.classList.add('on');
+  } else {
+    box.classList.remove('on');
+  }
+}
+
+function showMsg(el, txt, cls) {
+  el.textContent = txt;
+  el.className = 'fmsg ' + cls;
+  el.style.display = 'block';
+}
+
+let toastT;
+function toast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('on'), 3500);
+}
+
+// ── INIT ──────────────────────────────────────────────
+checkStatus();
+loadStats();
+setInterval(checkStatus, 30000);
+</script>
+</body>
+</html>

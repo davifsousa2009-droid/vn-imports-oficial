@@ -1,0 +1,9 @@
+# Pasta de bibliotecas do Node (muito pesada para o GitHub)
+node_modules/
+
+# Arquivo de senhas e segredos (CRÍTICO)
+.env
+
+# Arquivos de log e cache
+npm-debug.log*
+.DS_Store
