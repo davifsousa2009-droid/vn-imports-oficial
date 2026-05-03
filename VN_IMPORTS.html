@@ -198,6 +198,56 @@ nav{
 }
 .btn-sm:hover{background:var(--ink2)}
 
+/* ─── HERO CAROUSEL (banners API) ─── */
+.hero-carousel-outer{
+  max-width:1240px;margin:0 auto;padding:12px 36px 0;
+}
+.hero-carousel{
+  position:relative;border:1px solid var(--border);
+  background:linear-gradient(150deg,var(--bg2) 0%,#ebe6de 100%);
+  overflow:hidden;border-radius:2px;aspect-ratio:16/9;
+  max-height:min(54vh,560px);box-shadow:var(--sh);
+}
+.hc-slides{position:absolute;inset:0}
+.hc-slide{
+  position:absolute;inset:0;opacity:0;transition:opacity .75s ease-in-out;
+  pointer-events:none;
+}
+.hc-slide.on{opacity:1;z-index:1;pointer-events:auto}
+.hc-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.hc-nav{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+  width:48px;height:48px;border-radius:50%;
+  border:1px solid rgba(154,122,58,.55);
+  background:rgba(247,244,240,.94);backdrop-filter:blur(10px);
+  color:var(--gold);font-size:28px;line-height:1;font-weight:300;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .25s,border-color .25s,color .25s,box-shadow .25s;
+  box-shadow:0 4px 22px rgba(0,0,0,.07);padding:0;padding-bottom:3px;
+  font-family:var(--serif);
+}
+.hc-nav:hover{
+  background:var(--gold2);color:var(--ink);border-color:var(--gold2);
+  box-shadow:0 8px 32px rgba(154,122,58,.32);
+}
+.hc-prev{left:18px}
+.hc-next{right:18px}
+.hc-dots{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:3;
+  display:flex;gap:10px;align-items:center;padding:6px 12px;
+  background:rgba(247,244,240,.55);backdrop-filter:blur(6px);border-radius:999px;
+  border:1px solid rgba(196,165,90,.25);
+}
+.hc-dot{
+  width:7px;height:7px;border-radius:50%;padding:0;border:none;
+  background:rgba(17,17,17,.28);cursor:pointer;
+  transition:transform .2s,background .2s,box-shadow .2s;
+}
+.hc-dot.on{
+  background:var(--gold2);transform:scale(1.2);
+  box-shadow:0 0 0 2px rgba(196,165,90,.45);
+}
+
 /* ─── CATS ─── */
 .cats-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .cats-inner{max-width:1240px;margin:0 auto;padding:0 36px}
@@ -539,6 +589,70 @@ footer{background:var(--ink);color:var(--bg)}
 .cd-total span:last-child{color:var(--gold)}
 .cd-secure{text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
 
+/* ─── MODAL PIX (checkout) ─── */
+.pix-modal-bg{
+  position:fixed;inset:0;background:rgba(10,10,10,.72);z-index:500;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.pix-modal-bg.on{opacity:1;pointer-events:all}
+.pix-modal{
+  width:100%;max-width:420px;background:linear-gradient(165deg,#1a1814 0%,#111 45%,#0d0c0a 100%);
+  border:1px solid rgba(196,165,90,.35);box-shadow:0 24px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04) inset;
+  transform:scale(.96) translateY(12px);opacity:0;
+  transition:transform .32s cubic-bezier(.34,1.2,.64,1),opacity .28s;
+}
+.pix-modal-bg.on .pix-modal{transform:scale(1) translateY(0);opacity:1}
+.pix-modal-head{
+  padding:22px 24px 18px;border-bottom:1px solid rgba(196,165,90,.2);
+  display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(90deg,rgba(154,122,58,.12),transparent);
+}
+.pix-modal-head h3{
+  font-family:var(--serif);font-size:20px;font-weight:400;color:#F7F4F0;
+  letter-spacing:.02em;
+}
+.pix-modal-head h3 em{font-style:normal;color:var(--gold2)}
+.pix-modal-x{
+  width:38px;height:38px;border:1px solid rgba(196,165,90,.35);
+  background:rgba(0,0,0,.25);color:var(--gold2);font-size:16px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.pix-modal-x:hover{background:var(--gold2);color:#111;border-color:var(--gold2)}
+.pix-modal-body{padding:24px}
+.pix-m-label{
+  display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(196,165,90,.75);margin-bottom:8px;
+}
+.pix-m-total{
+  font-family:var(--serif);font-size:32px;font-weight:400;color:var(--gold2);
+  margin-bottom:22px;line-height:1.1;
+}
+.pix-m-keybox{
+  background:rgba(0,0,0,.35);border:1px solid rgba(196,165,90,.22);
+  padding:14px 16px;margin-bottom:16px;word-break:break-all;
+}
+.pix-m-keybox code{
+  font-family:'Barlow',ui-monospace,monospace;font-size:14px;font-weight:500;
+  color:#F0EBE3;line-height:1.5;
+}
+.pix-copy{
+  width:100%;padding:14px 20px;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  font-family:var(--sans);cursor:pointer;border:none;
+  background:linear-gradient(180deg,var(--gold2),#9A7A3A);color:#111;
+  border:1px solid rgba(196,165,90,.5);transition:filter .2s,transform .15s;
+}
+.pix-copy:hover{filter:brightness(1.06)}
+.pix-copy:active{transform:scale(.985)}
+.pix-copy.done{background:#2E6B47;color:#F7F4F0;border-color:#3d8a5c}
+.pix-notice{
+  margin-top:18px;padding:14px 16px;font-size:12px;line-height:1.65;color:rgba(247,244,240,.82);
+  background:rgba(154,122,58,.1);border-left:3px solid var(--gold2);
+  border-radius:0 2px 2px 0;
+}
+
 /* ─── SEARCH ─── */
 .search-wrap{
   border-bottom:1px solid var(--border);background:var(--bg);
@@ -743,6 +857,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 @media(max-width:768px){
   .nav-links{display:none}
   .nav-inner{padding:0 20px}
+  .hero-carousel-outer{padding:8px 20px 0}
+  .hero-carousel{
+    aspect-ratio:3/4;max-height:min(70vh,520px);
+    border-left:none;border-right:none;border-radius:0;
+  }
+  .hc-nav{width:42px;height:42px;font-size:24px}
+  .hc-prev{left:12px}
+  .hc-next{right:12px}
+  .hc-dots{bottom:12px}
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
   .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
   .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
@@ -776,6 +899,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .hero-btns{flex-direction:column}
   .btn-fill,.btn-line{width:100%;justify-content:center}
   .ep-2{grid-template-columns:1fr}
+  .hero-carousel{aspect-ratio:4/5;max-height:min(75vh,440px)}
+  .hc-nav{width:36px;height:36px;font-size:20px}
 }
 </style>
 </head>
@@ -814,6 +939,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="search-results" id="searchRes"></div>
   </div>
 </nav>
+
+<section class="hero-carousel-outer" id="heroCarouselOuter" hidden>
+  <div class="hero-carousel" id="heroCarousel" aria-roledescription="carousel" aria-label="Destaques da loja">
+    <div class="hc-slides" id="hcSlides"></div>
+    <button type="button" class="hc-nav hc-prev" id="hcPrev" aria-label="Anterior">‹</button>
+    <button type="button" class="hc-nav hc-next" id="hcNext" aria-label="Próximo">›</button>
+    <div class="hc-dots" id="hcDots"></div>
+  </div>
+</section>
 
 <!-- HERO -->
 <div class="hero">
@@ -857,13 +991,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <a href="#" class="sec-more">Ver todos →</a>
     </div>
-    <div class="filter-bar">
-      <button class="flt on" onclick="filter(this,'all')">Todos</button>
-      <button class="flt" onclick="filter(this,'vestidos')">Vestidos</button>
-      <button class="flt" onclick="filter(this,'calcados')">Calçados</button>
-      <button class="flt" onclick="filter(this,'acessorios')">Acessórios</button>
-      <button class="flt" onclick="filter(this,'casacos')">Casacos</button>
-    </div>
+    <div class="filter-bar" id="filterBar"></div>
     <div class="prod-grid" id="prodGrid"></div>
   </div>
 </div>
@@ -1087,6 +1215,24 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </div>
 
+<!-- MODAL PIX -->
+<div class="pix-modal-bg" id="pixModalBg" onclick="closePixModal()" aria-hidden="true">
+  <div class="pix-modal" role="dialog" aria-labelledby="pixModalTitle" aria-modal="true" onclick="event.stopPropagation()">
+    <div class="pix-modal-head">
+      <h3 id="pixModalTitle">Pagamento <em>PIX</em></h3>
+      <button type="button" class="pix-modal-x" onclick="closePixModal()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="pix-modal-body">
+      <span class="pix-m-label">Valor total</span>
+      <div class="pix-m-total" id="pixModalTotal">—</div>
+      <span class="pix-m-label">Chave PIX</span>
+      <div class="pix-m-keybox"><code id="pixModalKey"></code></div>
+      <button type="button" class="pix-copy" id="pixCopyBtn" onclick="copiarChavePix()">Copiar Chave PIX</button>
+      <p class="pix-notice">Após o pagamento, envie o comprovante para o nosso WhatsApp</p>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastMsg"></span></div>
 
@@ -1132,6 +1278,15 @@ let curProd = null;
 const save  = ()=>localStorage.setItem('vn_data', JSON.stringify(S));
 const saveC = ()=>localStorage.setItem('vn_cart', JSON.stringify(cart));
 const R$    = v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : `${window.location.origin}/api`;
+
+let categoriasVitrine = [];
+let heroBannersData = [];
+let heroBannerIndex = 0;
+let heroBannerTimer = null;
 
 /* ─── VIEWS ─── */
 function goView(id){
@@ -1211,21 +1366,139 @@ function renderGrid(list){
     </div>`).join('');
 }
 
-function filter(btn, cat){
-  document.querySelectorAll('.flt').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
+function filterDyn(btn, cat){
+  document.querySelectorAll('#filterBar .flt').forEach(b=>b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
   renderGrid(cat==='all'?S.products:S.products.filter(p=>p.cat===cat));
 }
 
 function filterAndGo(cat){
   scrollTo_('sec-prod');
   setTimeout(()=>{
-    const btns=document.querySelectorAll('.flt');
-    let b=btns[0];
-    btns.forEach(x=>{ if(x.textContent.toLowerCase().includes(cat)||cat==='all') b=x; });
-    filter(b,cat);
+    const btns = document.querySelectorAll('#filterBar .flt');
+    if (!btns.length) return;
+    const match = [...btns].find(x => x.dataset.cat === cat);
+    const useAll = cat === 'all' || !match;
+    const b = useAll ? btns[0] : match;
+    const c = useAll ? 'all' : cat;
+    filterDyn(b, c);
   },400);
 }
+
+async function carregarCategoriasVitrine(){
+  try{
+    const r = await fetch(API_URL + '/categories');
+    categoriasVitrine = r.ok ? await r.json() : [];
+  }catch{
+    categoriasVitrine = [];
+  }
+  renderFilterBar();
+}
+
+function renderFilterBar(){
+  const el = document.getElementById('filterBar');
+  if (!el) return;
+  el.textContent = '';
+  const mk = (label, slug, on) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'flt' + (on ? ' on' : '');
+    b.dataset.cat = slug;
+    b.textContent = label;
+    b.addEventListener('click', () => filterDyn(b, slug));
+    el.appendChild(b);
+  };
+  mk('Todos', 'all', true);
+  categoriasVitrine.forEach(c => mk(c.nome, c.slug, false));
+}
+
+function clearHeroBannerTimer(){
+  if (heroBannerTimer){ clearInterval(heroBannerTimer); heroBannerTimer = null; }
+}
+
+function startHeroBannerTimer(){
+  clearHeroBannerTimer();
+  if (heroBannersData.length <= 1 || document.hidden) return;
+  heroBannerTimer = setInterval(() => heroCarouselStep(1), 5000);
+}
+
+function heroCarouselRenderState(){
+  document.querySelectorAll('#hcSlides .hc-slide').forEach((s, i) => {
+    s.classList.toggle('on', i === heroBannerIndex);
+  });
+  document.querySelectorAll('#hcDots .hc-dot').forEach((d, i) => {
+    d.classList.toggle('on', i === heroBannerIndex);
+  });
+}
+
+function heroCarouselStep(dir){
+  if (!heroBannersData.length) return;
+  heroBannerIndex = (heroBannerIndex + dir + heroBannersData.length) % heroBannersData.length;
+  heroCarouselRenderState();
+  startHeroBannerTimer();
+}
+
+function heroCarouselGoTo(i){
+  if (i < 0 || i >= heroBannersData.length) return;
+  heroBannerIndex = i;
+  heroCarouselRenderState();
+  startHeroBannerTimer();
+}
+
+async function carregarBannersVitrine(){
+  const outer = document.getElementById('heroCarouselOuter');
+  const slidesEl = document.getElementById('hcSlides');
+  const dotsEl = document.getElementById('hcDots');
+  const prevBtn = document.getElementById('hcPrev');
+  const nextBtn = document.getElementById('hcNext');
+  clearHeroBannerTimer();
+  try{
+    const r = await fetch(API_URL + '/banners');
+    heroBannersData = r.ok ? await r.json() : [];
+  }catch{
+    heroBannersData = [];
+  }
+  if (!heroBannersData.length){
+    outer.hidden = true;
+    slidesEl.textContent = '';
+    dotsEl.textContent = '';
+    return;
+  }
+  outer.hidden = false;
+  slidesEl.textContent = '';
+  heroBannersData.forEach((b, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'hc-slide' + (i === 0 ? ' on' : '');
+    const img = document.createElement('img');
+    img.src = b.imagem;
+    img.alt = 'Destaque ' + (i + 1);
+    img.loading = i === 0 ? 'eager' : 'lazy';
+    wrap.appendChild(img);
+    slidesEl.appendChild(wrap);
+  });
+  dotsEl.textContent = '';
+  heroBannersData.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'hc-dot' + (i === 0 ? ' on' : '');
+    dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+    dot.addEventListener('click', () => heroCarouselGoTo(i));
+    dotsEl.appendChild(dot);
+  });
+  const multi = heroBannersData.length > 1;
+  prevBtn.style.visibility = multi ? 'visible' : 'hidden';
+  nextBtn.style.visibility = multi ? 'visible' : 'hidden';
+  dotsEl.style.display = multi ? 'flex' : 'none';
+  heroBannerIndex = 0;
+  prevBtn.onclick = () => heroCarouselStep(-1);
+  nextBtn.onclick = () => heroCarouselStep(1);
+  startHeroBannerTimer();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearHeroBannerTimer();
+  else startHeroBannerTimer();
+});
 
 /* ─── PRODUCT PAGE ─── */
 function openProd(id){
@@ -1336,15 +1609,65 @@ function renderCart(){
     </div>`).join('');
 }
 
-function checkout(){
-  const link=S.paylink?.trim();
-  if(!link){
-    showToast('⚙️','Configure o link de pagamento no painel admin');
-    closeCart();
+let _pixChaveAtual = '';
+
+async function checkout(){
+  if(!cart.length){
+    showToast('🛍️','Seu carrinho está vazio');
     return;
   }
-  window.open(link,'_blank');
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  closeCart();
+  try{
+    const r = await fetch(API_URL + '/config');
+    if(!r.ok) throw new Error('config');
+    const d = await r.json();
+    const chavePix = (d.chavePix != null ? String(d.chavePix) : '').trim();
+    if(!chavePix){
+      showToast('⚙️','Cadastre sua Chave PIX em Configuração no painel admin.');
+      return;
+    }
+    openPixModal(total,chavePix);
+  }catch{
+    showToast('⚠️','Não foi possível carregar a chave PIX. Verifique se o servidor está online.');
+  }
 }
+
+function openPixModal(total,chave){
+  _pixChaveAtual = chave;
+  document.getElementById('pixModalTotal').textContent = R$(total);
+  document.getElementById('pixModalKey').textContent = chave;
+  const btn = document.getElementById('pixCopyBtn');
+  btn.textContent = 'Copiar Chave PIX';
+  btn.classList.remove('done');
+  document.getElementById('pixModalBg').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePixModal(){
+  document.getElementById('pixModalBg').classList.remove('on');
+  document.body.style.overflow = '';
+  _pixChaveAtual = '';
+}
+
+async function copiarChavePix(){
+  const k = _pixChaveAtual || document.getElementById('pixModalKey').textContent;
+  if(!k) return;
+  try{
+    await navigator.clipboard.writeText(k);
+    const btn = document.getElementById('pixCopyBtn');
+    btn.textContent = 'Chave copiada!';
+    btn.classList.add('done');
+    showToast('✓','Chave PIX copiada');
+    setTimeout(()=>{ btn.textContent='Copiar Chave PIX'; btn.classList.remove('done'); },2200);
+  }catch{
+    showToast('⚠️','Não foi possível copiar. Selecione a chave manualmente.');
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && document.getElementById('pixModalBg').classList.contains('on')) closePixModal();
+});
 
 function syncDots(){
   const hC=cart.length>0, hW=wl.length>0;
@@ -1409,12 +1732,9 @@ function observeFI(){ document.querySelectorAll('.fi').forEach(el=>io.observe(el
 
 /* ══════════════════════════════════════════════════════════
    INTEGRAÇÃO COM O BACKEND — VN IMPORTS
-   Busca nome da loja e produtos do MongoDB via API.
+   Busca nome da loja e produtos do MongoDB via API (API_URL no topo).
    Se o servidor estiver offline, usa os dados padrão.
 ══════════════════════════════════════════════════════════ */
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000/api'
-  : `${window.location.origin}/api`;
 
 // Injeta o nome da loja em todos os elementos que o exibem
 async function carregarNomeDaLoja() {
@@ -1488,8 +1808,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   syncDots();
   observeFI();
-  carregarNomeDaLoja();        // injeta nome da loja via /api/config
-  carregarProdutosDoServidor(); // busca produtos via /api/produtos
+  carregarNomeDaLoja();
+  categoriasVitrine = [];
+  renderFilterBar();
+  carregarCategoriasVitrine();
+  carregarBannersVitrine();
+  carregarProdutosDoServidor();
 });
 </script>
 </body>
