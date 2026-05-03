@@ -1,8 +1,3 @@
-// ═══════════════════════════════════════════════════════
-//   VN IMPORTS — server.js
-//   ✅ Compatível com Vercel (Serverless) e localhost
-// ═══════════════════════════════════════════════════════
-
 require('dotenv').config();
 
 const express  = require('express');
@@ -16,45 +11,64 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve arquivos estáticos apenas fora da Vercel
-// (na Vercel os HTMLs ficam na raiz e são servidos automaticamente)
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
 
-// ── CONEXÃO COM MONGODB ────────────────────────────────
-// Reutiliza a conexão entre chamadas serverless (importante na Vercel)
+// ── CONEXÃO COM MONGODB (CORRIGIDA) ────────────────────
 let isConnected = false;
 
 async function connectDB() {
-  if (isConnected) return;
-  await mongoose.connect(process.env.MONGODB_URI);
-  isConnected = true;
-  console.log('✅ MongoDB conectado!');
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return;
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      w: 'majority',
+      maxPoolSize: 1,
+      minPoolSize: 0,
+    });
+
+    isConnected = true;
+    console.log('✅ MongoDB conectado');
+  } catch (err) {
+    isConnected = false;
+    console.error('❌ MongoDB erro:', err.message);
+    throw err;
+  }
 }
 
-// Conecta ao iniciar (funciona tanto local quanto Vercel)
-connectDB().catch(err => {
-  console.error('❌ Erro MongoDB:', err.message);
-});
+if (process.env.NODE_ENV === 'production') {
+  connectDB().catch(console.error);
+} else {
+  connectDB().catch(err => {
+    console.error('❌ Erro initial MongoDB:', err.message);
+  });
+}
 
 // ── MIDDLEWARE DE SEGURANÇA ────────────────────────────
 const verificarSenha = (req, res, next) => {
   const senhaRecebida = req.headers['x-admin-password'];
-  // Lê do .env — sem fallback hardcoded para evitar conflito de senhas
   const senhaMestra   = process.env.ADMIN_PASSWORD;
 
   if (!senhaMestra) {
-    // .env não carregou corretamente
-    console.error('❌ ADMIN_PASSWORD não encontrada no .env');
+    console.error('❌ ADMIN_PASSWORD não configurada');
     return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
   }
 
-  // .trim() remove espaços invisíveis que surgem ao copiar/colar senhas
   if (senhaRecebida?.trim() === senhaMestra.trim()) {
     next();
   } else {
-    console.warn(`⚠️ Acesso negado — recebida: "${senhaRecebida}" | esperada: "${senhaMestra}"`);
     res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
   }
 };
@@ -69,23 +83,33 @@ const produtoSchema = new mongoose.Schema({
   estoque:   { type: Number, default: 0 }
 }, { timestamps: true });
 
-// Evita erro "Cannot overwrite model" em ambiente serverless
 const Produto = mongoose.models.Produto || mongoose.model('Produto', produtoSchema);
 
 // ══════════════════════════════════════════════════════
 //   ROTAS DA API
 // ══════════════════════════════════════════════════════
 
-// GET /api/status — painel admin usa para checar conexão
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'online',
-    banco: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
-    hora: new Date().toLocaleString('pt-BR')
-  });
+// GET /api/status
+app.get('/api/status', async (req, res) => {
+  try {
+    await connectDB();
+    const estado = mongoose.connection.readyState;
+    res.json({
+      status: 'online',
+      banco: estado === 1 ? 'conectado' : `desconectado (${estado})`,
+      isConnected,
+      hora: new Date().toLocaleString('pt-BR')
+    });
+  } catch (err) {
+    res.json({
+      status: 'online',
+      banco: 'erro',
+      erro: err.message
+    });
+  }
 });
 
-// GET /api/produtos — pública (vitrine usa)
+// GET /api/produtos
 app.get('/api/produtos', async (req, res) => {
   try {
     await connectDB();
@@ -97,7 +121,7 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
-// GET /api/produtos/:id — pública
+// GET /api/produtos/:id
 app.get('/api/produtos/:id', async (req, res) => {
   try {
     await connectDB();
@@ -109,7 +133,7 @@ app.get('/api/produtos/:id', async (req, res) => {
   }
 });
 
-// POST /api/produtos — protegida
+// POST /api/produtos
 app.post('/api/produtos', verificarSenha, async (req, res) => {
   try {
     await connectDB();
@@ -124,7 +148,7 @@ app.post('/api/produtos', verificarSenha, async (req, res) => {
   }
 });
 
-// PUT /api/produtos/:id — protegida
+// PUT /api/produtos/:id
 app.put('/api/produtos/:id', verificarSenha, async (req, res) => {
   try {
     await connectDB();
@@ -138,7 +162,7 @@ app.put('/api/produtos/:id', verificarSenha, async (req, res) => {
   }
 });
 
-// DELETE /api/produtos/:id — protegida
+// DELETE /api/produtos/:id
 app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
   try {
     await connectDB();
@@ -150,17 +174,12 @@ app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
   }
 });
 
-// ── INICIAR SERVIDOR (apenas localmente) ──────────────
-// Na Vercel o app.listen() é ignorado — quem controla é o module.exports
+// ── INICIAR SERVIDOR (LOCAL)
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor em http://localhost:${PORT}`);
-    console.log(`🛍️  Loja:   http://localhost:${PORT}/VN_IMPORTS.html`);
-    console.log(`📦 Admin:  http://localhost:${PORT}/admin.html`);
-    console.log(`🔌 API:    http://localhost:${PORT}/api/produtos`);
+    console.log(`🚀 http://localhost:${PORT}`);
   });
 }
 
-// ✅ OBRIGATÓRIO para a Vercel funcionar
 module.exports = app;
