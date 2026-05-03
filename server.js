@@ -182,4 +182,16 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// ── SERVE HTML FILES ──────────────────────────────
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/VN_IMPORTS.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
+});
 module.exports = app;
