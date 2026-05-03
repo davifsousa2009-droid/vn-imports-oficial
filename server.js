@@ -1,11 +1,58 @@
 require('dotenv').config();
+// Upload de imagens: Cloudinary (defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET na Vercel e no .env local).
 
-const express  = require('express');
-const mongoose = require('mongoose');
-const cors     = require('cors');
-const path     = require('path');
+const express    = require('express');
+const mongoose   = require('mongoose');
+const cors       = require('cors');
+const path       = require('path');
+const multer     = require('multer');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
+
+if (
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
+
+const uploadMem = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype && /^image\//i.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Apenas arquivos de imagem são permitidos.'));
+  }
+});
+
+/** Extrai public_id a partir da secure_url padrão do Cloudinary (upload sem transformações). */
+function cloudinaryPublicIdFromUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloud || !url.includes(`res.cloudinary.com/${cloud}/`)) return null;
+  const m = url.match(/\/(?:image|raw)\/upload\/(?:v\d+\/)?(.+)$/i);
+  if (!m) return null;
+  let rest = m[1];
+  const dot = rest.lastIndexOf('.');
+  if (dot > 0) rest = rest.slice(0, dot);
+  return rest || null;
+}
+
+async function deleteCloudinaryAssetIfApplicable(url) {
+  const publicId = cloudinaryPublicIdFromUrl(url);
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId, undefined, { resource_type: 'image' });
+  } catch (e) {
+    console.warn('Cloudinary destroy:', e.message);
+  }
+}
 
 // ── MIDDLEWARES ────────────────────────────────────────
 app.use(cors());
@@ -40,10 +87,10 @@ async function connectDB() {
     });
 
     isConnected = true;
-    console.log('✅ MongoDB conectado');
+    console.log('MongoDB conectado');
   } catch (err) {
     isConnected = false;
-    console.error('❌ MongoDB erro:', err.message);
+    console.error('MongoDB erro:', err.message);
     throw err;
   }
 }
@@ -53,7 +100,7 @@ if (process.env.NODE_ENV === 'production') {
   connectDB().catch(console.error);
 } else {
   connectDB().catch(err => {
-    console.error('❌ Erro initial MongoDB:', err.message);
+    console.error('Erro initial MongoDB:', err.message);
   });
 }
 
@@ -63,7 +110,7 @@ const verificarSenha = (req, res, next) => {
   const senhaMestra   = process.env.ADMIN_PASSWORD;
 
   if (!senhaMestra) {
-    console.error('❌ ADMIN_PASSWORD não configurada');
+    console.error('ADMIN_PASSWORD não configurada');
     return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
   }
 
@@ -73,6 +120,41 @@ const verificarSenha = (req, res, next) => {
     res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
   }
 };
+
+// POST /api/upload — admin envia imagem; sobe para Cloudinary e retorna secure_url (campo path para compatibilidade com o admin)
+app.post('/api/upload', verificarSenha, (req, res) => {
+  const missing =
+    !process.env.CLOUDINARY_CLOUD_NAME ||
+    !process.env.CLOUDINARY_API_KEY ||
+    !process.env.CLOUDINARY_API_SECRET;
+  if (missing) {
+    return res.status(503).json({
+      erro: 'Cloudinary não configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET no ambiente.'
+    });
+  }
+
+  uploadMem.single('arquivo')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ erro: err.message || 'Erro no upload.' });
+    }
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
+    }
+    try {
+      const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const result = await cloudinary.uploader.upload(dataUri, undefined, {
+        folder: 'vn-imports',
+        resource_type: 'image',
+        unique_filename: true
+      });
+      const secureUrl = result.secure_url;
+      res.status(201).json({ path: secureUrl, mensagem: 'Upload concluído.' });
+    } catch (e) {
+      console.error('Cloudinary upload:', e.message);
+      res.status(500).json({ erro: e.message || 'Erro ao enviar imagem para o Cloudinary.' });
+    }
+  });
+});
 
 // ── MODEL DO PRODUTO ───────────────────────────────────
 const produtoSchema = new mongoose.Schema({
@@ -194,8 +276,10 @@ app.put('/api/produtos/:id', verificarSenha, async (req, res) => {
 app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
   try {
     await connectDB();
-    const removido = await Produto.findByIdAndDelete(req.params.id);
+    const removido = await Produto.findById(req.params.id);
     if (!removido) return res.status(404).json({ erro: 'Produto não encontrado' });
+    await deleteCloudinaryAssetIfApplicable(removido.imagem);
+    await Produto.findByIdAndDelete(req.params.id);
     res.json({ mensagem: 'Produto removido!' });
   } catch (err) {
     res.status(500).json({ erro: 'Erro ao remover', detalhe: err.message });
@@ -266,7 +350,7 @@ app.post('/api/banners', verificarSenha, async (req, res) => {
   try {
     await connectDB();
     const imagem = req.body.imagem?.trim();
-    if (!imagem) return res.status(400).json({ erro: 'Link da imagem é obrigatório' });
+    if (!imagem) return res.status(400).json({ erro: 'Imagem é obrigatória (faça upload no admin).' });
     const ordem = Number.parseInt(req.body.ordem, 10);
     const banner = await Banner.create({
       imagem,
@@ -282,8 +366,10 @@ app.post('/api/banners', verificarSenha, async (req, res) => {
 app.delete('/api/banners/:id', verificarSenha, async (req, res) => {
   try {
     await connectDB();
-    const removido = await Banner.findByIdAndDelete(req.params.id);
+    const removido = await Banner.findById(req.params.id);
     if (!removido) return res.status(404).json({ erro: 'Banner não encontrado' });
+    await deleteCloudinaryAssetIfApplicable(removido.imagem);
+    await Banner.findByIdAndDelete(req.params.id);
     res.json({ mensagem: 'Banner removido!' });
   } catch (err) {
     res.status(500).json({ erro: 'Erro ao remover banner', detalhe: err.message });
@@ -336,7 +422,7 @@ app.post('/api/config', verificarSenha, async (req, res) => {
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`🚀 http://localhost:${PORT}`);
+    console.log(`http://localhost:${PORT}`);
   });
 }
 
