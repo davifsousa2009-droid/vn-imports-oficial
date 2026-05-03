@@ -61,7 +61,10 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 .img-preview{display:none;align-items:center;gap:12px;margin-top:8px;padding:10px;background:#F7F4F0;border:1px solid #E0DBD4}
 .img-preview.on{display:flex}
 .img-preview img{width:52px;height:66px;object-fit:cover;border:1px solid #E0DBD4}
+.img-preview.on img.preview-tall{max-height:140px;width:auto;max-width:100%;height:auto}
 .img-url{font-size:11px;color:#999;word-break:break-all}
+.fi-file{padding:8px 0;font-size:13px;cursor:pointer}
+.sb-item .sb-ico{display:none}
 
 .form-btns{display:flex;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid #F0EDE8}
 
@@ -104,8 +107,10 @@ tr:hover td{background:#FAFAF8}
 .modal-bg.on .modal{transform:translate(-50%,-50%) scale(1)}
 .modal-head{padding:18px 22px;border-bottom:1px solid #F0EDE8;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
 .modal-head h3{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:400}
-.modal-x{background:transparent;border:1px solid #E0DBD4;width:30px;height:30px;font-size:16px;color:#888;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
-.modal-x:hover{background:#111;color:#fff;border-color:#111}
+.modal-x{background:transparent;border:1px solid #E0DBD4;width:30px;height:30px;color:#9A7A3A;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;padding:0}
+.modal-x-svg{width:14px;height:14px;display:block}
+.modal-x-svg path{stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round}
+.modal-x:hover{background:#111;color:#C4A55A;border-color:#111}
 .modal-body{padding:22px}
 
 /* TOAST */
@@ -133,14 +138,14 @@ tr:hover td{background:#FAFAF8}
   <aside class="sidebar">
     <div class="sb-logo">VN IMPORTS<span>Painel Admin</span></div>
     <nav class="sb-nav">
-      <div class="sb-item on" onclick="showPanel('dash',this)"><span>📊</span> Dashboard</div>
-      <div class="sb-item" onclick="showPanel('cadastrar',this)"><span>➕</span> Cadastrar Produto</div>
-      <div class="sb-item" onclick="showPanel('produtos',this);loadTable()"><span>📦</span> Gerenciar Produtos</div>
-      <div class="sb-item" onclick="showPanel('categorias',this);loadListaCategorias()"><span>🏷️</span> Gerenciar Categorias</div>
-      <div class="sb-item" onclick="showPanel('banners',this);loadListaBanners()"><span>🖼️</span> Gerenciar Banners</div>
-      <div class="sb-item" onclick="showPanel('config',this);loadConfig()"><span>⚙️</span> Configuração</div>
+      <div class="sb-item on" onclick="showPanel('dash',this)">Dashboard</div>
+      <div class="sb-item" onclick="showPanel('cadastrar',this)">Cadastrar Produto</div>
+      <div class="sb-item" onclick="showPanel('produtos',this);loadTable()">Gerenciar Produtos</div>
+      <div class="sb-item" onclick="showPanel('categorias',this);loadListaCategorias()">Gerenciar Categorias</div>
+      <div class="sb-item" onclick="showPanel('banners',this);loadListaBanners()">Gerenciar Banners</div>
+      <div class="sb-item" onclick="showPanel('config',this);loadConfig()">Configuração</div>
     </nav>
-    <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">🛍️ Ver loja →</a></div>
+    <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">Ver loja</a></div>
   </aside>
 
   <!-- MAIN -->
@@ -165,7 +170,7 @@ tr:hover td{background:#FAFAF8}
         <div class="card">
           <div class="card-title">Bem-vindo ao Painel VN IMPORTS</div>
           <p style="font-size:14px;color:#888;line-height:1.75">Use o menu lateral para <strong style="color:#111">cadastrar</strong> novos produtos ou <strong style="color:#111">gerenciar</strong> os existentes. Tudo que você salvar aqui aparece automaticamente na vitrine da loja.</p>
-          <div style="margin-top:18px;padding:13px 15px;background:#F7F4F0;border:1px solid #E0DBD4;font-size:12px;color:#888;line-height:1.65">🔒 <strong style="color:#111">Segurança:</strong> Nunca compartilhe seu arquivo <code>.env</code> — sua senha do banco está protegida lá.</div>
+          <div style="margin-top:18px;padding:13px 15px;background:#F7F4F0;border:1px solid #E0DBD4;font-size:12px;color:#888;line-height:1.65"><strong style="color:#111">Segurança:</strong> Nunca compartilhe seu arquivo <code>.env</code> — sua senha do banco está protegida lá.</div>
         </div>
       </div>
 
@@ -180,15 +185,15 @@ tr:hover td{background:#FAFAF8}
               <select class="fsel" id="f-cat"></select>
             </div>
             <div class="fg fw">
-              <label class="fl">URL da Imagem</label>
-              <input class="fi" id="f-img" placeholder="https://..." type="url" oninput="previewImg(this,'fprev')">
-              <div class="img-preview" id="fprev"><img src="" id="fprev-img" alt=""><span class="img-url" id="fprev-url"></span></div>
+              <label class="fl">Imagem do produto</label>
+              <input class="fi fi-file" id="f-file" type="file" accept="image/*" onchange="previewLocalFile(this,'fprev')">
+              <div class="img-preview" id="fprev"><img src="" id="fprev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="fprev-url"></span></div>
             </div>
             <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="f-desc" placeholder="Descreva o produto…"></textarea></div>
             <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
           </div>
           <div class="form-btns">
-            <button class="btn btn-p" onclick="salvar()">✓ &nbsp;Salvar Produto</button>
+            <button class="btn btn-p" onclick="salvar()">Salvar produto</button>
             <button class="btn btn-g" onclick="limpar()">Limpar</button>
           </div>
           <div class="fmsg" id="fmsg"></div>
@@ -200,7 +205,7 @@ tr:hover td{background:#FAFAF8}
         <div class="tbl-wrap">
           <div class="tbl-head">
             <span class="tbl-head-title">Todos os Produtos</span>
-            <input class="search-inp" placeholder="🔍  Buscar…" oninput="filtrar(this.value)">
+            <input class="search-inp" placeholder="Buscar…" oninput="filtrar(this.value)">
           </div>
           <div id="tblBody"><div class="empty">Carregando…</div></div>
         </div>
@@ -234,20 +239,20 @@ tr:hover td{background:#FAFAF8}
       <div class="panel" id="panel-banners">
         <div class="card">
           <div class="card-title">Gerenciar Banners</div>
-          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Imagens exibidas no carousel do topo da vitrine. Use URLs diretas (HTTPS) de imagens. Números menores em <strong>ordem</strong> aparecem primeiro.</p>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Imagens do carousel no topo da vitrine. Envie um arquivo do seu computador ou celular. Números menores em <strong>ordem</strong> aparecem primeiro.</p>
           <div class="fg2">
             <div class="fg fw">
-              <label class="fl">URL da imagem</label>
-              <input class="fi" id="ban-imagem" placeholder="https://…" type="url" oninput="previewBanImg(this)">
+              <label class="fl">Arquivo da imagem</label>
+              <input class="fi fi-file" id="ban-file" type="file" accept="image/*" onchange="previewLocalFile(this,'ban-prev')">
             </div>
             <div class="fg">
               <label class="fl">Ordem</label>
               <input class="fi" id="ban-ordem" placeholder="0" type="number" value="0" min="0" step="1">
             </div>
           </div>
-          <div class="img-preview" id="ban-prev"><img src="" id="ban-prev-img" alt=""><span class="img-url" id="ban-prev-url"></span></div>
+          <div class="img-preview" id="ban-prev"><img src="" id="ban-prev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="ban-prev-url"></span></div>
           <div class="form-btns" style="border-top:none;padding-top:12px;margin-top:0">
-            <button class="btn btn-p" onclick="salvarBanner()">✓ &nbsp;Salvar banner</button>
+            <button class="btn btn-p" onclick="salvarBanner()">Salvar banner</button>
           </div>
           <div class="fmsg" id="banmsg"></div>
         </div>
@@ -274,7 +279,7 @@ tr:hover td{background:#FAFAF8}
             </div>
           </div>
           <div class="form-btns">
-            <button class="btn btn-p" onclick="salvarConfig()">✓ &nbsp;Salvar Configuração</button>
+            <button class="btn btn-p" onclick="salvarConfig()">Salvar configuração</button>
           </div>
           <div class="fmsg" id="cfgmsg"></div>
         </div>
@@ -289,7 +294,7 @@ tr:hover td{background:#FAFAF8}
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
       <h3>Editar Produto</h3>
-      <button class="modal-x" onclick="closeModal()">✕</button>
+      <button type="button" class="modal-x" onclick="closeModal()" aria-label="Fechar"><svg class="modal-x-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="eid">
@@ -300,15 +305,16 @@ tr:hover td{background:#FAFAF8}
           <select class="fsel" id="ecat"></select>
         </div>
         <div class="fg fw">
-          <label class="fl">URL da Imagem</label>
-          <input class="fi" id="eimg" type="url" oninput="previewImg(this,'eprev')">
-          <div class="img-preview" id="eprev"><img src="" id="eprev-img" alt=""><span class="img-url" id="eprev-url"></span></div>
+          <label class="fl">Imagem (nova foto opcional)</label>
+          <input type="hidden" id="eimg-stored" value="">
+          <input class="fi fi-file" id="e-file" type="file" accept="image/*" onchange="previewLocalFile(this,'eprev')">
+          <div class="img-preview" id="eprev"><img src="" id="eprev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="eprev-url"></span></div>
         </div>
         <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="edesc"></textarea></div>
         <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
       </div>
       <div class="form-btns">
-        <button class="btn btn-p" onclick="salvarEdicao()">✓ &nbsp;Salvar Alterações</button>
+        <button class="btn btn-p" onclick="salvarEdicao()">Salvar alterações</button>
         <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
       </div>
     </div>
@@ -320,11 +326,50 @@ tr:hover td{background:#FAFAF8}
 <script>
 // ── CONFIG ────────────────────────────────────────────
 // Detecta automaticamente se está rodando local ou na Vercel
-// Local:  http://localhost:3000/admin.html  → API em localhost:3000
-// Vercel: https://vn-imports.vercel.app     → API no mesmo domínio
+// Local:  http://localhost:3000/admin.html  — API em localhost:3000
+// Vercel: https://vn-imports.vercel.app     — API no mesmo domínio
 const API = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
   : `${window.location.origin}/api`;
+
+const API_BASE = API.replace(/\/api\/?$/, '');
+
+function mediaUrl(src) {
+  if (!src) return '';
+  if (/^https?:\/\//i.test(src)) return src;
+  return API_BASE + (src.startsWith('/') ? src : '/' + src);
+}
+
+async function uploadArquivo(file) {
+  const fd = new FormData();
+  fd.append('arquivo', file);
+  const r = await fetch(API + '/upload', {
+    method: 'POST',
+    headers: { 'x-admin-password': obterSenha() },
+    body: fd
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.erro || 'Falha no upload');
+  return d.path;
+}
+
+function previewLocalFile(input, boxId) {
+  const box = document.getElementById(boxId);
+  const img = document.getElementById(boxId + '-img');
+  const cap = document.getElementById(boxId + '-url');
+  if (!input.files || !input.files[0]) {
+    box.classList.remove('on');
+    return;
+  }
+  const f = input.files[0];
+  const reader = new FileReader();
+  reader.onload = () => {
+    img.src = reader.result;
+    cap.textContent = f.name + ' · ' + Math.round(f.size / 1024) + ' KB';
+    box.classList.add('on');
+  };
+  reader.readAsDataURL(f);
+}
 
 const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 let todosProdutos = [];
@@ -340,7 +385,7 @@ function escHtml(s) {
 function obterSenha() {
   let s = localStorage.getItem('vni_pass');
   if (!s) {
-    s = prompt('🔐 Painel VN IMPORTS\nDigite a Senha Mestra:');
+    s = prompt('Painel VN IMPORTS\nDigite a Senha Mestra:');
     if (s) {
       // .trim() remove espaços invisíveis ao colar a senha
       localStorage.setItem('vni_pass', s.trim());
@@ -446,7 +491,7 @@ function renderListaCategorias() {
             <td class="td-name">${escHtml(c.nome)}</td>
             <td><span class="td-cat">${escHtml(c.slug)}</span></td>
             <td>
-              <button class="btn btn-d btn-sm" onclick='removerCategoria(${JSON.stringify(String(c._id))}, ${JSON.stringify(c.nome)})'>🗑️ Remover</button>
+              <button class="btn btn-d btn-sm" onclick='removerCategoria(${JSON.stringify(String(c._id))}, ${JSON.stringify(c.nome)})'>Remover</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -456,7 +501,7 @@ function renderListaCategorias() {
 async function adicionarCategoria() {
   const nome = document.getElementById('cat-nova').value.trim();
   const msg = document.getElementById('catmsg');
-  if (!nome) { showMsg(msg, '⚠️ Informe o nome da categoria.', 'er'); return; }
+  if (!nome) { showMsg(msg, 'Informe o nome da categoria.', 'er'); return; }
   try {
     const r = await fetch(API + '/categories', {
       method: 'POST',
@@ -469,17 +514,17 @@ async function adicionarCategoria() {
     const d = await r.json();
     if (r.ok) {
       document.getElementById('cat-nova').value = '';
-      showMsg(msg, '✅ Categoria criada!', 'ok');
-      toast('✅ Categoria adicionada');
+      showMsg(msg, 'Categoria criada.', 'ok');
+      toast('Categoria adicionada');
       await loadListaCategorias();
     } else if (r.status === 401) {
       relogar();
-      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
+      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
     } else {
-      showMsg(msg, '❌ ' + (d.erro || 'Erro ao criar.'), 'er');
+      showMsg(msg, d.erro || 'Erro ao criar.', 'er');
     }
   } catch {
-    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+    showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
   }
 }
 
@@ -491,33 +536,21 @@ async function removerCategoria(id, nome) {
       headers: { 'x-admin-password': obterSenha() }
     });
     if (r.ok) {
-      toast('🗑️ Categoria removida');
+      toast('Categoria removida');
       await loadListaCategorias();
     } else if (r.status === 401) {
       relogar();
-      toast('❌ Senha incorreta. Tente novamente.');
+      toast('Senha incorreta. Tente novamente.');
     } else {
       const d = await r.json().catch(() => ({}));
-      toast('❌ ' + (d.erro || 'Erro ao remover'));
+      toast(d.erro || 'Erro ao remover');
     }
   } catch {
-    toast('❌ Servidor offline');
+    toast('Servidor offline');
   }
 }
 
 let listaBannersAdmin = [];
-
-function previewBanImg(inp) {
-  const url = inp.value.trim();
-  const prev = document.getElementById('ban-prev');
-  if (url) {
-    document.getElementById('ban-prev-img').src = url;
-    document.getElementById('ban-prev-url').textContent = url;
-    prev.classList.add('on');
-  } else {
-    prev.classList.remove('on');
-  }
-}
 
 async function loadListaBanners() {
   document.getElementById('banTableBody').innerHTML = '<div class="empty">Carregando…</div>';
@@ -538,15 +571,15 @@ function renderListaBanners() {
   }
   el.innerHTML = `
     <table>
-      <thead><tr><th>Prévia</th><th>URL</th><th>Ordem</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Prévia</th><th>Caminho</th><th>Ordem</th><th>Ações</th></tr></thead>
       <tbody>
         ${listaBannersAdmin.map(b => `
           <tr>
-            <td><img class="td-ban" src="${escHtml(b.imagem)}" alt="" onerror="this.style.opacity=.35"></td>
+            <td><img class="td-ban" src="${escHtml(mediaUrl(b.imagem))}" alt="" onerror="this.style.opacity=.35"></td>
             <td style="font-size:11px;color:#888;word-break:break-all;max-width:260px">${escHtml(b.imagem)}</td>
             <td>${b.ordem ?? 0}</td>
             <td>
-              <button class="btn btn-d btn-sm" onclick="removerBanner(${JSON.stringify(String(b._id))})">🗑️ Remover</button>
+              <button class="btn btn-d btn-sm" onclick="removerBanner(${JSON.stringify(String(b._id))})">Remover</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -554,10 +587,17 @@ function renderListaBanners() {
 }
 
 async function salvarBanner() {
-  const imagem = document.getElementById('ban-imagem').value.trim();
+  const bf = document.getElementById('ban-file');
   const ordem = parseInt(document.getElementById('ban-ordem').value, 10) || 0;
   const msg = document.getElementById('banmsg');
-  if (!imagem) { showMsg(msg, '⚠️ Cole o link da imagem.', 'er'); return; }
+  if (!bf.files || !bf.files[0]) { showMsg(msg, 'Selecione uma imagem.', 'er'); return; }
+  let imagem;
+  try {
+    imagem = await uploadArquivo(bf.files[0]);
+  } catch (e) {
+    showMsg(msg, e.message || 'Erro no upload.', 'er');
+    return;
+  }
   try {
     const r = await fetch(API + '/banners', {
       method: 'POST',
@@ -569,19 +609,19 @@ async function salvarBanner() {
     });
     const d = await r.json();
     if (r.ok) {
-      document.getElementById('ban-imagem').value = '';
+      bf.value = '';
       document.getElementById('ban-prev').classList.remove('on');
-      showMsg(msg, '✅ Banner salvo!', 'ok');
-      toast('✅ Banner adicionado');
+      showMsg(msg, 'Banner salvo.', 'ok');
+      toast('Banner adicionado');
       await loadListaBanners();
     } else if (r.status === 401) {
       relogar();
-      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
+      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
     } else {
-      showMsg(msg, '❌ ' + (d.erro || 'Erro ao salvar.'), 'er');
+      showMsg(msg, d.erro || 'Erro ao salvar.', 'er');
     }
   } catch {
-    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+    showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
   }
 }
 
@@ -593,17 +633,17 @@ async function removerBanner(id) {
       headers: { 'x-admin-password': obterSenha() }
     });
     if (r.ok) {
-      toast('🗑️ Banner removido');
+      toast('Banner removido');
       await loadListaBanners();
     } else if (r.status === 401) {
       relogar();
-      toast('❌ Senha incorreta. Tente novamente.');
+      toast('Senha incorreta. Tente novamente.');
     } else {
       const d = await r.json().catch(() => ({}));
-      toast('❌ ' + (d.erro || 'Erro ao remover'));
+      toast(d.erro || 'Erro ao remover');
     }
   } catch {
-    toast('❌ Servidor offline');
+    toast('Servidor offline');
   }
 }
 
@@ -625,14 +665,24 @@ async function loadStats() {
 async function salvar() {
   const nome      = document.getElementById('f-nome').value.trim();
   const preco     = parseFloat(document.getElementById('f-preco').value);
-  const imagem    = document.getElementById('f-img').value.trim();
   const descricao = document.getElementById('f-desc').value.trim();
   const categoria = document.getElementById('f-cat').value;
   const estoque   = parseInt(document.getElementById('f-est').value) || 0;
   const msg       = document.getElementById('fmsg');
 
-  if (!nome)            { showMsg(msg, '⚠️ Nome é obrigatório.', 'er'); return; }
-  if (!preco || preco <= 0) { showMsg(msg, '⚠️ Informe um preço válido.', 'er'); return; }
+  if (!nome)            { showMsg(msg, 'Nome é obrigatório.', 'er'); return; }
+  if (!preco || preco <= 0) { showMsg(msg, 'Informe um preço válido.', 'er'); return; }
+
+  let imagem = '';
+  const ff = document.getElementById('f-file');
+  if (ff.files && ff.files[0]) {
+    try {
+      imagem = await uploadArquivo(ff.files[0]);
+    } catch (e) {
+      showMsg(msg, e.message || 'Erro no upload da imagem.', 'er');
+      return;
+    }
+  }
 
   try {
     const r = await fetch(API + '/produtos', {
@@ -647,26 +697,29 @@ async function salvar() {
     const d = await r.json();
 
     if (r.ok) {
-      showMsg(msg, '✅ Produto salvo com sucesso!', 'ok');
-      toast('✅ ' + nome + ' cadastrado!');
+      showMsg(msg, 'Produto salvo com sucesso.', 'ok');
+      toast('Cadastrado: ' + nome);
       limpar();
       loadStats();
     } else if (r.status === 401) {
       // Senha errada — limpa do cache e avisa
       relogar();
-      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
+      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
     } else {
-      showMsg(msg, '❌ ' + (d.erro || 'Erro ao salvar.'), 'er');
+      showMsg(msg, d.erro || 'Erro ao salvar.', 'er');
     }
   } catch {
-    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+    showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
   }
 }
 
 async function limpar() {
-  ['f-nome', 'f-preco', 'f-img', 'f-desc', 'f-est'].forEach(id => {
+  ['f-nome', 'f-preco', 'f-desc', 'f-est'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('f-file').value = '';
+  document.getElementById('fprev-img').removeAttribute('src');
+  document.getElementById('fprev-url').textContent = '';
   await refreshCategorias();
   const fc = document.getElementById('f-cat');
   if (fc.options.length) fc.selectedIndex = 0;
@@ -686,14 +739,14 @@ async function loadTable() {
     renderTable(todosProdutos);
   } catch {
     document.getElementById('tblBody').innerHTML =
-      '<div class="empty">⚠️ Servidor offline. Rode: node server.js</div>';
+      '<div class="empty">Servidor offline. Rode: node server.js</div>';
   }
 }
 
 function renderTable(list) {
   if (!list.length) {
     document.getElementById('tblBody').innerHTML =
-      '<div class="empty">📦 Nenhum produto cadastrado ainda.</div>';
+      '<div class="empty">Nenhum produto cadastrado ainda.</div>';
     return;
   }
   document.getElementById('tblBody').innerHTML = `
@@ -708,16 +761,16 @@ function renderTable(list) {
         ${list.map(p => `
           <tr>
             <td>${p.imagem
-              ? `<img class="td-img" src="${p.imagem}" onerror="this.style.display='none'">`
-              : '📦'}</td>
+              ? `<img class="td-img" src="${escHtml(mediaUrl(p.imagem))}" onerror="this.style.display='none'">`
+              : '<span style="color:#bbb">—</span>'}</td>
             <td class="td-name">${p.nome}</td>
             <td class="td-price">${fmt(p.preco)}</td>
             <td><span class="td-cat">${escHtml(getCatNome(p.categoria))}</span></td>
             <td>${p.estoque ?? '—'}</td>
             <td>
               <div class="td-actions">
-                <button class="btn btn-e btn-sm" onclick='editar(${JSON.stringify(p)})'>✏️ Editar</button>
-                <button class="btn btn-d btn-sm" onclick="deletar('${p._id}','${p.nome}')">🗑️ Remover</button>
+                <button class="btn btn-e btn-sm" onclick='editar(${JSON.stringify(p)})'>Editar</button>
+                <button class="btn btn-d btn-sm" onclick="deletar('${p._id}','${p.nome}')">Remover</button>
               </div>
             </td>
           </tr>`).join('')}
@@ -747,13 +800,14 @@ async function editar(p) {
     ecat.appendChild(o);
   }
   ecat.value = slug;
-  document.getElementById('eimg').value   = p.imagem || '';
+  document.getElementById('eimg-stored').value = p.imagem || '';
+  document.getElementById('e-file').value = '';
   document.getElementById('edesc').value  = p.descricao || '';
   document.getElementById('eest').value   = p.estoque || 0;
 
   if (p.imagem) {
-    document.getElementById('eprev-img').src = p.imagem;
-    document.getElementById('eprev-url').textContent = p.imagem;
+    document.getElementById('eprev-img').src = mediaUrl(p.imagem);
+    document.getElementById('eprev-url').textContent = 'Imagem atual no servidor';
     document.getElementById('eprev').classList.add('on');
   } else {
     document.getElementById('eprev').classList.remove('on');
@@ -763,6 +817,7 @@ async function editar(p) {
 
 function closeModal() {
   document.getElementById('modalBg').classList.remove('on');
+  document.getElementById('e-file').value = '';
 }
 
 // ── SALVAR EDIÇÃO ─────────────────────────────────────
@@ -771,11 +826,21 @@ async function salvarEdicao() {
   const nome      = document.getElementById('enome').value.trim();
   const preco     = parseFloat(document.getElementById('epreco').value);
   const categoria = document.getElementById('ecat').value;
-  const imagem    = document.getElementById('eimg').value.trim();
+  let imagem      = document.getElementById('eimg-stored').value.trim();
   const descricao = document.getElementById('edesc').value.trim();
   const estoque   = parseInt(document.getElementById('eest').value) || 0;
 
-  if (!nome || !preco) { toast('⚠️ Nome e preço são obrigatórios'); return; }
+  if (!nome || !preco) { toast('Nome e preço são obrigatórios'); return; }
+
+  const ef = document.getElementById('e-file');
+  if (ef.files && ef.files[0]) {
+    try {
+      imagem = await uploadArquivo(ef.files[0]);
+    } catch (e) {
+      toast(e.message || 'Erro no upload da imagem');
+      return;
+    }
+  }
 
   try {
     const r = await fetch(`${API}/produtos/${id}`, {
@@ -788,19 +853,19 @@ async function salvarEdicao() {
     });
 
     if (r.ok) {
-      toast('✅ ' + nome + ' atualizado!');
+      toast('Atualizado: ' + nome);
       closeModal();
       loadTable();
       loadStats();
     } else if (r.status === 401) {
       relogar();
-      toast('❌ Senha incorreta. Tente novamente.');
+      toast('Senha incorreta. Tente novamente.');
     } else {
       const d = await r.json();
-      toast('❌ ' + (d.erro || 'Erro ao atualizar.'));
+      toast(d.erro || 'Erro ao atualizar.');
     }
   } catch {
-    toast('❌ Servidor offline');
+    toast('Servidor offline');
   }
 }
 
@@ -817,32 +882,21 @@ async function deletar(id, nome) {
     });
 
     if (r.ok) {
-      toast('🗑️ ' + nome + ' removido');
+      toast('Removido: ' + nome);
       loadTable();
       loadStats();
     } else if (r.status === 401) {
       relogar();
-      toast('❌ Senha incorreta. Tente novamente.');
+      toast('Senha incorreta. Tente novamente.');
     } else {
-      toast('❌ Erro ao remover');
+      toast('Erro ao remover');
     }
   } catch {
-    toast('❌ Servidor offline');
+    toast('Servidor offline');
   }
 }
 
 // ── HELPERS ───────────────────────────────────────────
-function previewImg(input, boxId) {
-  const url = input.value.trim();
-  const box = document.getElementById(boxId);
-  if (url) {
-    document.getElementById(boxId + '-img').src = url;
-    document.getElementById(boxId + '-url').textContent = url;
-    box.classList.add('on');
-  } else {
-    box.classList.remove('on');
-  }
-}
 
 function showMsg(el, txt, cls) {
   el.textContent = txt;
@@ -878,7 +932,7 @@ async function salvarConfig() {
   const chavePix = document.getElementById('cfg-chavePix').value.trim();
   const msg      = document.getElementById('cfgmsg');
 
-  if (!nomeLoja) { showMsg(msg, '⚠️ O nome da loja não pode ficar vazio.', 'er'); return; }
+  if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
 
   try {
     const r = await fetch(API + '/config', {
@@ -893,16 +947,16 @@ async function salvarConfig() {
     const d = await r.json();
 
     if (r.ok) {
-      showMsg(msg, '✅ Configuração salva! Nome da loja e Chave PIX atualizados no banco.', 'ok');
-      toast('✅ Configuração da loja atualizada');
+      showMsg(msg, 'Configuração salva.', 'ok');
+      toast('Configuração da loja atualizada');
     } else if (r.status === 401) {
       relogar();
-      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
+      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
     } else {
-      showMsg(msg, '❌ ' + (d.erro || 'Erro ao salvar.'), 'er');
+      showMsg(msg, d.erro || 'Erro ao salvar.', 'er');
     }
   } catch {
-    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+    showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
   }
 }
 
