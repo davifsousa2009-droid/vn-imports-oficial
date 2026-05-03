@@ -1,15 +1,19 @@
 {
-  "name": "beckeend",
+  "name": "vn-imports-backend",
   "version": "1.0.0",
+  "description": "Backend para loja VN Imports",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^16.6.1",
-    "express": "^5.2.1",
-    "mongoose": "^9.6.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.4.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.24"
   }
 }
