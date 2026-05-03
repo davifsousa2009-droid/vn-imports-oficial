@@ -86,6 +86,33 @@ const produtoSchema = new mongoose.Schema({
 
 const Produto = mongoose.models.Produto || mongoose.model('Produto', produtoSchema);
 
+// ── MODEL CATEGORIA ───────────────────────────────────
+function slugifyNome(nome) {
+  const s = String(nome)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return s || 'categoria';
+}
+
+const CategorySchema = new mongoose.Schema({
+  nome: { type: String, required: true, trim: true },
+  slug: { type: String, required: true, unique: true, trim: true, lowercase: true }
+}, { timestamps: true });
+
+const Category = mongoose.models.Category || mongoose.model('Category', CategorySchema);
+
+// ── MODEL BANNER (carousel vitrine) ───────────────────
+const BannerSchema = new mongoose.Schema({
+  imagem: { type: String, required: true, trim: true },
+  ordem:  { type: Number, default: 0 }
+}, { timestamps: true });
+
+const Banner = mongoose.models.Banner || mongoose.model('Banner', BannerSchema);
+
 // ══════════════════════════════════════════════════════
 //   ROTAS DA API
 // ══════════════════════════════════════════════════════
@@ -172,6 +199,94 @@ app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
     res.json({ mensagem: 'Produto removido!' });
   } catch (err) {
     res.status(500).json({ erro: 'Erro ao remover', detalhe: err.message });
+  }
+});
+
+// GET /api/categories — lista (público; garante ao menos "Geral" se vazio)
+app.get('/api/categories', async (req, res) => {
+  try {
+    await connectDB();
+    let list = await Category.find().sort({ nome: 1 }).lean();
+    if (!list.length) {
+      await Category.create({ nome: 'Geral', slug: 'geral' });
+      list = await Category.find().sort({ nome: 1 }).lean();
+    }
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar categorias', detalhe: err.message });
+  }
+});
+
+// POST /api/categories — criar (admin)
+app.post('/api/categories', verificarSenha, async (req, res) => {
+  try {
+    await connectDB();
+    const nome = req.body.nome?.trim();
+    if (!nome) return res.status(400).json({ erro: 'Nome da categoria é obrigatório' });
+    const slug = req.body.slug?.trim()
+      ? slugifyNome(req.body.slug)
+      : slugifyNome(nome);
+    const exists = await Category.findOne({ slug });
+    if (exists) return res.status(409).json({ erro: 'Já existe uma categoria com este nome/slug.' });
+    const cat = await Category.create({ nome, slug });
+    res.status(201).json({ mensagem: 'Categoria criada!', categoria: cat });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ erro: 'Slug já cadastrado.' });
+    }
+    res.status(500).json({ erro: 'Erro ao criar categoria', detalhe: err.message });
+  }
+});
+
+// DELETE /api/categories/:id — remover (admin)
+app.delete('/api/categories/:id', verificarSenha, async (req, res) => {
+  try {
+    await connectDB();
+    const removido = await Category.findByIdAndDelete(req.params.id);
+    if (!removido) return res.status(404).json({ erro: 'Categoria não encontrada' });
+    res.json({ mensagem: 'Categoria removida!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover categoria', detalhe: err.message });
+  }
+});
+
+// GET /api/banners — listar (público), ordenado por ordem
+app.get('/api/banners', async (req, res) => {
+  try {
+    await connectDB();
+    const list = await Banner.find().sort({ ordem: 1, createdAt: 1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar banners', detalhe: err.message });
+  }
+});
+
+// POST /api/banners — criar (admin)
+app.post('/api/banners', verificarSenha, async (req, res) => {
+  try {
+    await connectDB();
+    const imagem = req.body.imagem?.trim();
+    if (!imagem) return res.status(400).json({ erro: 'Link da imagem é obrigatório' });
+    const ordem = Number.parseInt(req.body.ordem, 10);
+    const banner = await Banner.create({
+      imagem,
+      ordem: Number.isFinite(ordem) ? ordem : 0
+    });
+    res.status(201).json({ mensagem: 'Banner salvo!', banner });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar banner', detalhe: err.message });
+  }
+});
+
+// DELETE /api/banners/:id — remover (admin)
+app.delete('/api/banners/:id', verificarSenha, async (req, res) => {
+  try {
+    await connectDB();
+    const removido = await Banner.findByIdAndDelete(req.params.id);
+    if (!removido) return res.status(404).json({ erro: 'Banner não encontrado' });
+    res.json({ mensagem: 'Banner removido!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover banner', detalhe: err.message });
   }
 });
 
