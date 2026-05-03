@@ -257,24 +257,37 @@ tr:hover td{background:#FAFAF8}
 
 <script>
 // ── CONFIG ────────────────────────────────────────────
-const API = 'http://localhost:3000/api';  // ✅ URL da API correta
+// Detecta automaticamente se está rodando local ou na Vercel
+// Local:  http://localhost:3000/admin.html  → API em localhost:3000
+// Vercel: https://vn-imports.vercel.app     → API no mesmo domínio
+const API = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : `${window.location.origin}/api`;
+
 const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 let todosProdutos = [];
 
 // ── SENHA DO ADMIN ────────────────────────────────────
-// A senha deve ser a mesma que está no seu .env como ADMIN_PASSWORD
+// A senha é a mesma que está no ADMIN_PASSWORD do seu .env
+// Fica guardada no navegador para não precisar digitar toda hora
 function obterSenha() {
   let s = localStorage.getItem('vni_pass');
   if (!s) {
-    s = prompt('🔐 ACESSO RESTRITO\nDigite a Senha Mestra:');
-    if (s) localStorage.setItem('vni_pass', s);
+    s = prompt('🔐 Painel VN IMPORTS\nDigite a Senha Mestra:');
+    if (s) {
+      // .trim() remove espaços invisíveis ao colar a senha
+      localStorage.setItem('vni_pass', s.trim());
+      return s.trim();
+    }
   }
-  return s;
+  return s ? s.trim() : '';
 }
 
+// Limpa a senha salva e pede de novo (chamado quando senha está errada)
 function relogar() {
   localStorage.removeItem('vni_pass');
-  location.reload();
+  alert('Senha incorreta. Tente novamente.');
+  // NÃO faz reload — deixa o usuário tentar sem perder o que estava fazendo
 }
 
 // ── PANELS ────────────────────────────────────────────
@@ -283,7 +296,11 @@ function showPanel(name, el) {
   document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('on'));
   document.getElementById('panel-' + name).classList.add('on');
   if (el) el.classList.add('on');
-  const titles = { dash: 'Dashboard', cadastrar: 'Cadastrar Produto', produtos: 'Gerenciar Produtos' };
+  const titles = {
+    dash: 'Dashboard',
+    cadastrar: 'Cadastrar Produto',
+    produtos: 'Gerenciar Produtos'
+  };
   document.getElementById('panelTitle').textContent = titles[name] || name;
 }
 
@@ -314,7 +331,7 @@ async function loadStats() {
       document.getElementById('sMin').textContent = fmt(Math.min(...pr));
       document.getElementById('sMax').textContent = fmt(Math.max(...pr));
     }
-  } catch { /* silencioso no dashboard */ }
+  } catch { /* silencioso */ }
 }
 
 // ── CADASTRAR ─────────────────────────────────────────
@@ -327,7 +344,7 @@ async function salvar() {
   const estoque   = parseInt(document.getElementById('f-est').value) || 0;
   const msg       = document.getElementById('fmsg');
 
-  if (!nome)             { showMsg(msg, '⚠️ Nome é obrigatório.', 'er'); return; }
+  if (!nome)            { showMsg(msg, '⚠️ Nome é obrigatório.', 'er'); return; }
   if (!preco || preco <= 0) { showMsg(msg, '⚠️ Informe um preço válido.', 'er'); return; }
 
   try {
@@ -343,13 +360,16 @@ async function salvar() {
     const d = await r.json();
 
     if (r.ok) {
-      showMsg(msg, '✅ Produto salvo!', 'ok');
+      showMsg(msg, '✅ Produto salvo com sucesso!', 'ok');
       toast('✅ ' + nome + ' cadastrado!');
       limpar();
       loadStats();
+    } else if (r.status === 401) {
+      // Senha errada — limpa do cache e avisa
+      relogar();
+      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
     } else {
-      showMsg(msg, '❌ ' + (d.erro || 'Senha incorreta.'), 'er');
-      if (r.status === 401) relogar(); // Limpa senha errada e pede de novo
+      showMsg(msg, '❌ ' + (d.erro || 'Erro ao salvar.'), 'er');
     }
   } catch {
     showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
@@ -439,7 +459,6 @@ function editar(p) {
   } else {
     document.getElementById('eprev').classList.remove('on');
   }
-
   document.getElementById('modalBg').classList.add('on');
 }
 
@@ -474,10 +493,12 @@ async function salvarEdicao() {
       closeModal();
       loadTable();
       loadStats();
+    } else if (r.status === 401) {
+      relogar();
+      toast('❌ Senha incorreta. Tente novamente.');
     } else {
       const d = await r.json();
-      toast('❌ ' + (d.erro || 'Senha incorreta.'));
-      if (r.status === 401) relogar();
+      toast('❌ ' + (d.erro || 'Erro ao atualizar.'));
     }
   } catch {
     toast('❌ Servidor offline');
@@ -500,10 +521,11 @@ async function deletar(id, nome) {
       toast('🗑️ ' + nome + ' removido');
       loadTable();
       loadStats();
+    } else if (r.status === 401) {
+      relogar();
+      toast('❌ Senha incorreta. Tente novamente.');
     } else {
-      const d = await r.json();
-      toast('❌ ' + (d.erro || 'Senha incorreta.'));
-      if (r.status === 401) relogar();
+      toast('❌ Erro ao remover');
     }
   } catch {
     toast('❌ Servidor offline');
