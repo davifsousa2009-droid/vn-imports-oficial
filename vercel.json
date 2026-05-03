@@ -1,6 +1,27 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "server.js" }
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/admin.html",
+      "dest": "server.js"
+    },
+    {
+      "src": "/VN_IMPORTS.html",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
+    }
   ]
 }
