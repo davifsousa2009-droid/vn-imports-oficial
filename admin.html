@@ -220,6 +220,10 @@ tr:hover td{background:#FAFAF8}
               <label class="fl">Nome da Loja</label>
               <input class="fi" id="cfg-nomeLoja" placeholder="VN IMPORTS" type="text">
             </div>
+            <div class="fg fw">
+              <label class="fl">Chave PIX</label>
+              <input class="fi" id="cfg-chavePix" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" type="text" autocomplete="off">
+            </div>
           </div>
           <div class="form-btns">
             <button class="btn btn-p" onclick="salvarConfig()">✓ &nbsp;Salvar Configuração</button>
@@ -228,7 +232,7 @@ tr:hover td{background:#FAFAF8}
         </div>
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">Como funciona</div>
-          <p style="font-size:13px;color:#888;line-height:1.75">O nome salvo aqui é aplicado automaticamente na vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>) toda vez que a página carregar. A loja busca o nome direto do banco de dados via <code>/api/config</code>.</p>
+          <p style="font-size:13px;color:#888;line-height:1.75">O nome da loja e a chave PIX salvos aqui podem ser lidos pela vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>) via <code>/api/config</code> — use a chave no fluxo de pagamento PIX do seu site.</p>
         </div>
       </div>
 
@@ -586,14 +590,16 @@ async function loadConfig() {
     if (!r.ok) throw new Error('Sem resposta');
     const d = await r.json();
     document.getElementById('cfg-nomeLoja').value = d.nomeLoja || 'VN IMPORTS';
+    document.getElementById('cfg-chavePix').value = d.chavePix != null ? String(d.chavePix) : '';
   } catch {
-    // Se a rota ainda não existe ou servidor offline, mostra valor padrão
     document.getElementById('cfg-nomeLoja').value = 'VN IMPORTS';
+    document.getElementById('cfg-chavePix').value = '';
   }
 }
 
 async function salvarConfig() {
   const nomeLoja = document.getElementById('cfg-nomeLoja').value.trim();
+  const chavePix = document.getElementById('cfg-chavePix').value.trim();
   const msg      = document.getElementById('cfgmsg');
 
   if (!nomeLoja) { showMsg(msg, '⚠️ O nome da loja não pode ficar vazio.', 'er'); return; }
@@ -605,14 +611,14 @@ async function salvarConfig() {
         'Content-Type': 'application/json',
         'x-admin-password': obterSenha()
       },
-      body: JSON.stringify({ nomeLoja })
+      body: JSON.stringify({ nomeLoja, chavePix })
     });
 
     const d = await r.json();
 
     if (r.ok) {
-      showMsg(msg, '✅ Nome da loja atualizado! A vitrine já reflete a mudança.', 'ok');
-      toast('✅ Loja renomeada para: ' + nomeLoja);
+      showMsg(msg, '✅ Configuração salva! Nome da loja e Chave PIX atualizados no banco.', 'ok');
+      toast('✅ Configuração da loja atualizada');
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
