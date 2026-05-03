@@ -30,12 +30,12 @@ async function connectDB() {
 
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,  // ✅ Falha rápido se DNS falhar
+      socketTimeoutMS: 45000,           // ✅ Mais tempo que Vercel (30s)
+      connectTimeoutMS: 10000,          // ✅ Timeout de handshake
       retryWrites: true,
       w: 'majority',
-      maxPoolSize: 1,
+      maxPoolSize: 1,                   // ✅ Serverless precisa de pool pequeno
       minPoolSize: 0,
     });
 
@@ -48,6 +48,7 @@ async function connectDB() {
   }
 }
 
+// ✅ Conecta ANTES de qualquer requisição na Vercel
 if (process.env.NODE_ENV === 'production') {
   connectDB().catch(console.error);
 } else {
@@ -174,6 +175,39 @@ app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
   }
 });
 
+// --- CONFIGURAÇÃO DA LOJA ---
+const ConfigSchema = new mongoose.Schema({
+  nomeLoja: { type: String, default: 'VN IMPORTS' }
+});
+
+// Corrigido para "mongoose" com N e verificação de modelo existente (Vercel)
+const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
+
+// Rota pública para o site ler o nome
+app.get('/api/config', async (req, res) => {
+  try {
+    await connectDB();
+    let cfg = await Config.findOne();
+    if (!cfg) cfg = await Config.create({ nomeLoja: 'VN IMPORTS' });
+    res.json(cfg);
+  } catch (err) { 
+    res.status(500).json({ erro: err.message }); 
+  }
+});
+
+// Rota protegida para o admin salvar o nome
+app.post('/api/config', verificarSenha, async (req, res) => {
+  try {
+    await connectDB();
+    const { nomeLoja } = req.body;
+    // Salva ou cria se não existir
+    const atualizado = await Config.findOneAndUpdate({}, { nomeLoja }, { upsert: true, new: true });
+    res.json({ mensagem: 'Nome da loja atualizado!', config: atualizado });
+  } catch (err) { 
+    res.status(500).json({ erro: err.message }); 
+  }
+});
+
 // ── INICIAR SERVIDOR (LOCAL)
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
@@ -182,16 +216,4 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// ── SERVE HTML FILES ──────────────────────────────
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
-app.get('/VN_IMPORTS.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
-});
 module.exports = app;
