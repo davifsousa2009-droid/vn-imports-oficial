@@ -135,6 +135,7 @@ tr:hover td{background:#FAFAF8}
       <div class="sb-item on" onclick="showPanel('dash',this)"><span>📊</span> Dashboard</div>
       <div class="sb-item" onclick="showPanel('cadastrar',this)"><span>➕</span> Cadastrar Produto</div>
       <div class="sb-item" onclick="showPanel('produtos',this);loadTable()"><span>📦</span> Gerenciar Produtos</div>
+      <div class="sb-item" onclick="showPanel('config',this);loadConfig()"><span>⚙️</span> Configuração</div>
     </nav>
     <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">🛍️ Ver loja →</a></div>
   </aside>
@@ -210,11 +211,28 @@ tr:hover td{background:#FAFAF8}
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+      <!-- CONFIGURAÇÃO -->
+      <div class="panel" id="panel-config">
+        <div class="card">
+          <div class="card-title">Identidade da Loja</div>
+          <div class="fg2">
+            <div class="fg fw">
+              <label class="fl">Nome da Loja</label>
+              <input class="fi" id="cfg-nomeLoja" placeholder="VN IMPORTS" type="text">
+            </div>
+          </div>
+          <div class="form-btns">
+            <button class="btn btn-p" onclick="salvarConfig()">✓ &nbsp;Salvar Configuração</button>
+          </div>
+          <div class="fmsg" id="cfgmsg"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Como funciona</div>
+          <p style="font-size:13px;color:#888;line-height:1.75">O nome salvo aqui é aplicado automaticamente na vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>) toda vez que a página carregar. A loja busca o nome direto do banco de dados via <code>/api/config</code>.</p>
+        </div>
+      </div>
 
-<!-- MODAL EDIÇÃO -->
+
 <div class="modal-bg" id="modalBg" onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
@@ -299,7 +317,8 @@ function showPanel(name, el) {
   const titles = {
     dash: 'Dashboard',
     cadastrar: 'Cadastrar Produto',
-    produtos: 'Gerenciar Produtos'
+    produtos: 'Gerenciar Produtos',
+    config: 'Configuração da Loja'
   };
   document.getElementById('panelTitle').textContent = titles[name] || name;
 }
@@ -558,6 +577,51 @@ function toast(msg) {
   t.classList.add('on');
   clearTimeout(toastT);
   toastT = setTimeout(() => t.classList.remove('on'), 3500);
+}
+
+// ── CONFIGURAÇÃO DA LOJA ──────────────────────────────
+async function loadConfig() {
+  try {
+    const r = await fetch(API + '/config');
+    if (!r.ok) throw new Error('Sem resposta');
+    const d = await r.json();
+    document.getElementById('cfg-nomeLoja').value = d.nomeLoja || 'VN IMPORTS';
+  } catch {
+    // Se a rota ainda não existe ou servidor offline, mostra valor padrão
+    document.getElementById('cfg-nomeLoja').value = 'VN IMPORTS';
+  }
+}
+
+async function salvarConfig() {
+  const nomeLoja = document.getElementById('cfg-nomeLoja').value.trim();
+  const msg      = document.getElementById('cfgmsg');
+
+  if (!nomeLoja) { showMsg(msg, '⚠️ O nome da loja não pode ficar vazio.', 'er'); return; }
+
+  try {
+    const r = await fetch(API + '/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': obterSenha()
+      },
+      body: JSON.stringify({ nomeLoja })
+    });
+
+    const d = await r.json();
+
+    if (r.ok) {
+      showMsg(msg, '✅ Nome da loja atualizado! A vitrine já reflete a mudança.', 'ok');
+      toast('✅ Loja renomeada para: ' + nomeLoja);
+    } else if (r.status === 401) {
+      relogar();
+      showMsg(msg, '❌ Senha incorreta. Tente novamente.', 'er');
+    } else {
+      showMsg(msg, '❌ ' + (d.erro || 'Erro ao salvar.'), 'er');
+    }
+  } catch {
+    showMsg(msg, '❌ Servidor offline. Rode: node server.js', 'er');
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────
