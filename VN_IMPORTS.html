@@ -220,12 +220,12 @@ nav{
   width:48px;height:48px;border-radius:50%;
   border:1px solid rgba(154,122,58,.55);
   background:rgba(247,244,240,.94);backdrop-filter:blur(10px);
-  color:var(--gold);font-size:28px;line-height:1;font-weight:300;
+  color:var(--gold);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:background .25s,border-color .25s,color .25s,box-shadow .25s;
-  box-shadow:0 4px 22px rgba(0,0,0,.07);padding:0;padding-bottom:3px;
-  font-family:var(--serif);
+  box-shadow:0 4px 22px rgba(0,0,0,.07);padding:0;
 }
+.hc-nav .ico-sv{width:22px;height:22px}
 .hc-nav:hover{
   background:var(--gold2);color:var(--ink);border-color:var(--gold2);
   box-shadow:0 8px 32px rgba(154,122,58,.32);
@@ -247,6 +247,22 @@ nav{
   background:var(--gold2);transform:scale(1.2);
   box-shadow:0 0 0 2px rgba(196,165,90,.45);
 }
+
+/* Ícones SVG (traço fino; cor = currentColor / dourado onde definido) */
+.ico-sv{width:20px;height:20px;display:block;flex-shrink:0;color:inherit}
+.ico-sv--sm{width:14px;height:14px}
+.ico-sv--xs{width:12px;height:12px}
+.ico-sv path{stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.btn-with-ico{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.nav-back-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:inherit;font-size:inherit}
+.nav-back-link:hover{opacity:.88}
+.nav-back-link .ico-sv{color:var(--gold2)}
+.pv-back{display:inline-flex;align-items:center;gap:10px;background:transparent;border:none;font:inherit;cursor:pointer;font-size:13px;color:var(--muted);transition:color .2s;padding:0}
+.pv-back:hover{color:var(--ink)}
+.pv-back .ico-sv{color:var(--gold2)}
+.btop{padding:0;color:var(--bg)}
+.btop .ico-sv{width:18px;height:18px}
+.cd-close .ico-sv{width:15px;height:15px}
 
 /* ─── CATS ─── */
 .cats-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
@@ -276,8 +292,12 @@ nav{
 .sec-eye::before{content:'';display:block;width:24px;height:1px;background:var(--border2)}
 .sec-title{font-family:var(--serif);font-size:clamp(28px,3.5vw,46px);font-weight:400;line-height:1.08}
 .sec-title em{font-style:italic}
-.sec-more{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s}
+.sec-more{
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s;
+  display:inline-flex;align-items:center;gap:8px;
+}
 .sec-more:hover{color:var(--ink)}
+.sec-more .ico-sv{color:var(--gold2)}
 
 /* ─── FILTER ─── */
 .filter-bar{
@@ -307,8 +327,24 @@ nav{
 }
 .prod-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .45s}
 .prod-card:hover .prod-img-wrap img{transform:scale(1.04)}
-.prod-img-emoji{font-size:76px;transition:transform .45s}
-.prod-card:hover .prod-img-emoji{transform:scale(1.04)}
+.prod-ph{
+  width:100%;height:100%;min-height:320px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,var(--bg2),var(--bg));border-bottom:1px solid var(--border);
+}
+.prod-ph-txt{
+  font-family:var(--serif);font-size:clamp(22px,4vw,36px);font-weight:400;color:var(--gold);
+  letter-spacing:.25em;text-transform:uppercase;border:1px solid rgba(154,122,58,.35);
+  padding:18px 28px;
+}
+.nav-btn-txt{
+  width:auto;min-width:auto;padding:0 14px;border-radius:2px;font-size:10px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.cat-line{width:32px;height:1px;background:var(--gold2);margin-bottom:12px}
+.feat-mark{width:3px;min-height:36px;background:linear-gradient(180deg,var(--gold2),var(--gold));flex-shrink:0}
+.rating-num{font-family:var(--serif);font-size:13px;color:var(--gold);letter-spacing:.08em}
+.fsoc-txt{font-size:10px;font-weight:600;letter-spacing:.14em}
+.cdet-line{width:2px;height:28px;background:var(--gold);opacity:.5;flex-shrink:0}
 .prod-hover-btns{
   position:absolute;bottom:0;left:0;right:0;
   display:flex;gap:1px;background:var(--border);
@@ -384,8 +420,9 @@ nav{
 .rc-author{display:flex;align-items:center;gap:12px}
 .rc-av{
   width:38px;height:38px;border-radius:50%;
-  background:var(--bg2);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+  background:var(--bg2);border:1px solid rgba(154,122,58,.35);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:var(--serif);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.02em;
 }
 .rc-name{font-size:13px;font-weight:600}
 .rc-date{font-size:11px;color:var(--muted);margin-top:1px}
@@ -506,7 +543,6 @@ footer{background:var(--ink);color:var(--bg)}
 .cinfo p{font-size:15px;color:var(--muted);line-height:1.8;margin-bottom:32px;font-weight:300}
 .cdetails{display:flex;flex-direction:column;gap:18px;margin-top:36px}
 .cdet{display:flex;gap:14px;align-items:flex-start}
-.cdet-ico{font-size:18px;margin-top:2px}
 .cdet-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
 .cdet-val{font-size:14px;color:var(--ink)}
 .cform{background:var(--bg2);padding:40px;border:1px solid var(--border)}
@@ -550,10 +586,10 @@ footer{background:var(--ink);color:var(--bg)}
 .cd-head h3{font-family:var(--serif);font-size:21px;font-weight:400}
 .cd-close{
   width:36px;height:36px;border:1px solid var(--border);
-  background:transparent;font-size:17px;color:var(--muted);
+  background:transparent;color:var(--gold2);
   display:flex;align-items:center;justify-content:center;transition:all .2s;
 }
-.cd-close:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cd-close:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .cd-items{flex:1;overflow-y:auto;padding:16px 26px}
 .cd-empty{text-align:center;padding:56px 0;color:var(--muted)}
 .cd-empty-ico{font-size:44px;margin-bottom:12px}
@@ -581,7 +617,11 @@ footer{background:var(--ink);color:var(--bg)}
 }
 .cqb:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cqn{font-size:13px;font-weight:600;min-width:16px;text-align:center}
-.ci-del{background:transparent;border:none;color:var(--silver);font-size:16px;align-self:flex-start;transition:color .2s}
+.ci-del{
+  background:transparent;border:none;color:var(--silver);align-self:flex-start;transition:color .2s;
+  padding:2px 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.ci-del .ico-sv{width:14px;height:14px}
 .ci-del:hover{color:var(--red)}
 .cd-foot{border-top:1px solid var(--border);padding:18px 26px}
 .cd-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:5px}
@@ -616,10 +656,11 @@ footer{background:var(--ink);color:var(--bg)}
 .pix-modal-head h3 em{font-style:normal;color:var(--gold2)}
 .pix-modal-x{
   width:38px;height:38px;border:1px solid rgba(196,165,90,.35);
-  background:rgba(0,0,0,.25);color:var(--gold2);font-size:16px;
+  background:rgba(0,0,0,.25);color:var(--gold2);
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   transition:background .2s,border-color .2s,color .2s;
 }
+.pix-modal-x .ico-sv{width:16px;height:16px}
 .pix-modal-x:hover{background:var(--gold2);color:#111;border-color:var(--gold2)}
 .pix-modal-body{padding:24px}
 .pix-m-label{
@@ -718,7 +759,7 @@ footer{background:var(--ink);color:var(--bg)}
 .fi.vis{opacity:1;transform:none}
 
 /* ══════════════════════════════════════
-   PAINEL DE EDIÇÃO — botão ⚙️
+   PAINEL DE EDIÇÃO (opcional)
 ══════════════════════════════════════ */
 .edit-fab{
   position:fixed;bottom:28px;right:28px;z-index:700;
@@ -862,7 +903,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     aspect-ratio:3/4;max-height:min(70vh,520px);
     border-left:none;border-right:none;border-radius:0;
   }
-  .hc-nav{width:42px;height:42px;font-size:24px}
+  .hc-nav{width:42px;height:42px}
+  .hc-nav .ico-sv{width:20px;height:20px}
   .hc-prev{left:12px}
   .hc-next{right:12px}
   .hc-dots{bottom:12px}
@@ -900,7 +942,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .btn-fill,.btn-line{width:100%;justify-content:center}
   .ep-2{grid-template-columns:1fr}
   .hero-carousel{aspect-ratio:4/5;max-height:min(75vh,440px)}
-  .hc-nav{width:36px;height:36px;font-size:20px}
+  .hc-nav{width:36px;height:36px}
+  .hc-nav .ico-sv{width:18px;height:18px}
 }
 </style>
 </head>
@@ -926,9 +969,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
     </ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="toggleSearch()" title="Buscar">🔍</button>
-      <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos">♡<span class="nav-dot" id="wDot"></span></button>
-      <button class="nav-btn" onclick="openCart()" title="Carrinho">🛍️<span class="nav-dot" id="cDot"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="toggleSearch()" title="Buscar">Buscar</button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="goView('view-wishlist')" title="Favoritos">Favoritos<span class="nav-dot" id="wDot"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="openCart()" title="Carrinho">Carrinho<span class="nav-dot" id="cDot"></span></button>
     </div>
   </div>
   <div class="search-wrap" id="searchWrap" style="position:relative">
@@ -943,8 +986,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <section class="hero-carousel-outer" id="heroCarouselOuter" hidden>
   <div class="hero-carousel" id="heroCarousel" aria-roledescription="carousel" aria-label="Destaques da loja">
     <div class="hc-slides" id="hcSlides"></div>
-    <button type="button" class="hc-nav hc-prev" id="hcPrev" aria-label="Anterior">‹</button>
-    <button type="button" class="hc-nav hc-next" id="hcNext" aria-label="Próximo">›</button>
+    <button type="button" class="hc-nav hc-prev" id="hcPrev" aria-label="Anterior"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button type="button" class="hc-nav hc-next" id="hcNext" aria-label="Próximo"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
     <div class="hc-dots" id="hcDots"></div>
   </div>
 </section>
@@ -956,12 +999,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <h1 class="hero-title">Vista-se<br>com <em>intenção.</em></h1>
     <p class="hero-lead">Peças importadas selecionadas para quem exige qualidade, estilo e personalidade em cada look.</p>
     <div class="hero-btns">
-      <button class="btn-fill" onclick="scrollTo_('sec-prod')">Ver Coleção →</button>
+      <button type="button" class="btn-fill btn-with-ico" onclick="scrollTo_('sec-prod')"><span>Ver Coleção</span><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
       <button class="btn-line" onclick="scrollTo_('sec-cats')">Categorias</button>
     </div>
     <div class="hero-stats">
       <div><span class="stat-val">500+</span><span class="stat-label">Produtos</span></div>
-      <div><span class="stat-val">4.9★</span><span class="stat-label">Avaliação</span></div>
+      <div><span class="stat-val"><span class="rating-num">4,9</span></span><span class="stat-label">Avaliação</span></div>
       <div><span class="stat-val">8k+</span><span class="stat-label">Clientes</span></div>
     </div>
   </div>
@@ -972,10 +1015,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="cats-wrap" id="sec-cats">
   <div class="cats-inner">
     <div class="cats-grid">
-      <div class="cat-card" onclick="filterAndGo('vestidos')"><div class="cat-icon">👗</div><div class="cat-name">Vestidos</div><div class="cat-sub">128 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('calcados')"><div class="cat-icon">👟</div><div class="cat-name">Calçados</div><div class="cat-sub">96 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('acessorios')"><div class="cat-icon">👜</div><div class="cat-name">Acessórios</div><div class="cat-sub">214 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('casacos')"><div class="cat-icon">🧥</div><div class="cat-name">Casacos</div><div class="cat-sub">75 peças</div><div class="cat-arr">→</div></div>
+      <div class="cat-card" onclick="filterAndGo('vestidos')"><div class="cat-line"></div><div class="cat-name">Vestidos</div><div class="cat-sub">Coleção</div><div class="cat-arr">Ver</div></div>
+      <div class="cat-card" onclick="filterAndGo('calcados')"><div class="cat-line"></div><div class="cat-name">Calçados</div><div class="cat-sub">Coleção</div><div class="cat-arr">Ver</div></div>
+      <div class="cat-card" onclick="filterAndGo('acessorios')"><div class="cat-line"></div><div class="cat-name">Acessórios</div><div class="cat-sub">Coleção</div><div class="cat-arr">Ver</div></div>
+      <div class="cat-card" onclick="filterAndGo('casacos')"><div class="cat-line"></div><div class="cat-name">Casacos</div><div class="cat-sub">Coleção</div><div class="cat-arr">Ver</div></div>
     </div>
   </div>
 </div>
@@ -989,7 +1032,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <div class="sec-eye">Produtos</div>
         <h2 class="sec-title">Mais <em>Vendidos</em></h2>
       </div>
-      <a href="#" class="sec-more">Ver todos →</a>
+      <a href="#" class="sec-more">Ver todos<svg class="ico-sv ico-sv--xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
     </div>
     <div class="filter-bar" id="filterBar"></div>
     <div class="prod-grid" id="prodGrid"></div>
@@ -1000,7 +1043,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="banner-eye">Oferta Especial</div>
     <h2 class="banner-title">Até 40% OFF<br>em <em>peças selecionadas</em></h2>
     <p class="banner-sub">Aproveite nossa liquidação de fim de temporada. Qualidade importada pelo melhor preço do ano.</p>
-    <button class="btn-light" onclick="filterAndGo('all')">Ver Promoções →</button>
+    <button type="button" class="btn-light btn-with-ico" onclick="filterAndGo('all')"><span>Ver Promoções</span><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
   </div>
 </div>
 
@@ -1016,15 +1059,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="rev-summary fi">
       <div>
         <div class="rev-avg-num">4.9</div>
-        <div class="rev-avg-stars">★★★★★</div>
+        <div class="rev-avg-stars"><span class="rating-num">5,0 · avaliações</span></div>
         <div class="rev-avg-label">127 avaliações verificadas</div>
       </div>
       <div class="rev-bars">
-        <div class="rbar-row">5★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="93%"></div></div>93%</div>
-        <div class="rbar-row">4★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="5%"></div></div>5%</div>
-        <div class="rbar-row">3★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
-        <div class="rbar-row">2★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
-        <div class="rbar-row">1★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%"></div></div>0%</div>
+        <div class="rbar-row">5<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="93%"></div></div>93%</div>
+        <div class="rbar-row">4<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="5%"></div></div>5%</div>
+        <div class="rbar-row">3<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
+        <div class="rbar-row">2<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
+        <div class="rbar-row">1<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%"></div></div>0%</div>
       </div>
     </div>
     <div class="rev-grid" id="revGrid"></div>
@@ -1034,10 +1077,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- FEATS -->
 <div class="feats-bar" id="sec-about">
   <div class="feats-inner">
-    <div class="feat"><div class="feat-ico">🚚</div><div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div></div>
-    <div class="feat"><div class="feat-ico">🔄</div><div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div></div>
-    <div class="feat"><div class="feat-ico">🔒</div><div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div></div>
-    <div class="feat"><div class="feat-ico">💎</div><div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div></div>
+    <div class="feat"><div class="feat-mark"></div><div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div></div>
+    <div class="feat"><div class="feat-mark"></div><div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div></div>
+    <div class="feat"><div class="feat-mark"></div><div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div></div>
+    <div class="feat"><div class="feat-mark"></div><div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div></div>
   </div>
 </div>
 
@@ -1048,10 +1091,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials">
-        <a href="#" class="fsoc">📷</a>
-        <a href="#" class="fsoc">📘</a>
-        <a href="#" class="fsoc">🎵</a>
-        <a href="#" class="fsoc">▶️</a>
+        <a href="#" class="fsoc"><span class="fsoc-txt">IG</span></a>
+        <a href="#" class="fsoc"><span class="fsoc-txt">FB</span></a>
+        <a href="#" class="fsoc"><span class="fsoc-txt">TT</span></a>
+        <a href="#" class="fsoc"><span class="fsoc-txt">YT</span></a>
       </div>
     </div>
     <div class="foot-col">
@@ -1097,14 +1140,14 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299 &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal">12</em>x sem juros</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
+    <ul class="nav-links"><li><a href="#" class="nav-back-link" onclick="goHome()"><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Voltar à loja</a></li></ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="goView('view-wishlist')">♡<span class="nav-dot" id="wDot2"></span></button>
-      <button class="nav-btn" onclick="openCart()">🛍️<span class="nav-dot" id="cDot2"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="goView('view-wishlist')">Favoritos<span class="nav-dot" id="wDot2"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="openCart()">Carrinho<span class="nav-dot" id="cDot2"></span></button>
     </div>
   </div></nav>
   <div class="pv-inner">
-    <button class="pv-back" onclick="goHome()">← Voltar aos produtos</button>
+    <button type="button" class="pv-back" onclick="goHome()"><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Voltar aos produtos</button>
     <div class="pv-grid">
       <div class="pv-gallery">
         <div class="pv-main" id="pvMain"></div>
@@ -1113,7 +1156,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="pv-info">
         <div class="pv-brand" id="pvBrand"></div>
         <h1 class="pv-name" id="pvName"></h1>
-        <div class="pv-stars">★★★★★ <span>4.9 · 127 avaliações</span></div>
+        <div class="pv-stars"><span class="rating-num">4,9</span> <span>· 127 avaliações</span></div>
         <div class="pv-price" id="pvPrice"></div>
         <div class="pv-inst" id="pvInst"></div>
         <hr class="pv-div">
@@ -1122,12 +1165,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
           <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
-          <button class="pv-wish-btn" id="pvWishBtn">♡ &nbsp;Adicionar aos Favoritos</button>
+          <button type="button" class="pv-wish-btn" id="pvWishBtn">Adicionar aos favoritos</button>
         </div>
         <div class="pv-feats">
-          <div class="pv-feat">🚚 <strong>Frete grátis</strong> acima de R$299</div>
-          <div class="pv-feat">🔄 <strong>Troca grátis</strong> em até 30 dias</div>
-          <div class="pv-feat">🔒 <strong>Pagamento seguro</strong> · PIX, Cartão, Boleto</div>
+          <div class="pv-feat"><strong>Frete grátis</strong> acima de R$299</div>
+          <div class="pv-feat"><strong>Troca grátis</strong> em até 30 dias</div>
+          <div class="pv-feat"><strong>Pagamento seguro</strong> · PIX, cartão, boleto</div>
         </div>
       </div>
     </div>
@@ -1139,8 +1182,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
-    <div class="nav-right"><button class="nav-btn" onclick="openCart()">🛍️<span class="nav-dot" id="cDot3"></span></button></div>
+    <ul class="nav-links"><li><a href="#" class="nav-back-link" onclick="goHome()"><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Voltar à loja</a></li></ul>
+    <div class="nav-right"><button type="button" class="nav-btn nav-btn-txt" onclick="openCart()">Carrinho<span class="nav-dot" id="cDot3"></span></button></div>
   </div></nav>
   <div class="page-wrap">
     <h1 class="page-h1">Meus <em style="font-family:var(--serif)">Favoritos</em></h1>
@@ -1154,10 +1197,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
+    <ul class="nav-links"><li><a href="#" class="nav-back-link" onclick="goHome()"><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Voltar à loja</a></li></ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="goView('view-wishlist')">♡<span class="nav-dot" id="wDot3"></span></button>
-      <button class="nav-btn" onclick="openCart()">🛍️<span class="nav-dot" id="cDot4"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="goView('view-wishlist')">Favoritos<span class="nav-dot" id="wDot3"></span></button>
+      <button type="button" class="nav-btn nav-btn-txt" onclick="openCart()">Carrinho<span class="nav-dot" id="cDot4"></span></button>
     </div>
   </div></nav>
   <div class="page-wrap">
@@ -1167,10 +1210,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <h1>Estamos aqui<br>para <em style="font-family:var(--serif)">ajudar.</em></h1>
         <p>Dúvidas sobre pedidos, trocas ou produtos? Respondemos em até 24h nos dias úteis.</p>
         <div class="cdetails">
-          <div class="cdet"><div class="cdet-ico">📍</div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
-          <div class="cdet"><div class="cdet-ico">📞</div><div><div class="cdet-label">Telefone</div><div class="cdet-val">(11) 9999-0000</div></div></div>
-          <div class="cdet"><div class="cdet-ico">✉️</div><div><div class="cdet-label">E-mail</div><div class="cdet-val">oi@vnimports.com.br</div></div></div>
-          <div class="cdet"><div class="cdet-ico">⏰</div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
+          <div class="cdet"><div class="cdet-line"></div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
+          <div class="cdet"><div class="cdet-line"></div><div><div class="cdet-label">Telefone</div><div class="cdet-val">(11) 9999-0000</div></div></div>
+          <div class="cdet"><div class="cdet-line"></div><div><div class="cdet-label">E-mail</div><div class="cdet-val">oi@vnimports.com.br</div></div></div>
+          <div class="cdet"><div class="cdet-line"></div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
         </div>
       </div>
       <div>
@@ -1191,8 +1234,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
             </select>
           </div>
           <div class="fgroup"><label class="flabel">Mensagem</label><textarea class="ftextarea" placeholder="Descreva sua dúvida…" required></textarea></div>
-          <button type="submit" class="btn-fill btn-full">Enviar Mensagem →</button>
-          <div class="fsuccess" id="formOk">✓ &nbsp;Mensagem enviada! Respondemos em até 24h.</div>
+          <button type="submit" class="btn-fill btn-full btn-with-ico"><span>Enviar Mensagem</span><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+          <div class="fsuccess" id="formOk">Mensagem enviada. Respondemos em até 24h.</div>
         </form>
       </div>
     </div>
@@ -1202,15 +1245,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- CART DRAWER -->
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
-  <div class="cd-head"><h3>Carrinho</h3><button class="cd-close" onclick="closeCart()">✕</button></div>
+  <div class="cd-head"><h3>Carrinho</h3><button type="button" class="cd-close" onclick="closeCart()" aria-label="Fechar carrinho"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
   <div class="cd-items" id="cdItems"></div>
   <div id="cdFoot" style="display:none">
     <div class="cd-foot">
       <div class="cd-row"><span>Subtotal</span><span id="cdSub">—</span></div>
       <div class="cd-row"><span>Frete</span><span style="color:var(--green)">GRÁTIS</span></div>
       <div class="cd-total"><span>Total</span><span id="cdTotal">—</span></div>
-      <button class="btn-fill btn-full" onclick="checkout()">Finalizar Compra →</button>
-      <div class="cd-secure">🔒 Pagamento 100% seguro</div>
+      <button type="button" class="btn-fill btn-full btn-with-ico" onclick="checkout()"><span>Finalizar Compra</span><svg class="ico-sv ico-sv--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+      <div class="cd-secure">Pagamento seguro</div>
     </div>
   </div>
 </div>
@@ -1220,7 +1263,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="pix-modal" role="dialog" aria-labelledby="pixModalTitle" aria-modal="true" onclick="event.stopPropagation()">
     <div class="pix-modal-head">
       <h3 id="pixModalTitle">Pagamento <em>PIX</em></h3>
-      <button type="button" class="pix-modal-x" onclick="closePixModal()" aria-label="Fechar">✕</button>
+      <button type="button" class="pix-modal-x" onclick="closePixModal()" aria-label="Fechar"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="pix-modal-body">
       <span class="pix-m-label">Valor total</span>
@@ -1234,10 +1277,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastMsg"></span></div>
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
 
 <!-- BACK TOP -->
-<button class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button type="button" class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg></button>
 
 <!-- ════════════════════════════════════════════════
      JAVASCRIPT
@@ -1253,19 +1296,19 @@ const DEF = {
   parctxt:'Parcele em até 12x sem juros',
   paylink:'',
   products:[
-    {id:0,name:'Vestido Midi Linho',brand:'VN IMPORTS',cat:'vestidos',price:349,old:null,img:'',emoji:'👗',desc:'Vestido midi em mistura de algodão e linho com corte evasê. Tecido respirável, ideal para o dia a dia com elegância discreta.',sizes:['PP','P','M','G','GG'],badge:'hot'},
-    {id:1,name:'Blazer Oversize',brand:'VN IMPORTS',cat:'casacos',price:589,old:null,img:'',emoji:'🧥',desc:'Blazer de alfaiataria com caimento oversized. Forro acetinado, botões de madrepérola.',sizes:['P','M','G','GG'],badge:'new'},
-    {id:2,name:'Calça Pantalona',brand:'VN IMPORTS',cat:'vestidos',price:289,old:380,img:'',emoji:'👖',desc:'Calça pantalona em tecido crepom. Cós elástico, bolsos laterais. Elegante e confortável.',sizes:['PP','P','M','G','GG'],badge:'sale'},
-    {id:3,name:'Tênis Chunky Couro',brand:'VN IMPORTS',cat:'calcados',price:479,old:null,img:'',emoji:'👟',desc:'Tênis chunky em couro legítimo com solado de borracha. Palmilha anatômica.',sizes:['35','36','37','38','39','40'],badge:null},
-    {id:4,name:'Bolsa Tote Premium',brand:'VN IMPORTS',cat:'acessorios',price:649,old:null,img:'',emoji:'👜',desc:'Bolsa tote estruturada em couro sintético premium. Alça de mão e tiracolo.',sizes:[],badge:'new'},
-    {id:5,name:'Scarpin Bico Fino',brand:'VN IMPORTS',cat:'calcados',price:399,old:499,img:'',emoji:'👠',desc:'Scarpin clássico com bico fino e salto de 7cm. Couro sintético de qualidade.',sizes:['35','36','37','38','39','40'],badge:'sale'},
-    {id:6,name:'Colar Camadas Gold',brand:'VN IMPORTS',cat:'acessorios',price:149,old:null,img:'',emoji:'📿',desc:'Conjunto de colares em camadas com banho dourado 18k. Antialérgico.',sizes:[],badge:null},
-    {id:7,name:'Jaqueta Couro Moto',brand:'VN IMPORTS',cat:'casacos',price:529,old:null,img:'',emoji:'🧥',desc:'Jaqueta moto em couro sintético premium. Forro quentinho, bolsos com zíper.',sizes:['PP','P','M','G','GG'],badge:'hot'},
+    {id:0,name:'Vestido Midi Linho',brand:'VN IMPORTS',cat:'vestidos',price:349,old:null,img:'',desc:'Vestido midi em mistura de algodão e linho com corte evasê. Tecido respirável, ideal para o dia a dia com elegância discreta.',sizes:['PP','P','M','G','GG'],badge:'hot'},
+    {id:1,name:'Blazer Oversize',brand:'VN IMPORTS',cat:'casacos',price:589,old:null,img:'',desc:'Blazer de alfaiataria com caimento oversized. Forro acetinado, botões de madrepérola.',sizes:['P','M','G','GG'],badge:'new'},
+    {id:2,name:'Calça Pantalona',brand:'VN IMPORTS',cat:'vestidos',price:289,old:380,img:'',desc:'Calça pantalona em tecido crepom. Cós elástico, bolsos laterais. Elegante e confortável.',sizes:['PP','P','M','G','GG'],badge:'sale'},
+    {id:3,name:'Tênis Chunky Couro',brand:'VN IMPORTS',cat:'calcados',price:479,old:null,img:'',desc:'Tênis chunky em couro legítimo com solado de borracha. Palmilha anatômica.',sizes:['35','36','37','38','39','40'],badge:null},
+    {id:4,name:'Bolsa Tote Premium',brand:'VN IMPORTS',cat:'acessorios',price:649,old:null,img:'',desc:'Bolsa tote estruturada em couro sintético premium. Alça de mão e tiracolo.',sizes:[],badge:'new'},
+    {id:5,name:'Scarpin Bico Fino',brand:'VN IMPORTS',cat:'calcados',price:399,old:499,img:'',desc:'Scarpin clássico com bico fino e salto de 7cm. Couro sintético de qualidade.',sizes:['35','36','37','38','39','40'],badge:'sale'},
+    {id:6,name:'Colar Camadas Gold',brand:'VN IMPORTS',cat:'acessorios',price:149,old:null,img:'',desc:'Conjunto de colares em camadas com banho dourado 18k. Antialérgico.',sizes:[],badge:null},
+    {id:7,name:'Jaqueta Couro Moto',brand:'VN IMPORTS',cat:'casacos',price:529,old:null,img:'',desc:'Jaqueta moto em couro sintético premium. Forro quentinho, bolsos com zíper.',sizes:['PP','P','M','G','GG'],badge:'hot'},
   ],
   reviews:[
-    {name:'Mariana C.',av:'🧑‍🦱',stars:5,text:'Produto incrível! Chegou antes do prazo, embalagem impecável e a qualidade é exatamente como descrito. Já pedi de novo!',date:'há 3 dias'},
-    {name:'Ricardo A.',av:'🧔',stars:5,text:'Uso todos os dias há 3 meses e continua como novo. Vale cada centavo, recomendo sem hesitar para qualquer pessoa.',date:'há 1 semana'},
-    {name:'Fernanda L.',av:'👩',stars:5,text:'Atendimento excelente e qualidade superior. Entrega super rápida. A VN IMPORTS virou minha loja favorita!',date:'há 2 semanas'},
+    {name:'Mariana C.',stars:5,text:'Produto incrível! Chegou antes do prazo, embalagem impecável e a qualidade é exatamente como descrito. Já pedi de novo!',date:'há 3 dias'},
+    {name:'Ricardo A.',stars:5,text:'Uso todos os dias há 3 meses e continua como novo. Vale cada centavo, recomendo sem hesitar para qualquer pessoa.',date:'há 1 semana'},
+    {name:'Fernanda L.',stars:5,text:'Atendimento excelente e qualidade superior. Entrega super rápida. A VN IMPORTS virou minha loja favorita!',date:'há 2 semanas'},
   ]
 };
 
@@ -1282,6 +1325,27 @@ const R$    = v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
   : `${window.location.origin}/api`;
+
+const ORIGIN_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : window.location.origin;
+
+function mediaUrl(src) {
+  if (!src) return '';
+  if (/^https?:\/\//i.test(src)) return src;
+  return ORIGIN_BASE + (src.startsWith('/') ? src : '/' + src);
+}
+
+function prodMonogram(name) {
+  const w = (name || 'VN').trim().split(/\s+/).filter(Boolean);
+  if (!w.length) return 'VN';
+  if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
+  return (w[0][0] + w[1][0]).toUpperCase();
+}
+
+function reviewInitials(name) {
+  return prodMonogram(name || 'A');
+}
 
 let categoriasVitrine = [];
 let heroBannersData = [];
@@ -1302,6 +1366,26 @@ function scrollTo_(id){
   document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
 }
 
+function renderHeroMini(){
+  const hc = document.getElementById('heroCards');
+  if (!hc) return;
+  hc.innerHTML = S.products.slice(0,2).map(p=>`
+    <div class="hero-feat-card" onclick="openProd(${p.id})">
+      <div class="hfc-img">${p.img?`<img src="${mediaUrl(p.img)}" alt="${p.name}">`:`<div class="prod-ph" style="min-height:108px;width:100%"><span class="prod-ph-txt" style="font-size:16px;padding:10px 14px">${prodMonogram(p.name)}</span></div>`}</div>
+      <div class="hfc-body">
+        <div>
+          <div class="hfc-tag">${p.badge==='new'?'Novo':p.badge==='hot'?'Destaque':'Importado'}</div>
+          <div class="hfc-name">${p.name}</div>
+          <div class="hfc-desc">${p.desc.substring(0,55)}…</div>
+        </div>
+        <div class="hfc-foot">
+          <span class="hfc-price">${R$(p.price)}</span>
+          <button type="button" class="btn-sm" onclick="event.stopPropagation();addCart(S.products[${p.id}])">Carrinho</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
 /* ─── RENDER HOME ─── */
 function renderHome(){
   document.title = S.store + ' — Moda Premium';
@@ -1311,24 +1395,7 @@ function renderHome(){
   document.getElementById('footYear').textContent = new Date().getFullYear();
   document.getElementById('anParc').textContent = S.parc;
 
-  // hero cards (primeiros 2 produtos)
-  const hc = document.getElementById('heroCards');
-  hc.innerHTML = S.products.slice(0,2).map(p=>`
-    <div class="hero-feat-card" onclick="openProd(${p.id})">
-      <div class="hfc-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span>${p.emoji}</span>`}</div>
-      <div class="hfc-body">
-        <div>
-          <div class="hfc-tag">${p.badge==='new'?'Novo':p.badge==='hot'?'Destaque':'Importado'}</div>
-          <div class="hfc-name">${p.name}</div>
-          <div class="hfc-desc">${p.desc.substring(0,55)}…</div>
-        </div>
-        <div class="hfc-foot">
-          <span class="hfc-price">${R$(p.price)}</span>
-          <button class="btn-sm" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
-        </div>
-      </div>
-    </div>`).join('');
-
+  renderHeroMini();
   renderGrid(S.products);
   renderRevs();
 }
@@ -1340,15 +1407,15 @@ function renderGrid(list){
   g.innerHTML = list.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-emoji">${p.emoji}</span>`}
+        ${p.img?`<img src="${mediaUrl(p.img)}" alt="${p.name}">`:`<div class="prod-ph"><span class="prod-ph-txt">${prodMonogram(p.name)}</span></div>`}
         <div class="prod-badges">
           ${p.badge==='new'?'<span class="pb pb-new">Novo</span>':''}
           ${p.badge==='sale'&&p.old?`<span class="pb pb-sale">-${Math.round(100-(p.price/p.old*100))}%</span>`:''}
           ${p.badge==='hot'?'<span class="pb pb-hot">Hot</span>':''}
         </div>
         <div class="prod-hover-btns">
-          <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
-          <button class="phb phb-wish ${wl.find(w=>w.id===p.id)?'on':''}" onclick="event.stopPropagation();toggleWL(${p.id})">♡</button>
+          <button type="button" class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">Carrinho</button>
+          <button type="button" class="phb phb-wish ${wl.find(w=>w.id===p.id)?'on':''}" onclick="event.stopPropagation();toggleWL(${p.id})">${wl.find(w=>w.id===p.id)?'Salvo':'Lista'}</button>
         </div>
       </div>
       <div class="prod-info">
@@ -1360,7 +1427,7 @@ function renderGrid(list){
             <span class="prod-price">${R$(p.price)}</span>
             ${p.old?`<span class="prod-old">${R$(p.old)}</span>`:''}
           </div>
-          <span class="prod-stars">★★★★★</span>
+          <span class="rating-num">5,0</span>
         </div>
       </div>
     </div>`).join('');
@@ -1470,7 +1537,7 @@ async function carregarBannersVitrine(){
     const wrap = document.createElement('div');
     wrap.className = 'hc-slide' + (i === 0 ? ' on' : '');
     const img = document.createElement('img');
-    img.src = b.imagem;
+    img.src = mediaUrl(b.imagem);
     img.alt = 'Destaque ' + (i + 1);
     img.loading = i === 0 ? 'eager' : 'lazy';
     wrap.appendChild(img);
@@ -1504,7 +1571,10 @@ document.addEventListener('visibilitychange', () => {
 function openProd(id){
   const p = S.products[id]; curProd=p;
   const main = document.getElementById('pvMain');
-  main.innerHTML = p.img?`<img src="${p.img}" alt="${p.name}">`:`<span style="font-size:140px">${p.emoji}</span>`;
+  const imgUrl = p.img ? mediaUrl(p.img) : '';
+  main.innerHTML = imgUrl
+    ? `<img src="${imgUrl}" alt="${p.name.replace(/"/g,'&quot;')}">`
+    : `<div class="prod-ph" style="min-height:380px"><span class="prod-ph-txt">${prodMonogram(p.name)}</span></div>`;
   document.getElementById('pvBrand').textContent = p.brand;
   document.getElementById('pvName').textContent  = p.name;
   document.getElementById('pvDesc').textContent  = p.desc;
@@ -1512,33 +1582,28 @@ function openProd(id){
   document.getElementById('pvPrice').innerHTML = `${R$(p.price)}${p.old?`<span>${R$(p.old)}</span>`:''}`;
   document.getElementById('pvInst').innerHTML  = `ou <b>${S.parc}x de ${R$(parc)}</b> sem juros`;
 
-  // thumbs
-  document.getElementById('pvThumbs').innerHTML =
-    [p.img||p.emoji,p.emoji,p.emoji].map((src,i)=>
-      `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${p.img||''}','${p.emoji}')">
-         ${p.img?`<img src="${p.img}" alt="">`:`<span style="font-size:28px">${p.emoji}</span>`}
-       </div>`
-    ).join('');
+  document.getElementById('pvThumbs').innerHTML = imgUrl
+    ? `<div class="pv-thumb on" data-img="${encodeURIComponent(imgUrl)}" onclick="switchThumbEl(this)"><img src="${imgUrl}" alt=""></div>`
+    : '';
 
-  // sizes
   const sg = document.getElementById('pvSizes');
   sg.innerHTML = p.sizes.length
-    ? p.sizes.map((s,i)=>`<button class="pv-size ${i===0?'on':''}" onclick="selSize(this)">${s}</button>`).join('')
+    ? p.sizes.map((s,i)=>`<button type="button" class="pv-size ${i===0?'on':''}" onclick="selSize(this)">${s}</button>`).join('')
     : '<span style="font-size:13px;color:var(--muted)">Tamanho único</span>';
 
-  // wishlist btn
   const wb = document.getElementById('pvWishBtn');
   const inWL = wl.find(w=>w.id===p.id);
-  wb.innerHTML = inWL?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos';
-  wb.onclick = ()=>{ toggleWL(p.id); wb.innerHTML=wl.find(w=>w.id===p.id)?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos'; };
+  wb.textContent = inWL ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+  wb.onclick = ()=>{ toggleWL(p.id); wb.textContent = wl.find(w=>w.id===p.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'; };
   document.getElementById('pvAddBtn').onclick = ()=>addCart(p);
 
   goView('view-product');
 }
 
-function switchThumb(el,img,emoji){
-  const main=document.getElementById('pvMain');
-  main.innerHTML=img?`<img src="${img}" alt="">`:`<span style="font-size:140px">${emoji}</span>`;
+function switchThumbEl(el){
+  const u = decodeURIComponent(el.dataset.img || '');
+  const main = document.getElementById('pvMain');
+  main.innerHTML = u ? `<img src="${u}" alt="">` : `<div class="prod-ph" style="min-height:380px"><span class="prod-ph-txt">VN</span></div>`;
   document.querySelectorAll('.pv-thumb').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
 }
@@ -1547,27 +1612,27 @@ function selSize(el){ document.querySelectorAll('.pv-size').forEach(b=>b.classLi
 /* ─── WISHLIST ─── */
 function toggleWL(id){
   const p=S.products[id], idx=wl.findIndex(w=>w.id===id);
-  if(idx>-1){ wl.splice(idx,1); showToast('♡','Removido dos favoritos'); }
-  else { wl.push(p); showToast('♥','Adicionado aos favoritos!'); }
+  if(idx>-1){ wl.splice(idx,1); showToast('Removido dos favoritos'); }
+  else { wl.push(p); showToast('Adicionado aos favoritos'); }
   syncDots(); renderGrid(S.products);
 }
 function renderWL(){
   const g=document.getElementById('wGrid');
   document.getElementById('wSubtitle').textContent=wl.length+' item'+(wl.length!==1?'s':'')+' salvo'+(wl.length!==1?'s':'');
-  if(!wl.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><div style="font-size:44px;margin-bottom:12px">♡</div><p>Nenhum favorito ainda.<br><br><button class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
+  if(!wl.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><p style="font-family:var(--serif);font-size:18px;color:var(--gold);margin-bottom:12px">Favoritos</p><p>Nenhum item salvo ainda.<br><br><button type="button" class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
   g.innerHTML=wl.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-emoji">${p.emoji}</span>`}
+        ${p.img?`<img src="${mediaUrl(p.img)}" alt="${p.name}">`:`<div class="prod-ph"><span class="prod-ph-txt">${prodMonogram(p.name)}</span></div>`}
         <div class="prod-hover-btns">
-          <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
-          <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()">♥ Remover</button>
+          <button type="button" class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">Carrinho</button>
+          <button type="button" class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()">Remover</button>
         </div>
       </div>
       <div class="prod-info">
         <div class="prod-brand">${p.brand}</div>
         <div class="prod-name">${p.name}</div>
-        <div class="prod-foot"><span class="prod-price">${R$(p.price)}</span><span class="prod-stars">★★★★★</span></div>
+        <div class="prod-foot"><span class="prod-price">${R$(p.price)}</span><span class="rating-num">5,0</span></div>
       </div>
     </div>`).join('');
 }
@@ -1577,7 +1642,7 @@ function addCart(p){
   const ex=cart.find(i=>i.id===p.id);
   ex ? ex.qty++ : cart.push({...p,qty:1});
   saveC(); syncDots(); renderCart();
-  showToast('✓', p.name+' adicionado!');
+  showToast(p.name + ' adicionado ao carrinho');
   setTimeout(openCart,350);
 }
 function openCart(){  document.getElementById('cartDrawer').classList.add('on');  document.getElementById('overlay').classList.add('on'); }
@@ -1592,10 +1657,10 @@ function renderCart(){
   foot.style.display=cart.length?'block':'none';
   if(cart.length){ document.getElementById('cdSub').textContent=R$(total); document.getElementById('cdTotal').textContent=R$(total); }
   const el=document.getElementById('cdItems');
-  if(!cart.length){ el.innerHTML=`<div class="cd-empty"><div class="cd-empty-ico">🛍️</div><p>Carrinho vazio</p></div>`; return; }
+  if(!cart.length){ el.innerHTML=`<div class="cd-empty"><p class="rating-num" style="margin-bottom:10px">Carrinho</p><p>Carrinho vazio</p></div>`; return; }
   el.innerHTML=cart.map((it,i)=>`
     <div class="ci">
-      <div class="ci-img">${it.img?`<img src="${it.img}" alt="">`:`<span style="font-size:32px">${it.emoji}</span>`}</div>
+      <div class="ci-img">${it.img?`<img src="${mediaUrl(it.img)}" alt="">`:`<div class="prod-ph" style="min-height:90px"><span class="prod-ph-txt" style="font-size:14px;padding:8px 12px">${prodMonogram(it.name)}</span></div>`}</div>
       <div class="ci-body">
         <div class="ci-name">${it.name}</div>
         <div class="ci-price">${R$(it.price)}</div>
@@ -1605,7 +1670,7 @@ function renderCart(){
           <button class="cqb" onclick="chQty(${i},1)">+</button>
         </div>
       </div>
-      <button class="ci-del" onclick="delItem(${i})">✕</button>
+      <button type="button" class="ci-del" onclick="delItem(${i})" aria-label="Remover"><svg class="ico-sv" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>`).join('');
 }
 
@@ -1613,7 +1678,7 @@ let _pixChaveAtual = '';
 
 async function checkout(){
   if(!cart.length){
-    showToast('🛍️','Seu carrinho está vazio');
+    showToast('Seu carrinho está vazio');
     return;
   }
   const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -1624,12 +1689,12 @@ async function checkout(){
     const d = await r.json();
     const chavePix = (d.chavePix != null ? String(d.chavePix) : '').trim();
     if(!chavePix){
-      showToast('⚙️','Cadastre sua Chave PIX em Configuração no painel admin.');
+      showToast('Cadastre sua Chave PIX no painel admin (Configuração).');
       return;
     }
     openPixModal(total,chavePix);
   }catch{
-    showToast('⚠️','Não foi possível carregar a chave PIX. Verifique se o servidor está online.');
+    showToast('Não foi possível carregar a chave PIX. Verifique o servidor.');
   }
 }
 
@@ -1658,10 +1723,10 @@ async function copiarChavePix(){
     const btn = document.getElementById('pixCopyBtn');
     btn.textContent = 'Chave copiada!';
     btn.classList.add('done');
-    showToast('✓','Chave PIX copiada');
+    showToast('Chave PIX copiada');
     setTimeout(()=>{ btn.textContent='Copiar Chave PIX'; btn.classList.remove('done'); },2200);
   }catch{
-    showToast('⚠️','Não foi possível copiar. Selecione a chave manualmente.');
+    showToast('Não foi possível copiar. Selecione a chave manualmente.');
   }
 }
 
@@ -1691,7 +1756,7 @@ function doSearch(q){
   res.innerHTML=found.length
     ? `<div class="sr-wrap">${found.map(p=>`
         <div class="sr-item" onclick="toggleSearch();openProd(${p.id})">
-          <div class="sr-img">${p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover">`:`<span>${p.emoji}</span>`}</div>
+          <div class="sr-img">${p.img?`<img src="${mediaUrl(p.img)}" style="width:100%;height:100%;object-fit:cover">`:`<span class="rating-num" style="font-size:11px">${prodMonogram(p.name)}</span>`}</div>
           <div><div class="sr-name">${p.name}</div><div class="sr-price">${R$(p.price)}</div></div>
         </div>`).join('')}</div>`
     : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${q}"</div>`;
@@ -1701,11 +1766,11 @@ function doSearch(q){
 function renderRevs(){
   document.getElementById('revGrid').innerHTML=S.reviews.map(r=>`
     <div class="rev-card fi">
-      <div class="rc-stars">${'★'.repeat(r.stars)}</div>
+      <div class="rc-stars"><span class="rating-num">${r.stars},0 · avaliação</span></div>
       <div class="rc-text">"${r.text}"</div>
       <div class="rc-author">
-        <div class="rc-av">${r.av}</div>
-        <div><div class="rc-name">${r.name}</div><div class="rc-date">${r.date}</div><div class="rc-badge">✓ Compra verificada</div></div>
+        <div class="rc-av">${reviewInitials(r.name)}</div>
+        <div><div class="rc-name">${r.name}</div><div class="rc-date">${r.date}</div><div class="rc-badge">Compra verificada</div></div>
       </div>
     </div>`).join('');
   observeFI();
@@ -1716,9 +1781,8 @@ function submitForm(e){ e.preventDefault(); const ok=document.getElementById('fo
 
 /* ─── TOAST ─── */
 let toastT;
-function showToast(ico,msg){
-  document.getElementById('toastIco').textContent=ico;
-  document.getElementById('toastMsg').textContent=msg;
+function showToast(msg){
+  document.getElementById('toastMsg').textContent = msg;
   const t=document.getElementById('toast'); t.classList.add('on');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),3000);
 }
@@ -1755,7 +1819,7 @@ async function carregarNomeDaLoja() {
   }
 }
 
-// Converte produto do formato MongoDB → formato da loja
+// Converte produto do formato MongoDB para o formato da loja
 function converterProduto(p, index) {
   return {
     id:    index,
@@ -1766,7 +1830,6 @@ function converterProduto(p, index) {
     price: Number(p.preco),
     old:   null,
     img:   p.imagem || '',
-    emoji: '👗',
     desc:  p.descricao || p.nome,
     sizes: ['PP','P','M','G','GG'],
     badge: null
@@ -1786,9 +1849,10 @@ async function carregarProdutosDoServidor(categoria) {
 
     if (dados.length > 0) {
       S.products = dados.map(converterProduto);
-      console.log(`✅ ${S.products.length} produto(s) carregado(s) do MongoDB`);
+      renderHeroMini();
+      console.log(S.products.length + ' produto(s) carregado(s) do MongoDB');
     } else {
-      console.log('ℹ️ Nenhum produto no banco — exibindo produtos padrão.');
+      console.log('Nenhum produto no banco — exibindo produtos padrão.');
     }
 
     const lista = categoria && categoria !== 'all'
@@ -1797,7 +1861,7 @@ async function carregarProdutosDoServidor(categoria) {
 
     renderGrid(lista);
   } catch (err) {
-    console.warn('⚠️ Servidor offline — usando produtos padrão.', err.message);
+    console.warn('Servidor offline — usando produtos padrão.', err.message);
     renderGrid(S.products);
   }
 }
