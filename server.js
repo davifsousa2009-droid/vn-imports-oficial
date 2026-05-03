@@ -177,34 +177,43 @@ app.delete('/api/produtos/:id', verificarSenha, async (req, res) => {
 
 // --- CONFIGURAÇÃO DA LOJA ---
 const ConfigSchema = new mongoose.Schema({
-  nomeLoja: { type: String, default: 'VN IMPORTS' }
+  nomeLoja: { type: String, default: 'VN IMPORTS' },
+  chavePix: { type: String, default: '' }
 });
 
-// Corrigido para "mongoose" com N e verificação de modelo existente (Vercel)
 const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 
-// Rota pública para o site ler o nome
+// Rota pública para o site ler nome da loja e chave PIX (vitrine / checkout)
 app.get('/api/config', async (req, res) => {
   try {
     await connectDB();
     let cfg = await Config.findOne();
-    if (!cfg) cfg = await Config.create({ nomeLoja: 'VN IMPORTS' });
+    if (!cfg) {
+      cfg = await Config.create({ nomeLoja: 'VN IMPORTS', chavePix: '' });
+    }
     res.json(cfg);
-  } catch (err) { 
-    res.status(500).json({ erro: err.message }); 
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
   }
 });
 
-// Rota protegida para o admin salvar o nome
+// Rota protegida para o admin salvar configurações
 app.post('/api/config', verificarSenha, async (req, res) => {
   try {
     await connectDB();
-    const { nomeLoja } = req.body;
-    // Salva ou cria se não existir
-    const atualizado = await Config.findOneAndUpdate({}, { nomeLoja }, { upsert: true, new: true });
-    res.json({ mensagem: 'Nome da loja atualizado!', config: atualizado });
-  } catch (err) { 
-    res.status(500).json({ erro: err.message }); 
+    const { nomeLoja, chavePix } = req.body;
+    const dados = { nomeLoja: nomeLoja?.trim() || 'VN IMPORTS' };
+    if (chavePix !== undefined) {
+      dados.chavePix = String(chavePix).trim();
+    }
+    const atualizado = await Config.findOneAndUpdate(
+      {},
+      dados,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ mensagem: 'Configuração atualizada!', config: atualizado });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
   }
 });
 
