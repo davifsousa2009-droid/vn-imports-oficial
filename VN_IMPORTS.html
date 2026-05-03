@@ -791,7 +791,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <nav id="main-nav">
   <div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer">
-      VN IMPORTS
+      <span data-loja="nome">VN IMPORTS</span>
       <span class="nav-logo-badge">Premium</span>
     </div>
     <ul class="nav-links">
@@ -917,7 +917,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <footer>
   <div class="foot-top">
     <div>
-      <div class="foot-logo">VN IMPORTS</div>
+      <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials">
         <a href="#" class="fsoc">📷</a>
@@ -968,7 +968,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-product">
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299 &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal">12</em>x sem juros</div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer">VN IMPORTS</div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')">♡<span class="nav-dot" id="wDot2"></span></button>
@@ -1010,7 +1010,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-wishlist">
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer">VN IMPORTS</div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
     <div class="nav-right"><button class="nav-btn" onclick="openCart()">🛍️<span class="nav-dot" id="cDot3"></span></button></div>
   </div></nav>
@@ -1025,7 +1025,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-contact">
   <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer">VN IMPORTS</div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')">♡<span class="nav-dot" id="wDot3"></span></button>
@@ -1092,89 +1092,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- BACK TOP -->
 <button class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
-
-<!-- EDITOR FAB -->
-<button class="edit-fab" onclick="toggleEditor()" title="Painel de edição">⚙️</button>
-
-<!-- EDITOR OVERLAY + PANEL -->
-<div class="edit-overlay" id="editOverlay" onclick="toggleEditor()"></div>
-<div class="edit-panel" id="editPanel">
-  <div class="ep-head">
-    <div>
-      <div class="ep-logo">Painel VN IMPORTS <span>Editar loja</span></div>
-    </div>
-    <button class="ep-x" onclick="toggleEditor()">✕</button>
-  </div>
-  <div class="ep-tabs">
-    <button class="ep-tab on" onclick="switchTab(this,'tab-loja')">Loja</button>
-    <button class="ep-tab" onclick="switchTab(this,'tab-prod')">Produtos</button>
-    <button class="ep-tab" onclick="switchTab(this,'tab-pag')">Pagamento</button>
-    <button class="ep-tab" onclick="switchTab(this,'tab-rev')">Avaliações</button>
-  </div>
-  <div class="ep-body">
-
-    <!-- TAB: LOJA -->
-    <div class="ep-pane on" id="tab-loja">
-      <div class="ep-block">
-        <div class="ep-bt">Informações gerais</div>
-        <div class="ep-f"><label class="ep-l">Nome da loja</label><input class="ep-i" id="cfg-store" placeholder="VN IMPORTS"></div>
-        <div class="ep-f"><label class="ep-l">Slogan / Hero título</label><input class="ep-i" id="cfg-slogan" placeholder="Vista-se com intenção."></div>
-        <div class="ep-f"><label class="ep-l">Descrição (hero)</label><textarea class="ep-i" id="cfg-herodesc"></textarea></div>
-        <div class="ep-2">
-          <div class="ep-f"><label class="ep-l">Frete grátis acima de</label><input class="ep-i" id="cfg-frete" type="number" placeholder="299"></div>
-          <div class="ep-f"><label class="ep-l">Parcelas máx.</label><input class="ep-i" id="cfg-parc" type="number" placeholder="12"></div>
-        </div>
-      </div>
-      <div class="ep-block">
-        <div class="ep-bt">Contato / Rodapé</div>
-        <div class="ep-f"><label class="ep-l">Telefone</label><input class="ep-i" id="cfg-tel" placeholder="(11) 9999-0000"></div>
-        <div class="ep-f"><label class="ep-l">E-mail</label><input class="ep-i" id="cfg-email" placeholder="oi@vnimports.com.br"></div>
-        <div class="ep-f"><label class="ep-l">Descrição do rodapé</label><textarea class="ep-i" id="cfg-footdesc" style="min-height:60px"></textarea></div>
-      </div>
-    </div>
-
-    <!-- TAB: PRODUTOS -->
-    <div class="ep-pane" id="tab-prod">
-      <div class="ep-block">
-        <div class="ep-bt">Clique num produto para editar</div>
-        <div id="epProdList"></div>
-      </div>
-    </div>
-
-    <!-- TAB: PAGAMENTO -->
-    <div class="ep-pane" id="tab-pag">
-      <div class="ep-block">
-        <div class="ep-bt">Link de pagamento</div>
-        <div class="ep-f">
-          <label class="ep-l">Link do Mercado Pago / PagSeguro / Stripe</label>
-          <input class="ep-i" id="cfg-paylink" placeholder="https://mpago.la/seu-link">
-          <div class="ep-note">
-            Como criar: acesse <a href="https://www.mercadopago.com.br" target="_blank">mercadopago.com.br</a>
-            → Cobranças → Link de pagamento → Copie e cole aqui.<br><br>
-            Ao clicar em "Finalizar Compra" o cliente será redirecionado para esse link.
-          </div>
-        </div>
-      </div>
-      <div class="ep-block">
-        <div class="ep-bt">Formas de pagamento exibidas</div>
-        <div class="ep-f"><label class="ep-l">Texto do anúncio de parcelas</label><input class="ep-i" id="cfg-parctxt" placeholder="Parcele em até 12x sem juros"></div>
-      </div>
-    </div>
-
-    <!-- TAB: AVALIAÇÕES -->
-    <div class="ep-pane" id="tab-rev">
-      <div class="ep-block">
-        <div class="ep-bt">Depoimentos de clientes</div>
-        <div id="epRevList"></div>
-      </div>
-    </div>
-
-  </div>
-  <div class="ep-foot">
-    <button class="ep-apply" onclick="applyAll()">✓ &nbsp;Salvar e Aplicar</button>
-    <div class="ep-hint">Salvo no navegador. Publique o arquivo no GitHub Pages e a loja estará no ar.</div>
-  </div>
-</div>
 
 <!-- ════════════════════════════════════════════════
      JAVASCRIPT
@@ -1422,8 +1339,8 @@ function renderCart(){
 function checkout(){
   const link=S.paylink?.trim();
   if(!link){
-    showToast('⚙️','Configure o link de pagamento no painel ⚙️');
-    closeCart(); setTimeout(toggleEditor,500);
+    showToast('⚙️','Configure o link de pagamento no painel admin');
+    closeCart();
     return;
   }
   window.open(link,'_blank');
@@ -1490,154 +1407,33 @@ window.addEventListener('scroll',()=>{ document.getElementById('btop').classList
 const io=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); e.target.querySelectorAll('.rbar-fill[data-w]').forEach(b=>setTimeout(()=>b.style.width=b.dataset.w,150)); } }); },{threshold:.12});
 function observeFI(){ document.querySelectorAll('.fi').forEach(el=>io.observe(el)); }
 
-/* ══════════════════════════════════════
-   PAINEL DE EDIÇÃO
-══════════════════════════════════════ */
-let edOpen=false;
-function toggleEditor(){
-  edOpen=!edOpen;
-  document.getElementById('editPanel').classList.toggle('on',edOpen);
-  document.getElementById('editOverlay').classList.toggle('on',edOpen);
-  if(edOpen) populateEditor();
-}
-function switchTab(btn,pane){
-  document.querySelectorAll('.ep-tab').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.ep-pane').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById(pane).classList.add('on');
-}
-
-function populateEditor(){
-  // Loja
-  document.getElementById('cfg-store').value    = S.store;
-  document.getElementById('cfg-slogan').value   = S.slogan||'';
-  document.getElementById('cfg-herodesc').value = S.herodesc||'';
-  document.getElementById('cfg-frete').value    = S.frete;
-  document.getElementById('cfg-parc').value     = S.parc;
-  document.getElementById('cfg-tel').value      = S.tel||'';
-  document.getElementById('cfg-email').value    = S.email||'';
-  document.getElementById('cfg-footdesc').value = S.footdesc||'';
-  document.getElementById('cfg-paylink').value  = S.paylink||'';
-  document.getElementById('cfg-parctxt').value  = S.parctxt||'';
-
-  // Produtos
-  const pl=document.getElementById('epProdList');
-  pl.innerHTML=S.products.map((p,i)=>`
-    <div class="ep-prod-row" id="epr-${i}" onclick="toggleProdForm(${i})">
-      <div class="ep-prod-ico">${p.img?`<img src="${p.img}" style="width:40px;height:40px;object-fit:cover;border-radius:2px">`:`<span>${p.emoji}</span>`}</div>
-      <div class="ep-prod-meta"><div class="ep-prod-meta-name">${p.name}</div><div class="ep-prod-meta-price">${R$(p.price)}</div></div>
-      <span class="ep-prod-chev">›</span>
-    </div>
-    <div class="ep-prod-form" id="epf-${i}">
-      <div class="ep-f"><label class="ep-l">Nome do produto</label><input class="ep-i" id="pn-${i}" value="${p.name}"></div>
-      <div class="ep-2">
-        <div class="ep-f"><label class="ep-l">Preço (R$)</label><input class="ep-i" type="number" id="pp-${i}" value="${p.price}" step="0.01"></div>
-        <div class="ep-f"><label class="ep-l">Preço antigo</label><input class="ep-i" type="number" id="po-${i}" value="${p.old||''}" placeholder="opcional"></div>
-      </div>
-      <div class="ep-f"><label class="ep-l">Descrição</label><textarea class="ep-i" id="pd-${i}">${p.desc}</textarea></div>
-      <div class="ep-f"><label class="ep-l">📷 Foto — Upload</label>
-        <div class="ep-upload" id="eu-${i}">
-          <input type="file" accept="image/*" onchange="handleUpload(this,${i})">
-          <div class="ep-upload-ico">📷</div>
-          <div class="ep-upload-txt">Clique ou arraste aqui<br><b>JPG, PNG, WEBP</b></div>
-        </div>
-        <img class="ep-preview ${p.img?'on':''}" id="eprev-${i}" src="${p.img||''}" alt="">
-      </div>
-      <div class="ep-or">— ou link da imagem —</div>
-      <div class="ep-f"><label class="ep-l">URL da foto</label><input class="ep-i" id="pimg-${i}" value="${p.img||''}" placeholder="https://…" oninput="previewURL(this,${i})"></div>
-    </div>`).join('');
-
-  // Avaliações
-  const rl=document.getElementById('epRevList');
-  rl.innerHTML=S.reviews.map((r,i)=>`
-    <div class="ep-block" style="margin-bottom:12px">
-      <div class="ep-bt">Depoimento ${i+1}</div>
-      <div class="ep-f"><label class="ep-l">Nome</label><input class="ep-i" id="rn-${i}" value="${r.name}"></div>
-      <div class="ep-f"><label class="ep-l">Texto</label><textarea class="ep-i" id="rt-${i}" style="min-height:70px">${r.text}</textarea></div>
-      <div class="ep-f"><label class="ep-l">Data</label><input class="ep-i" id="rd-${i}" value="${r.date}"></div>
-    </div>`).join('');
-}
-
-function toggleProdForm(i){
-  const row=document.getElementById(`epr-${i}`);
-  const form=document.getElementById(`epf-${i}`);
-  const isOpen=form.classList.contains('on');
-  document.querySelectorAll('.ep-prod-form').forEach(f=>f.classList.remove('on'));
-  document.querySelectorAll('.ep-prod-row').forEach(r=>r.classList.remove('open'));
-  if(!isOpen){ form.classList.add('on'); row.classList.add('open'); }
-}
-
-function handleUpload(input,i){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const src=e.target.result;
-    S.products[i].img=src;
-    const prev=document.getElementById(`eprev-${i}`);
-    prev.src=src; prev.classList.add('on');
-    document.getElementById(`pimg-${i}`).value='';
-    // update icon in list
-    const ico=document.getElementById(`epr-${i}`)?.querySelector('.ep-prod-ico');
-    if(ico) ico.innerHTML=`<img src="${src}" style="width:40px;height:40px;object-fit:cover;border-radius:2px">`;
-  };
-  reader.readAsDataURL(file);
-}
-
-function previewURL(input,i){
-  const src=input.value.trim();
-  const prev=document.getElementById(`eprev-${i}`);
-  if(src){ prev.src=src; prev.classList.add('on'); }
-  else prev.classList.remove('on');
-}
-
-function applyAll(){
-  // Loja
-  S.store    = document.getElementById('cfg-store').value.trim()||S.store;
-  S.slogan   = document.getElementById('cfg-slogan').value.trim()||S.slogan;
-  S.herodesc = document.getElementById('cfg-herodesc').value.trim()||S.herodesc;
-  S.frete    = Number(document.getElementById('cfg-frete').value)||S.frete;
-  S.parc     = Number(document.getElementById('cfg-parc').value)||S.parc;
-  S.tel      = document.getElementById('cfg-tel').value.trim();
-  S.email    = document.getElementById('cfg-email').value.trim();
-  S.footdesc = document.getElementById('cfg-footdesc').value.trim()||S.footdesc;
-  S.paylink  = document.getElementById('cfg-paylink').value.trim();
-  S.parctxt  = document.getElementById('cfg-parctxt').value.trim()||S.parctxt;
-
-  // Produtos
-  S.products.forEach((p,i)=>{
-    p.name  = document.getElementById(`pn-${i}`)?.value.trim()||p.name;
-    p.price = Number(document.getElementById(`pp-${i}`)?.value)||p.price;
-    const oldVal=document.getElementById(`po-${i}`)?.value;
-    p.old   = oldVal?Number(oldVal):null;
-    p.desc  = document.getElementById(`pd-${i}`)?.value.trim()||p.desc;
-    const urlVal=document.getElementById(`pimg-${i}`)?.value.trim();
-    if(urlVal) p.img=urlVal;
-    // badge auto
-    if(p.old&&p.old>p.price) p.badge='sale';
-  });
-
-  // Avaliações
-  S.reviews.forEach((r,i)=>{
-    r.name = document.getElementById(`rn-${i}`)?.value||r.name;
-    r.text = document.getElementById(`rt-${i}`)?.value||r.text;
-    r.date = document.getElementById(`rd-${i}`)?.value||r.date;
-  });
-
-  // Atualizar carrinho com novos preços/nomes
-  cart=cart.map(it=>{ const sp=S.products.find(p=>p.id===it.id); return sp?{...it,name:sp.name,price:sp.price,img:sp.img,emoji:sp.emoji}:it; });
-
-  save(); saveC();
-  renderHome(); renderCart(); syncDots();
-  showToast('✓','Salvo com sucesso!');
-  setTimeout(toggleEditor,500);
-}
-
 /* ══════════════════════════════════════════════════════════
    INTEGRAÇÃO COM O BACKEND — VN IMPORTS
-   Busca produtos reais do MongoDB via API.
-   Se o servidor estiver offline, exibe os produtos padrão.
+   Busca nome da loja e produtos do MongoDB via API.
+   Se o servidor estiver offline, usa os dados padrão.
 ══════════════════════════════════════════════════════════ */
-const API_URL = 'http://localhost:3000/api';
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : `${window.location.origin}/api`;
+
+// Injeta o nome da loja em todos os elementos que o exibem
+async function carregarNomeDaLoja() {
+  try {
+    const r = await fetch(API_URL + '/config');
+    if (!r.ok) return; // silencioso — mantém nome padrão
+    const d = await r.json();
+    if (!d.nomeLoja) return;
+    const nome = d.nomeLoja;
+    // Atualiza título da aba do browser
+    document.title = nome + ' — Moda Premium';
+    // Atualiza todos os elementos com data-loja="nome"
+    document.querySelectorAll('[data-loja="nome"]').forEach(el => {
+      el.textContent = nome;
+    });
+  } catch {
+    // Silencioso — loja funciona normalmente com nome padrão
+  }
+}
 
 // Converte produto do formato MongoDB → formato da loja
 function converterProduto(p, index) {
@@ -1666,39 +1462,34 @@ async function carregarProdutosDoServidor(categoria) {
 
     const r = await fetch(url);
     if (!r.ok) throw new Error('Erro na resposta do servidor');
-
     const dados = await r.json();
 
     if (dados.length > 0) {
-      // Substitui produtos do estado local pelos do banco
       S.products = dados.map(converterProduto);
       console.log(`✅ ${S.products.length} produto(s) carregado(s) do MongoDB`);
     } else {
       console.log('ℹ️ Nenhum produto no banco — exibindo produtos padrão.');
     }
 
-    // Sempre re-renderiza após buscar
     const lista = categoria && categoria !== 'all'
       ? S.products.filter(p => p.cat === categoria)
       : S.products;
 
     renderGrid(lista);
   } catch (err) {
-    // Servidor offline: loja continua funcionando com dados padrão
     console.warn('⚠️ Servidor offline — usando produtos padrão.', err.message);
     renderGrid(S.products);
   }
 }
 
 /* ─── INIT ─── */
-// UMA ÚNICA chamada — sem duplicatas
 document.addEventListener('DOMContentLoaded', () => {
-  renderHome();                    // renderiza estrutura imediatamente
+  renderHome();
   renderCart();
   syncDots();
   observeFI();
-  carregarProdutosDoServidor();    // busca produtos do banco em seguida
+  carregarNomeDaLoja();        // injeta nome da loja via /api/config
+  carregarProdutosDoServidor(); // busca produtos via /api/produtos
 });
 </script>
 </body>
-</html>
