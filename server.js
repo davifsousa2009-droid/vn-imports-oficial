@@ -216,4 +216,19 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// ── SERVIR OS HTMLS (obrigatório na Vercel) ────────────
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
+});
+
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/VN_IMPORTS.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'VN_IMPORTS.html'));
+});
+
+// ── INICIAR SERVIDOR (LOCAL) ───────────────────────────
+
 module.exports = app;
