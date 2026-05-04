@@ -1,4 +1,8 @@
-require('dotenv').config();
+// Na Vercel as variáveis vêm do painel (process.env); dotenv só em ambiente local
+// para não carregar um .env vazio/errado que possa interferir com o runtime.
+if (!process.env.VERCEL) {
+  require('dotenv').config();
+}
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,6 +15,53 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 const shopConfig = require('./shopConfig');
+
+/** Lê JWT do ambiente (Vercel injeta antes do handler; aceita nomes alternativos comuns). */
+function readJwtSecretFromEnv() {
+  const keys = ['JWT_SECRET', 'JWT_SIGNING_SECRET', 'JWT_KEY'];
+  for (const key of keys) {
+    const raw = process.env[key];
+    if (raw == null) continue;
+    let s = String(raw).trim().replace(/^\uFEFF/, '');
+    if (!s) continue;
+    if (
+      (s.startsWith('"') && s.endsWith('"')) ||
+      (s.startsWith("'") && s.endsWith("'"))
+    ) {
+      s = s.slice(1, -1).trim();
+    }
+    if (s) return s;
+  }
+  return '';
+}
+
+let jwtSecretNonEmptyCache = null;
+
+function getJwtSecret() {
+  if (jwtSecretNonEmptyCache) return jwtSecretNonEmptyCache;
+  const s = readJwtSecretFromEnv();
+  if (s) jwtSecretNonEmptyCache = s;
+  return s;
+}
+
+function invalidateJwtSecretCache() {
+  jwtSecretNonEmptyCache = null;
+}
+
+/** Micro-retries: em serverless raramente útil, mas cobre cold start sem bloquear o processo. */
+async function waitForJwtSecret(maxMs = 600) {
+  const step = 30;
+  for (let t = 0; t < maxMs; t += step) {
+    invalidateJwtSecretCache();
+    const s = readJwtSecretFromEnv();
+    if (s) {
+      jwtSecretNonEmptyCache = s;
+      return s;
+    }
+    await new Promise((r) => setTimeout(r, step));
+  }
+  return readJwtSecretFromEnv();
+}
 
 const app = express();
 
@@ -155,31 +206,53 @@ const loginLimiter = rateLimit({
   message: { erro: 'Muitas tentativas de login. Aguarde alguns minutos.' }
 });
 
-app.post('/api/admin/login', loginLimiter, (req, res) => {
-  const senhaMestra = process.env.ADMIN_PASSWORD;
-  if (!senhaMestra) {
-    console.error('ADMIN_PASSWORD não configurada');
-    return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
-  }
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error('JWT_SECRET não configurada');
-    return res.status(500).json({ erro: 'JWT_SECRET não configurada no servidor.' });
-  }
+app.post('/api/admin/login', loginLimiter, async (req, res) => {
+  try {
+    const senhaMestra = process.env.ADMIN_PASSWORD;
+    if (!senhaMestra) {
+      console.error('ADMIN_PASSWORD não configurada');
+      return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
+    }
 
-  const senha = String(req.body?.senha ?? '').trim();
-  if (senha !== senhaMestra.trim()) {
-    return res.status(401).json({ erro: 'Senha incorreta.' });
-  }
+    let secret = getJwtSecret();
+    if (!secret && process.env.VERCEL) {
+      secret = await waitForJwtSecret(600);
+    } else if (!secret) {
+      secret = readJwtSecretFromEnv();
+      if (secret) jwtSecretNonEmptyCache = secret;
+    }
 
-  const token = jwt.sign({ role: 'admin' }, secret, { expiresIn: '8h' });
-  res.json({ token, expiresIn: '8h' });
+    if (!secret) {
+      console.error(
+        'JWT_SECRET vazio: defina JWT_SECRET no painel Vercel (Production) e faça redeploy.'
+      );
+      return res.status(500).json({
+        erro:
+          'JWT_SECRET não configurada no servidor. No painel da Vercel use o nome exato JWT_SECRET, ambiente Production, e redeploy.'
+      });
+    }
+
+    const senha = String(req.body?.senha ?? '').trim();
+    if (senha !== senhaMestra.trim()) {
+      return res.status(401).json({ erro: 'Senha incorreta.' });
+    }
+
+    jwtSecretNonEmptyCache = secret;
+    const token = jwt.sign({ role: 'admin' }, secret, { expiresIn: '8h' });
+    res.json({ token, expiresIn: '8h' });
+  } catch (e) {
+    console.error('admin/login:', e.message);
+    res.status(500).json({ erro: 'Erro ao processar login.' });
+  }
 });
 
 function verificarJWT(req, res, next) {
-  const secret = process.env.JWT_SECRET;
+  const secret = getJwtSecret();
   if (!secret) {
-    return res.status(500).json({ erro: 'JWT_SECRET não configurada no servidor.' });
+    return res.status(500).json({
+      erro:
+        'JWT_SECRET não configurada no servidor. No painel da Vercel use o nome exato JWT_SECRET, ambiente Production, e redeploy.'
+    });
   }
   const auth = req.headers.authorization;
   const token = auth && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
