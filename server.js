@@ -1,5 +1,5 @@
-// Na Vercel as variáveis vêm do painel (process.env); dotenv só em ambiente local
-// para não carregar um .env vazio/errado que possa interferir com o runtime.
+// Local: carrega .env com dotenv. Na Vercel (VERCEL definido) NUNCA usamos dotenv —
+// JWT_SECRET e demais chaves vêm só de process.env (painel Project → Environment Variables).
 if (!process.env.VERCEL) {
   require('dotenv').config();
 }
@@ -16,23 +16,22 @@ const jwt = require('jsonwebtoken');
 
 const shopConfig = require('./shopConfig');
 
-/** Lê JWT do ambiente (Vercel injeta antes do handler; aceita nomes alternativos comuns). */
+/**
+ * Segredo JWT: nome exatamente JWT_SECRET (igual ao painel da Vercel).
+ * Lê diretamente de process.env — sem arquivo .env em produção na Vercel.
+ */
 function readJwtSecretFromEnv() {
-  const keys = ['JWT_SECRET', 'JWT_SIGNING_SECRET', 'JWT_KEY'];
-  for (const key of keys) {
-    const raw = process.env[key];
-    if (raw == null) continue;
-    let s = String(raw).trim().replace(/^\uFEFF/, '');
-    if (!s) continue;
-    if (
-      (s.startsWith('"') && s.endsWith('"')) ||
-      (s.startsWith("'") && s.endsWith("'"))
-    ) {
-      s = s.slice(1, -1).trim();
-    }
-    if (s) return s;
+  const raw = process.env.JWT_SECRET;
+  if (raw == null) return '';
+  let s = String(raw).trim().replace(/^\uFEFF/, '');
+  if (!s) return '';
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    s = s.slice(1, -1).trim();
   }
-  return '';
+  return s || '';
 }
 
 let jwtSecretNonEmptyCache = null;
@@ -64,6 +63,17 @@ async function waitForJwtSecret(maxMs = 600) {
 }
 
 const app = express();
+
+// Log só na Vercel (aparece em Functions → Logs). Não imprime o segredo, só se existe e o tamanho.
+if (process.env.VERCEL) {
+  const raw = process.env.JWT_SECRET;
+  const trimmed = raw == null ? '' : String(raw).trim();
+  const ok = trimmed.length > 0;
+  console.log(
+    '[vn-imports][Vercel] JWT_SECRET:',
+    ok ? `definida (comprimento ${trimmed.length})` : 'ausente ou vazia — confira no painel (Production) e redeploy'
+  );
+}
 
 app.set('trust proxy', 1);
 
