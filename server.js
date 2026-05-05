@@ -13,15 +13,12 @@ const cloudinary = require('cloudinary').v2;
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const shopConfig = require('./shopConfig');
 
-/**
- * Segredo JWT: nome exatamente JWT_SECRET (igual ao painel da Vercel).
- * Lê diretamente de process.env — sem arquivo .env em produção na Vercel.
- */
-function readJwtSecretFromEnv() {
-  const raw = process.env.JWT_SECRET;
+/** Normaliza valor de JWT vindo do painel (.trim(), BOM, aspas externas opcionais). */
+function normalizeJwtEnvValue(raw) {
   if (raw == null) return '';
   let s = String(raw).trim().replace(/^\uFEFF/, '');
   if (!s) return '';
@@ -34,45 +31,83 @@ function readJwtSecretFromEnv() {
   return s || '';
 }
 
-let jwtSecretNonEmptyCache = null;
-
-function getJwtSecret() {
-  if (jwtSecretNonEmptyCache) return jwtSecretNonEmptyCache;
-  const s = readJwtSecretFromEnv();
-  if (s) jwtSecretNonEmptyCache = s;
-  return s;
+/** Compara UTF-8 em tempo constante; não usa .trim() — preserva espaços/caracteres da senha. */
+function timingSafePasswordEqual(secretA, secretB) {
+  const b1 = Buffer.from(secretA ?? '', 'utf8');
+  const b2 = Buffer.from(secretB ?? '', 'utf8');
+  if (b1.length !== b2.length) return false;
+  if (b1.length === 0) return false;
+  return crypto.timingSafeEqual(b1, b2);
 }
+
+/** Último recurso se JWT_SECRET falhar — valor público; troque e remova assim que env estiver estável na Vercel. */
+const JWT_HARDCODED_TEST_FALLBACK =
+  'vn-imports-TEMP-JWT-HARDCODED-remove-after-env-fixed';
+
+let jwtSecretCache = '';
+let jwtSourceLoggedLabel = '';
 
 function invalidateJwtSecretCache() {
-  jwtSecretNonEmptyCache = null;
+  jwtSecretCache = '';
+  jwtSourceLoggedLabel = '';
 }
 
-/** Micro-retries: em serverless raramente útil, mas cobre cold start sem bloquear o processo. */
-async function waitForJwtSecret(maxMs = 600) {
+/** Ordem: JWT_SECRET → JWT_SECRET_FALLBACK (painel alternativo) → literal de teste. */
+function resolveJwtSecretWithSourceOnce() {
+  const fromJwt = normalizeJwtEnvValue(process.env.JWT_SECRET);
+  if (fromJwt)
+    return { secret: fromJwt, sourceLabel: 'process.env.JWT_SECRET' };
+
+  const fromFb = normalizeJwtEnvValue(process.env.JWT_SECRET_FALLBACK);
+  if (fromFb)
+    return {
+      secret: fromFb,
+      sourceLabel:
+        'process.env.JWT_SECRET_FALLBACK (duplique valor em JWT_SECRET no painel e remova FALLBACK)'
+    };
+
+  console.error(
+    '[jwt] JWT_SECRET vazio → usando JWT_HARDCODED_TEST_FALLBACK (defina JWT_SECRET na Vercel e redeploy)'
+  );
+  return {
+    secret: JWT_HARDCODED_TEST_FALLBACK,
+    sourceLabel: 'HARDCODED_TEST_FALLBACK — não use em produção'
+  };
+}
+
+function getJwtSecret() {
+  if (jwtSecretCache) return jwtSecretCache;
+  const { secret, sourceLabel } = resolveJwtSecretWithSourceOnce();
+  jwtSecretCache = secret;
+  if (!jwtSourceLoggedLabel && jwtSecretCache) {
+    jwtSourceLoggedLabel = sourceLabel;
+    console.log('[jwt] segredo JWT ativo obtido via:', jwtSourceLoggedLabel);
+  }
+  return jwtSecretCache;
+}
+
+/** Poucas leituras de JWT_SECRET antes de usar fallback / HARDCODED (principalmente na Vercel). */
+async function probeEnvJwtSecretWithDelay(maxMs = 600) {
   const step = 30;
   for (let t = 0; t < maxMs; t += step) {
-    invalidateJwtSecretCache();
-    const s = readJwtSecretFromEnv();
-    if (s) {
-      jwtSecretNonEmptyCache = s;
-      return s;
-    }
+    const s = normalizeJwtEnvValue(process.env.JWT_SECRET);
+    if (s) return s;
     await new Promise((r) => setTimeout(r, step));
   }
-  return readJwtSecretFromEnv();
+  return normalizeJwtEnvValue(process.env.JWT_SECRET);
 }
 
 const app = express();
 
-// Log só na Vercel (aparece em Functions → Logs). Não imprime o segredo, só se existe e o tamanho.
+// Log só na Vercel (Functions → Logs). Não imprime o segredo.
 if (process.env.VERCEL) {
-  const raw = process.env.JWT_SECRET;
-  const trimmed = raw == null ? '' : String(raw).trim();
-  const ok = trimmed.length > 0;
-  console.log(
-    '[vn-imports][Vercel] JWT_SECRET:',
-    ok ? `definida (comprimento ${trimmed.length})` : 'ausente ou vazia — confira no painel (Production) e redeploy'
-  );
+  const hasJwt = normalizeJwtEnvValue(process.env.JWT_SECRET).length > 0;
+  const hasFb = normalizeJwtEnvValue(process.env.JWT_SECRET_FALLBACK).length > 0;
+  console.log('[vn-imports][Vercel] JWT_SECRET preenchido:', hasJwt ? 'sim' : 'não');
+  console.log('[vn-imports][Vercel] JWT_SECRET_FALLBACK preenchido:', hasFb ? 'sim' : 'não');
+  if (!hasJwt && JWT_HARDCODED_TEST_FALLBACK) {
+    console.warn('[vn-imports][Vercel] Se login falhar, o código pode cair em HARDCODED_TEST até JWT_SECRET ficar válido.');
+  }
 }
 
 app.set('trust proxy', 1);
@@ -218,36 +253,36 @@ const loginLimiter = rateLimit({
 
 app.post('/api/admin/login', loginLimiter, async (req, res) => {
   try {
-    const senhaMestra = process.env.ADMIN_PASSWORD;
-    if (!senhaMestra) {
+    const masterRaw = process.env.ADMIN_PASSWORD;
+    if (masterRaw == null || String(masterRaw).length === 0) {
       console.error('ADMIN_PASSWORD não configurada');
       return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
     }
 
-    let secret = getJwtSecret();
-    if (!secret && process.env.VERCEL) {
-      secret = await waitForJwtSecret(600);
-    } else if (!secret) {
-      secret = readJwtSecretFromEnv();
-      if (secret) jwtSecretNonEmptyCache = secret;
-    }
+    const bodyPwd =
+      req.body?.senha == null
+        ? ''
+        : typeof req.body.senha === 'string'
+          ? req.body.senha
+          : String(req.body.senha);
 
-    if (!secret) {
-      console.error(
-        'JWT_SECRET vazio: defina JWT_SECRET no painel Vercel (Production) e faça redeploy.'
-      );
-      return res.status(500).json({
-        erro:
-          'JWT_SECRET não configurada no servidor. No painel da Vercel use o nome exato JWT_SECRET, ambiente Production, e redeploy.'
-      });
-    }
-
-    const senha = String(req.body?.senha ?? '').trim();
-    if (senha !== senhaMestra.trim()) {
+    if (!timingSafePasswordEqual(bodyPwd, String(masterRaw))) {
       return res.status(401).json({ erro: 'Senha incorreta.' });
     }
 
-    jwtSecretNonEmptyCache = secret;
+    invalidateJwtSecretCache();
+    let peek = normalizeJwtEnvValue(process.env.JWT_SECRET);
+    if (!peek && process.env.VERCEL) {
+      peek = await probeEnvJwtSecretWithDelay(600);
+    }
+    if (peek) {
+      jwtSecretCache = peek;
+      jwtSourceLoggedLabel = 'process.env.JWT_SECRET';
+      console.log('[jwt] segredo JWT ativo obtido via:', jwtSourceLoggedLabel);
+    }
+
+    const secret = getJwtSecret();
+
     const token = jwt.sign({ role: 'admin' }, secret, { expiresIn: '8h' });
     res.json({ token, expiresIn: '8h' });
   } catch (e) {
@@ -260,8 +295,7 @@ function verificarJWT(req, res, next) {
   const secret = getJwtSecret();
   if (!secret) {
     return res.status(500).json({
-      erro:
-        'JWT_SECRET não configurada no servidor. No painel da Vercel use o nome exato JWT_SECRET, ambiente Production, e redeploy.'
+      erro: 'Falha interna ao obter segredo JWT após fluxo de fallback.'
     });
   }
   const auth = req.headers.authorization;
@@ -278,19 +312,19 @@ function verificarJWT(req, res, next) {
 }
 
 const verificarSenha = (req, res, next) => {
-  const senhaRecebida = req.headers['x-admin-password'];
-  const senhaMestra = process.env.ADMIN_PASSWORD;
-
-  if (!senhaMestra) {
+  const masterRaw = process.env.ADMIN_PASSWORD;
+  if (masterRaw == null || String(masterRaw).length === 0) {
     console.error('ADMIN_PASSWORD não configurada');
     return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
   }
 
-  if (senhaRecebida?.trim() === senhaMestra.trim()) {
-    next();
-  } else {
-    res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
+  const hdr = req.headers['x-admin-password'];
+  const recebida = hdr == null ? '' : String(hdr);
+
+  if (!timingSafePasswordEqual(recebida, String(masterRaw))) {
+    return res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
   }
+  next();
 };
 
 // POST /api/upload — admin envia imagem; sobe para Cloudinary e retorna secure_url (campo path para compatibilidade com o admin)
