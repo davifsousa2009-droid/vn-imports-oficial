@@ -1,37 +1,31 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
-  ],
   "functions": {
     "server.js": {
       "maxDuration": 30
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/admin/login",
-      "dest": "server.js"
+      "source": "/api/admin/login",
+      "destination": "/server.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "server.js"
+      "source": "/api/(.*)",
+      "destination": "/server.js"
     },
     {
-      "src": "/admin.html",
-      "dest": "server.js"
+      "source": "/admin.html",
+      "destination": "/server.js"
     },
     {
-      "src": "/VN_IMPORTS.html",
-      "dest": "server.js"
+      "source": "/VN_IMPORTS.html",
+      "destination": "/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "source": "/(.*)",
+      "destination": "/server.js"
     }
   ]
 }
