@@ -257,8 +257,7 @@ nav{
 }
 .prod-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .45s}
 .prod-card:hover .prod-img-wrap img{transform:scale(1.04)}
-.prod-img-emoji{font-size:76px;transition:transform .45s}
-.prod-card:hover .prod-img-emoji{transform:scale(1.04)}
+.prod-img-empty{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .prod-hover-btns{
   position:absolute;bottom:0;left:0;right:0;
   display:flex;gap:1px;background:var(--border);
@@ -837,12 +836,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- CATS -->
 <div class="cats-wrap" id="sec-cats">
   <div class="cats-inner">
-    <div class="cats-grid">
-      <div class="cat-card" onclick="filterAndGo('vestidos')"><div class="cat-icon">👗</div><div class="cat-name">Vestidos</div><div class="cat-sub">128 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('calcados')"><div class="cat-icon">👟</div><div class="cat-name">Calçados</div><div class="cat-sub">96 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('acessorios')"><div class="cat-icon">👜</div><div class="cat-name">Acessórios</div><div class="cat-sub">214 peças</div><div class="cat-arr">→</div></div>
-      <div class="cat-card" onclick="filterAndGo('casacos')"><div class="cat-icon">🧥</div><div class="cat-name">Casacos</div><div class="cat-sub">75 peças</div><div class="cat-arr">→</div></div>
-    </div>
+    <div class="cats-grid" id="catsGrid"></div>
   </div>
 </div>
 
@@ -857,13 +851,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <a href="#" class="sec-more">Ver todos →</a>
     </div>
-    <div class="filter-bar">
-      <button class="flt on" onclick="filter(this,'all')">Todos</button>
-      <button class="flt" onclick="filter(this,'vestidos')">Vestidos</button>
-      <button class="flt" onclick="filter(this,'calcados')">Calçados</button>
-      <button class="flt" onclick="filter(this,'acessorios')">Acessórios</button>
-      <button class="flt" onclick="filter(this,'casacos')">Casacos</button>
-    </div>
+    <div class="filter-bar" id="filterBar"></div>
     <div class="prod-grid" id="prodGrid"></div>
   </div>
 </div>
@@ -1106,16 +1094,7 @@ const DEF = {
   footdesc:'Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.',
   parctxt:'Parcele em até 12x sem juros',
   paylink:'',
-  products:[
-    {id:0,name:'Vestido Midi Linho',brand:'VN IMPORTS',cat:'vestidos',price:349,old:null,img:'',emoji:'👗',desc:'Vestido midi em mistura de algodão e linho com corte evasê. Tecido respirável, ideal para o dia a dia com elegância discreta.',sizes:['PP','P','M','G','GG'],badge:'hot'},
-    {id:1,name:'Blazer Oversize',brand:'VN IMPORTS',cat:'casacos',price:589,old:null,img:'',emoji:'🧥',desc:'Blazer de alfaiataria com caimento oversized. Forro acetinado, botões de madrepérola.',sizes:['P','M','G','GG'],badge:'new'},
-    {id:2,name:'Calça Pantalona',brand:'VN IMPORTS',cat:'vestidos',price:289,old:380,img:'',emoji:'👖',desc:'Calça pantalona em tecido crepom. Cós elástico, bolsos laterais. Elegante e confortável.',sizes:['PP','P','M','G','GG'],badge:'sale'},
-    {id:3,name:'Tênis Chunky Couro',brand:'VN IMPORTS',cat:'calcados',price:479,old:null,img:'',emoji:'👟',desc:'Tênis chunky em couro legítimo com solado de borracha. Palmilha anatômica.',sizes:['35','36','37','38','39','40'],badge:null},
-    {id:4,name:'Bolsa Tote Premium',brand:'VN IMPORTS',cat:'acessorios',price:649,old:null,img:'',emoji:'👜',desc:'Bolsa tote estruturada em couro sintético premium. Alça de mão e tiracolo.',sizes:[],badge:'new'},
-    {id:5,name:'Scarpin Bico Fino',brand:'VN IMPORTS',cat:'calcados',price:399,old:499,img:'',emoji:'👠',desc:'Scarpin clássico com bico fino e salto de 7cm. Couro sintético de qualidade.',sizes:['35','36','37','38','39','40'],badge:'sale'},
-    {id:6,name:'Colar Camadas Gold',brand:'VN IMPORTS',cat:'acessorios',price:149,old:null,img:'',emoji:'📿',desc:'Conjunto de colares em camadas com banho dourado 18k. Antialérgico.',sizes:[],badge:null},
-    {id:7,name:'Jaqueta Couro Moto',brand:'VN IMPORTS',cat:'casacos',price:529,old:null,img:'',emoji:'🧥',desc:'Jaqueta moto em couro sintético premium. Forro quentinho, bolsos com zíper.',sizes:['PP','P','M','G','GG'],badge:'hot'},
-  ],
+  products:[],
   reviews:[
     {name:'Mariana C.',av:'🧑‍🦱',stars:5,text:'Produto incrível! Chegou antes do prazo, embalagem impecável e a qualidade é exatamente como descrito. Já pedi de novo!',date:'há 3 dias'},
     {name:'Ricardo A.',av:'🧔',stars:5,text:'Uso todos os dias há 3 meses e continua como novo. Vale cada centavo, recomendo sem hesitar para qualquer pessoa.',date:'há 1 semana'},
@@ -1128,6 +1107,7 @@ let S = JSON.parse(localStorage.getItem('vn_data')||'null') || JSON.parse(JSON.s
 let cart = JSON.parse(localStorage.getItem('vn_cart')||'[]');
 let wl = [];
 let curProd = null;
+let categoriasVitrine = [];
 
 const save  = ()=>localStorage.setItem('vn_data', JSON.stringify(S));
 const saveC = ()=>localStorage.setItem('vn_cart', JSON.stringify(cart));
@@ -1160,7 +1140,7 @@ function renderHome(){
   const hc = document.getElementById('heroCards');
   hc.innerHTML = S.products.slice(0,2).map(p=>`
     <div class="hero-feat-card" onclick="openProd(${p.id})">
-      <div class="hfc-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span>${p.emoji}</span>`}</div>
+      <div class="hfc-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
       <div class="hfc-body">
         <div>
           <div class="hfc-tag">${p.badge==='new'?'Novo':p.badge==='hot'?'Destaque':'Importado'}</div>
@@ -1181,11 +1161,11 @@ function renderHome(){
 /* ─── PRODUCT GRID ─── */
 function renderGrid(list){
   const g = document.getElementById('prodGrid');
-  if(!list.length){ g.innerHTML=`<div style="padding:40px;color:var(--muted);grid-column:1/-1">Nenhum produto encontrado.</div>`; return; }
+  if(!list.length){ g.innerHTML=`<div style="padding:40px;color:var(--muted);grid-column:1/-1">Nenhum produto cadastrado no momento</div>`; return; }
   g.innerHTML = list.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-emoji">${p.emoji}</span>`}
+        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-badges">
           ${p.badge==='new'?'<span class="pb pb-new">Novo</span>':''}
           ${p.badge==='sale'&&p.old?`<span class="pb pb-sale">-${Math.round(100-(p.price/p.old*100))}%</span>`:''}
@@ -1231,7 +1211,7 @@ function filterAndGo(cat){
 function openProd(id){
   const p = S.products[id]; curProd=p;
   const main = document.getElementById('pvMain');
-  main.innerHTML = p.img?`<img src="${p.img}" alt="${p.name}">`:`<span style="font-size:140px">${p.emoji}</span>`;
+  main.innerHTML = p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`;
   document.getElementById('pvBrand').textContent = p.brand;
   document.getElementById('pvName').textContent  = p.name;
   document.getElementById('pvDesc').textContent  = p.desc;
@@ -1241,9 +1221,9 @@ function openProd(id){
 
   // thumbs
   document.getElementById('pvThumbs').innerHTML =
-    [p.img||p.emoji,p.emoji,p.emoji].map((src,i)=>
-      `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${p.img||''}','${p.emoji}')">
-         ${p.img?`<img src="${p.img}" alt="">`:`<span style="font-size:28px">${p.emoji}</span>`}
+    [p.img,p.img,p.img].map((src,i)=>
+      `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${p.img||''}')">
+         ${p.img?`<img src="${p.img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`}
        </div>`
     ).join('');
 
@@ -1263,9 +1243,9 @@ function openProd(id){
   goView('view-product');
 }
 
-function switchThumb(el,img,emoji){
+function switchThumb(el,img){
   const main=document.getElementById('pvMain');
-  main.innerHTML=img?`<img src="${img}" alt="">`:`<span style="font-size:140px">${emoji}</span>`;
+  main.innerHTML=img?`<img src="${img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`;
   document.querySelectorAll('.pv-thumb').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
 }
@@ -1285,7 +1265,7 @@ function renderWL(){
   g.innerHTML=wl.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-emoji">${p.emoji}</span>`}
+        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-hover-btns">
           <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
           <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()">♥ Remover</button>
@@ -1322,7 +1302,7 @@ function renderCart(){
   if(!cart.length){ el.innerHTML=`<div class="cd-empty"><div class="cd-empty-ico">🛍️</div><p>Carrinho vazio</p></div>`; return; }
   el.innerHTML=cart.map((it,i)=>`
     <div class="ci">
-      <div class="ci-img">${it.img?`<img src="${it.img}" alt="">`:`<span style="font-size:32px">${it.emoji}</span>`}</div>
+      <div class="ci-img">${it.img?`<img src="${it.img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
       <div class="ci-body">
         <div class="ci-name">${it.name}</div>
         <div class="ci-price">${R$(it.price)}</div>
@@ -1368,7 +1348,7 @@ function doSearch(q){
   res.innerHTML=found.length
     ? `<div class="sr-wrap">${found.map(p=>`
         <div class="sr-item" onclick="toggleSearch();openProd(${p.id})">
-          <div class="sr-img">${p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover">`:`<span>${p.emoji}</span>`}</div>
+          <div class="sr-img">${p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
           <div><div class="sr-name">${p.name}</div><div class="sr-price">${R$(p.price)}</div></div>
         </div>`).join('')}</div>`
     : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${q}"</div>`;
@@ -1457,11 +1437,46 @@ function converterProduto(p, index) {
     price: Number(p.preco),
     old:   null,
     img:   p.imagem || '',
-    emoji: '👗',
     desc:  p.descricao || p.nome,
     sizes: ['PP','P','M','G','GG'],
     badge: null
   };
+}
+
+function renderFilterBar() {
+  const fb = document.getElementById('filterBar');
+  if (!fb) return;
+  const botoes = ['<button class="flt on" onclick="filter(this,\'all\')">Todos</button>']
+    .concat(categoriasVitrine.map(c => `<button class="flt" onclick="filter(this,'${c.slug}')">${c.nome}</button>`));
+  fb.innerHTML = botoes.join('');
+}
+
+function renderCategoriasHome() {
+  const cg = document.getElementById('catsGrid');
+  if (!cg) return;
+  if (!categoriasVitrine.length) {
+    cg.innerHTML = `<div class="cat-card"><div class="cat-name">Sem categorias cadastradas</div><div class="cat-sub">Cadastre categorias no painel admin</div><div class="cat-arr">→</div></div>`;
+    return;
+  }
+  cg.innerHTML = categoriasVitrine.map(c => `
+    <div class="cat-card" onclick="filterAndGo('${c.slug}')">
+      <div class="cat-name">${c.nome}</div>
+      <div class="cat-sub">Categoria cadastrada</div>
+      <div class="cat-arr">→</div>
+    </div>`).join('');
+}
+
+async function carregarCategoriasDoServidor() {
+  try {
+    const r = await fetch(`${API_URL}/categories`);
+    if (!r.ok) throw new Error('Erro categorias');
+    const dados = await r.json();
+    categoriasVitrine = Array.isArray(dados) ? dados.filter(c => c && c.slug && c.nome) : [];
+  } catch {
+    categoriasVitrine = [];
+  }
+  renderFilterBar();
+  renderCategoriasHome();
 }
 
 // Busca produtos do banco e atualiza a vitrine
@@ -1475,12 +1490,7 @@ async function carregarProdutosDoServidor(categoria) {
     if (!r.ok) throw new Error('Erro na resposta do servidor');
     const dados = await r.json();
 
-    if (dados.length > 0) {
-      S.products = dados.map(converterProduto);
-      console.log(`✅ ${S.products.length} produto(s) carregado(s) do MongoDB`);
-    } else {
-      console.log('ℹ️ Nenhum produto no banco — exibindo produtos padrão.');
-    }
+    S.products = Array.isArray(dados) ? dados.map(converterProduto) : [];
 
     const lista = categoria && categoria !== 'all'
       ? S.products.filter(p => p.cat === categoria)
@@ -1488,14 +1498,16 @@ async function carregarProdutosDoServidor(categoria) {
 
     renderGrid(lista);
   } catch (err) {
-    console.warn('⚠️ Servidor offline — usando produtos padrão.', err.message);
-    renderGrid(S.products);
+    console.warn('⚠️ Servidor offline.', err.message);
+    S.products = [];
+    renderGrid([]);
   }
 }
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
   await carregarConfigLoja();
+  await carregarCategoriasDoServidor();
   renderHome();
   renderCart();
   syncDots();
