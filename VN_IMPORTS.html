@@ -1317,53 +1317,34 @@ function renderCart(){
 }
 
 function checkout(){
-  console.log('[checkout] S recebido:', S);
+  // Deve ser 100% controlado pelo Admin via /api/config.
+  // Regra dinâmica:
+  // 1) Se o valor do Admin começar com 'http' => abre em nova aba.
+  // 2) Se NÃO começar com 'http' (telefone/chave/número) => exibe alert com o valor.
+  //
+  // Importante: O Admin atualmente salva em campo 'chavePix' (Config.chavePix).
 
-  const chavePix = (S.chavePix && String(S.chavePix).trim()) || '';
-  const paylinkRaw = (S.paylink && String(S.paylink).trim()) || '';
+  const raw = (S.chavePix && String(S.chavePix).trim()) || '';
 
-  // Se o usuário colocar no painel um texto que comece com http, tratamos como link de pagamento.
-  if (paylinkRaw && /^https?:\/\//i.test(paylinkRaw)) {
-    window.open(paylinkRaw, '_blank');
-    return;
-  }
-
-  // Híbrido: se S.chavePix existir OU S.paylink existir, seguimos.
-  // Quando paylink não começa com http, tratamos paylink como “valor Pix” em fallback.
-  const pixKey = chavePix || '';
-  const fallbackPix = (pixKey || paylinkRaw) ? (pixKey || paylinkRaw) : '';
-
-  if (!fallbackPix) {
-    showToast('⚙️','Nenhuma chave Pix veio do banco (S.chavePix) e também não há paylink para fallback.');
+  if (!raw) {
+    alert('Chave Pix para pagamento: (vazio)');
     closeCart();
     return;
   }
 
-
-  // Heurística: se vier algo que pareça URL mesmo sem começar com http (ex.: www.), abre em vez de Pix.
-  if (/^www\./i.test(fallbackPix)) {
-    window.open('https://' + fallbackPix, '_blank');
+  if (/^https?:\/\//i.test(raw)) {
+    window.open(raw, '_blank');
     return;
   }
 
-  // Pagamento Pix direto: abre uma “URI” genérica; dependendo do provedor,
-  // isso pode abrir o app/banco. Se o seu checkout externo exigir query params,
-  // preencha paylink com a URL (começando com http) ao invés de usar Pix direto.
-  //
-  // NOTA: Nem todo gateway aceita chave Pix via URI; mas o requisito aqui é:
-  // adaptável sem travar e baseado no que foi digitado.
-  const pixValue = fallbackPix;
-  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const amountStr = Number.isFinite(total) && total > 0 ? total.toFixed(2) : '';
+  if (/^www\./i.test(raw)) {
+    window.open('https://' + raw, '_blank');
+    return;
+  }
 
-  // Tentativa de abrir Pix via “copia e cola” no provedor/cliente.
-  // Se o seu navegador/app não suportar, ele falha no pagamento—mas a chave NÃO vai ser ignorada.
-  const uri = amountStr
-    ? `pix:${encodeURIComponent(pixValue)}?amount=${encodeURIComponent(amountStr)}`
-    : `pix:${encodeURIComponent(pixValue)}`;
-
-  window.open(uri, '_blank');
+  alert('Chave Pix para pagamento: ' + raw);
 }
+
 
 
 
