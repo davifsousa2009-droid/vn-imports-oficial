@@ -1320,14 +1320,11 @@ function checkout(){
   // Deve ser 100% controlado pelo Admin via /api/config.
   // Regra dinâmica:
   // 1) Se o valor do Admin começar com 'http' => abre em nova aba.
-  // 2) Se NÃO começar com 'http' (telefone/chave/número) => exibe alert com o valor.
-  //
-  // Importante: O Admin atualmente salva em campo 'chavePix' (Config.chavePix).
-
+  // 2) Se NÃO começar com 'http' (telefone/chave/número) => abre modal luxuoso exibindo a chave.
   const raw = (S.chavePix && String(S.chavePix).trim()) || '';
 
   if (!raw) {
-    alert('Chave Pix para pagamento: (vazio)');
+    showPixModal('', true);
     closeCart();
     return;
   }
@@ -1342,8 +1339,101 @@ function checkout(){
     return;
   }
 
-  alert('Chave Pix para pagamento: ' + raw);
+  showPixModal(raw, false);
 }
+
+function showPixModal(pixValue, isEmpty){
+  const EXIST_ID = 'pixModalVn';
+  const existing = document.getElementById(EXIST_ID);
+  if (existing) existing.remove();
+
+  const darkOverlay = document.createElement('div');
+  darkOverlay.id = 'pixModalOverlayVn';
+  darkOverlay.style.position = 'fixed';
+  darkOverlay.style.inset = '0';
+  darkOverlay.style.background = 'rgba(0,0,0,.62)';
+  darkOverlay.style.backdropFilter = 'blur(6px)';
+  darkOverlay.style.zIndex = '2000';
+  darkOverlay.style.display = 'flex';
+  darkOverlay.style.alignItems = 'center';
+  darkOverlay.style.justifyContent = 'center';
+
+  const modal = document.createElement('div');
+  modal.id = EXIST_ID;
+  modal.style.width = 'min(560px, 94vw)';
+  modal.style.background = '#0F0F0F';
+  modal.style.border = '1px solid rgba(196,165,90,.35)';
+  modal.style.borderRadius = '16px';
+  modal.style.boxShadow = '0 18px 70px rgba(0,0,0,.55)';
+  modal.style.overflow = 'hidden';
+
+  const styles = `
+    .vn-pix-header{padding:18px 20px;border-bottom:1px solid rgba(196,165,90,.25);display:flex;align-items:center;justify-content:space-between}
+    .vn-pix-title{font-family:var(--serif);font-size:18px;font-weight:400;color:#F7F4F0}
+    .vn-pix-sub{font-family:var(--sans);font-size:12px;color:rgba(196,165,90,.9);letter-spacing:.12em;text-transform:uppercase}
+    .vn-pix-body{padding:18px 20px}
+    .vn-pix-label{font-family:var(--sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(247,244,240,.45);margin-bottom:10px}
+    .vn-pix-value{font-family:var(--sans);font-size:14px;color:#F7F4F0;word-break:break-word;background:rgba(196,165,90,.08);border:1px solid rgba(196,165,90,.25);padding:12px 12px;border-radius:12px;margin-bottom:16px}
+    .vn-pix-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .vn-pix-btn{border:none;cursor:pointer;transition:transform .12s, background .2s, border-color .2s; font-family:var(--sans); letter-spacing:.08em; text-transform:uppercase; font-size:11px; font-weight:800; padding:12px 14px; border-radius:12px}
+    .vn-pix-btn.primary{background:#9A7A3A;color:#fff}
+    .vn-pix-btn.primary:hover{background:#7d6330;transform:translateY(-1px)}
+    .vn-pix-btn.ghost{background:transparent;color:#F7F4F0;border:1px solid rgba(247,244,240,.18)}
+    .vn-pix-btn.ghost:hover{border-color:rgba(196,165,90,.6);transform:translateY(-1px)}
+    .vn-pix-close{width:34px;height:34px;border-radius:10px;border:1px solid rgba(247,244,240,.18);background:transparent;color:#F7F4F0;cursor:pointer}
+    .vn-pix-close:hover{border-color:rgba(196,165,90,.6)}
+  `;
+
+  modal.innerHTML = `
+    <style>${styles}</style>
+    <div class="vn-pix-header">
+      <div>
+        <div class="vn-pix-sub">Pagamento Seguro</div>
+        <div class="vn-pix-title">Finalize seu Pagamento</div>
+      </div>
+      <button class="vn-pix-close" aria-label="Fechar" onclick="(function(){var o=document.getElementById('pixModalVn'); if(o) o.parentElement && o.parentElement.remove();})()">✕</button>
+    </div>
+    <div class="vn-pix-body">
+      <div class="vn-pix-label">Chave Pix para pagamento</div>
+      <div class="vn-pix-value">${isEmpty ? '— (não configurada)' : String(pixValue)}</div>
+      <div class="vn-pix-actions">
+        <button class="vn-pix-btn primary" id="vnPixCopyBtn" ${isEmpty ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>Copiar Chave Pix</button>
+        <button class="vn-pix-btn ghost" onclick="(function(){var o=document.getElementById('pixModalVn'); if(o) o.parentElement && o.parentElement.remove();})()">Fechar</button>
+      </div>
+    </div>
+  `;
+
+  darkOverlay.appendChild(modal);
+  document.body.appendChild(darkOverlay);
+
+  if (!isEmpty) {
+    const btn = document.getElementById('vnPixCopyBtn');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(String(pixValue));
+        showToast('✓','Chave Pix copiada!');
+      } catch {
+        // fallback de cópia
+        const ta = document.createElement('textarea');
+        ta.value = String(pixValue);
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('✓','Chave Pix copiada!');
+      }
+    });
+  }
+
+  darkOverlay.addEventListener('click', (e) => {
+    if (e.target === darkOverlay) {
+      darkOverlay.remove();
+    }
+  });
+}
+
 
 
 
