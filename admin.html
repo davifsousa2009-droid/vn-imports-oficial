@@ -223,7 +223,7 @@ tr:hover td{background:#FAFAF8}
             <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
           </div>
           <div class="form-btns">
-            <button class="btn btn-p" onclick="salvar()">Salvar produto</button>
+            <button class="btn btn-p" id="btnSalvarProduto" onclick="salvar()">Salvar produto</button>
             <button class="btn btn-g" onclick="limpar()">Limpar</button>
           </div>
           <div class="fmsg" id="fmsg"></div>
@@ -517,15 +517,46 @@ function showPanel(name, el) {
 async function checkStatus() {
   try {
     const r = await fetch(API + '/status');
+    if (!r.ok) throw new Error('status http ' + r.status);
     const d = await r.json();
-    const ok = d.banco === 'conectado';
+    const bancoTxt = String(d?.banco ?? '').toLowerCase();
+    const ok =
+      d?.isConnected === true ||
+      bancoTxt === 'conectado' ||
+      (bancoTxt.includes('conectado') && !bancoTxt.includes('desconectado'));
+
     document.getElementById('sDot').classList.toggle('on', ok);
     document.getElementById('sTxt').textContent = ok
       ? 'Online · MongoDB conectado'
       : 'Online · Banco desconectado';
+
+    const btnSalvar = document.getElementById('btnSalvarProduto');
+    if (btnSalvar) {
+      btnSalvar.disabled = !ok;
+      btnSalvar.style.opacity = ok ? '1' : '.55';
+      btnSalvar.style.cursor = ok ? 'pointer' : 'not-allowed';
+      btnSalvar.title = ok ? '' : 'Banco de dados indisponível no momento.';
+    }
+
+    // Se o banco voltou, limpa alerta vermelho antigo de cadastro.
+    if (ok) {
+      const msg = document.getElementById('fmsg');
+      if (msg?.classList.contains('er')) {
+        msg.style.display = 'none';
+        msg.className = 'fmsg';
+      }
+    }
   } catch {
     document.getElementById('sDot').classList.remove('on');
     document.getElementById('sTxt').textContent = 'Servidor offline';
+
+    const btnSalvar = document.getElementById('btnSalvarProduto');
+    if (btnSalvar) {
+      btnSalvar.disabled = true;
+      btnSalvar.style.opacity = '.55';
+      btnSalvar.style.cursor = 'not-allowed';
+      btnSalvar.title = 'Servidor offline.';
+    }
   }
 }
 
