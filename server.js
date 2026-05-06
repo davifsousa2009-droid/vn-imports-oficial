@@ -15,7 +15,7 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const shopConfig = require('./shopConfig');
+const shopConfig = require('./config');
 
 /** Normaliza valor de JWT vindo do painel (.trim(), BOM, aspas externas opcionais). */
 function normalizeJwtEnvValue(raw) {
@@ -164,6 +164,16 @@ async function deleteCloudinaryAssetIfApplicable(url) {
   } catch (e) {
     console.warn('Cloudinary destroy:', e.message);
   }
+}
+
+function slugifyTenantTag(v) {
+  return String(v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'loja';
 }
 
 // ── MIDDLEWARES ────────────────────────────────────────
@@ -347,11 +357,25 @@ app.post('/api/upload', verificarSenha, (req, res) => {
       return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
     }
     try {
+      let tenantTag = slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja);
+      try {
+        if (await tryConnectDb()) {
+          const cfg = await Config.findOne().lean();
+          tenantTag = slugifyTenantTag(
+            cfg?.clienteTag || cfg?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja
+          );
+        }
+      } catch (e) {
+        console.warn('Cloudinary tenant tag fallback:', e.message);
+      }
+
       const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const result = await cloudinary.uploader.upload(dataUri, undefined, {
-        folder: 'vn-imports',
+        folder: `shops/${tenantTag}`,
         resource_type: 'image',
-        unique_filename: true
+        unique_filename: true,
+        tags: [`shop:${tenantTag}`, `tenant:${tenantTag}`],
+        public_id_prefix: `tenant-${tenantTag}`
       });
       const secureUrl = result.secure_url;
       res.status(201).json({ path: secureUrl, mensagem: 'Upload concluído.' });
@@ -582,7 +606,13 @@ app.delete('/api/banners/:id', verificarJWT, async (req, res) => {
 // --- CONFIGURAÇÃO DA LOJA ---
 const ConfigSchema = new mongoose.Schema({
   nomeLoja: { type: String, default: shopConfig.nomeLoja },
-  chavePix: { type: String, default: '' }
+  chavePix: { type: String, default: '' },
+  corPrimaria: { type: String, default: shopConfig.corPrimaria },
+  corSecundaria: { type: String, default: shopConfig.corSecundaria },
+  whatsappContato: { type: String, default: shopConfig.whatsappContato },
+  instagramLink: { type: String, default: shopConfig.instagramLink },
+  emailContato: { type: String, default: shopConfig.emailContato },
+  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) }
 });
 
 const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
@@ -590,41 +620,83 @@ const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 function mergePublicConfig(doc) {
   const nomeDb = doc?.nomeLoja?.trim();
   const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
+  const corPrimaria = String(doc?.corPrimaria || shopConfig.corPrimaria || '').trim();
+  const corSecundaria = String(doc?.corSecundaria || shopConfig.corSecundaria || '').trim();
+  const colorsMerged = {
+    ...(shopConfig.colors || {}),
+    ...(corPrimaria ? { gold: corPrimaria } : {}),
+    ...(corSecundaria ? { gold2: corSecundaria } : {})
+  };
   return {
     nomeLoja: nomeDb || shopConfig.nomeLoja,
     chavePix: pixDb || (shopConfig.chavePix || '').trim(),
-    colors: shopConfig.colors || {},
+    corPrimaria: corPrimaria || shopConfig.corPrimaria || '',
+    corSecundaria: corSecundaria || shopConfig.corSecundaria || '',
+    whatsappContato: String(doc?.whatsappContato || shopConfig.whatsappContato || '').trim(),
+    instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
+    emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
+    clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
+    colors: colorsMerged,
     pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium'
   };
 }
 
 // Rota pública para o site ler nome da loja, PIX e tema (shopConfig + Mongo)
+// Observação: não usamos cache para garantir que alterações feitas no admin
+// sejam refletidas imediatamente na vitrine.
 app.get('/api/config', async (req, res) => {
   let doc = null;
-  if (await tryConnectDb()) {
-    try {
-      doc = await Config.findOne();
+  try {
+    if (await tryConnectDb()) {
+      doc = await Config.findOne().lean();
       if (!doc) {
         doc = await Config.create({
           nomeLoja: shopConfig.nomeLoja,
-          chavePix: shopConfig.chavePix || ''
+          chavePix: shopConfig.chavePix || '',
+          corPrimaria: shopConfig.corPrimaria,
+          corSecundaria: shopConfig.corSecundaria,
+          whatsappContato: shopConfig.whatsappContato,
+          instagramLink: shopConfig.instagramLink,
+          emailContato: shopConfig.emailContato,
+          clienteTag: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja)
         });
+        doc = doc?.toObject ? doc.toObject() : doc;
       }
-    } catch (e) {
-      console.warn('GET /api/config:', e.message);
     }
+  } catch (e) {
+    console.warn('GET /api/config:', e.message);
   }
+
   res.json(mergePublicConfig(doc));
 });
+
 
 // Rota protegida para o admin salvar configurações
 app.post('/api/config', verificarSenha, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nomeLoja, chavePix } = req.body;
+    const {
+      nomeLoja,
+      chavePix,
+      corPrimaria,
+      corSecundaria,
+      whatsappContato,
+      instagramLink,
+      emailContato,
+      clienteTag
+    } = req.body;
     const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
     if (chavePix !== undefined) {
       dados.chavePix = String(chavePix).trim();
+    }
+    if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
+    if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
+    if (whatsappContato !== undefined) dados.whatsappContato = String(whatsappContato).trim();
+    if (instagramLink !== undefined) dados.instagramLink = String(instagramLink).trim();
+    if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
+    if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
+    if (!dados.clienteTag) {
+      dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
     }
     const atualizado = await Config.findOneAndUpdate({}, dados, {
       upsert: true,

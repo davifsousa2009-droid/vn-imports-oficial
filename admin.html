@@ -297,7 +297,7 @@ tr:hover td{background:#FAFAF8}
       <!-- CONFIGURAÇÃO -->
       <div class="panel" id="panel-config">
         <div class="card">
-          <div class="card-title">Identidade da Loja</div>
+          <div class="card-title">Identidade da Loja (White-Label)</div>
           <div class="fg2">
             <div class="fg fw">
               <label class="fl">Nome da Loja</label>
@@ -306,6 +306,26 @@ tr:hover td{background:#FAFAF8}
             <div class="fg fw">
               <label class="fl">Chave PIX</label>
               <input class="fi" id="cfg-chavePix" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" type="text" autocomplete="off">
+            </div>
+            <div class="fg">
+              <label class="fl">Cor Primária</label>
+              <input class="fi" id="cfg-corPrimaria" placeholder="#9A7A3A" type="text">
+            </div>
+            <div class="fg">
+              <label class="fl">Cor Secundária</label>
+              <input class="fi" id="cfg-corSecundaria" placeholder="#C4A55A" type="text">
+            </div>
+            <div class="fg fw">
+              <label class="fl">WhatsApp de Contato</label>
+              <input class="fi" id="cfg-whatsappContato" placeholder="+5511999990000" type="text">
+            </div>
+            <div class="fg fw">
+              <label class="fl">Link do Instagram</label>
+              <input class="fi" id="cfg-instagramLink" placeholder="https://instagram.com/sualoja" type="url">
+            </div>
+            <div class="fg fw">
+              <label class="fl">E-mail de Contato</label>
+              <input class="fi" id="cfg-emailContato" placeholder="contato@sualoja.com" type="email">
             </div>
           </div>
           <div class="form-btns">
@@ -1032,17 +1052,35 @@ async function loadConfig() {
     const r = await fetch(API + '/config');
     if (!r.ok) throw new Error('Sem resposta');
     const d = await r.json();
-    document.getElementById('cfg-nomeLoja').value = d.nomeLoja || 'VN IMPORTS';
+    document.getElementById('cfg-nomeLoja').value = d.nomeLoja || 'Minha Loja';
     document.getElementById('cfg-chavePix').value = d.chavePix != null ? String(d.chavePix) : '';
+    document.getElementById('cfg-corPrimaria').value = d.corPrimaria || '';
+    document.getElementById('cfg-corSecundaria').value = d.corSecundaria || '';
+    document.getElementById('cfg-whatsappContato').value = d.whatsappContato || '';
+    document.getElementById('cfg-instagramLink').value = d.instagramLink || '';
+    document.getElementById('cfg-emailContato').value = d.emailContato || '';
+    const logo = document.querySelector('.sb-logo');
+    if (logo && d.nomeLoja) logo.childNodes[0].textContent = d.nomeLoja;
+    if (d.nomeLoja) document.title = `Admin — ${d.nomeLoja}`;
   } catch {
-    document.getElementById('cfg-nomeLoja').value = 'VN IMPORTS';
+    document.getElementById('cfg-nomeLoja').value = 'Minha Loja';
     document.getElementById('cfg-chavePix').value = '';
+    document.getElementById('cfg-corPrimaria').value = '';
+    document.getElementById('cfg-corSecundaria').value = '';
+    document.getElementById('cfg-whatsappContato').value = '';
+    document.getElementById('cfg-instagramLink').value = '';
+    document.getElementById('cfg-emailContato').value = '';
   }
 }
 
 async function salvarConfig() {
   const nomeLoja = document.getElementById('cfg-nomeLoja').value.trim();
   const chavePix = document.getElementById('cfg-chavePix').value.trim();
+  const corPrimaria = document.getElementById('cfg-corPrimaria').value.trim();
+  const corSecundaria = document.getElementById('cfg-corSecundaria').value.trim();
+  const whatsappContato = document.getElementById('cfg-whatsappContato').value.trim();
+  const instagramLink = document.getElementById('cfg-instagramLink').value.trim();
+  const emailContato = document.getElementById('cfg-emailContato').value.trim();
   const msg      = document.getElementById('cfgmsg');
 
   if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
@@ -1054,7 +1092,15 @@ async function salvarConfig() {
         'Content-Type': 'application/json',
         'x-admin-password': obterSenha()
       },
-      body: JSON.stringify({ nomeLoja, chavePix })
+      body: JSON.stringify({
+        nomeLoja,
+        chavePix,
+        corPrimaria,
+        corSecundaria,
+        whatsappContato,
+        instagramLink,
+        emailContato
+      })
     });
 
     const d = await r.json();
@@ -1062,6 +1108,8 @@ async function salvarConfig() {
     if (r.ok) {
       showMsg(msg, 'Configuração salva.', 'ok');
       toast('Configuração da loja atualizada');
+      const logo = document.querySelector('.sb-logo');
+      if (logo) logo.childNodes[0].textContent = nomeLoja;
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
@@ -1078,6 +1126,7 @@ checkAuthGate();
 checkStatus();
 loadStats();
 refreshCategorias();
+loadConfig();
 setInterval(checkStatus, 30000);
 </script>
 </body>

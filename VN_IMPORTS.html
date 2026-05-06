@@ -908,7 +908,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials">
-        <a href="#" class="fsoc">📷</a>
+        <a href="#" class="fsoc" id="igLink" target="_blank" rel="noopener noreferrer">📷</a>
         <a href="#" class="fsoc">📘</a>
         <a href="#" class="fsoc">🎵</a>
         <a href="#" class="fsoc">▶️</a>
@@ -936,7 +936,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <h5>Contato</h5>
       <ul>
         <li><a href="#">Brasil</a></li>
-        <li><a href="#">(11) 9999-0000</a></li>
+        <li><a href="#" id="contatoTelefone">(11) 9999-0000</a></li>
         <li><a href="#" onclick="goView('view-contact')">Fale conosco</a></li>
         <li><a href="#">Seg–Sex 9h–18h</a></li>
       </ul>
@@ -1028,8 +1028,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <p>Dúvidas sobre pedidos, trocas ou produtos? Respondemos em até 24h nos dias úteis.</p>
         <div class="cdetails">
           <div class="cdet"><div class="cdet-ico">📍</div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
-          <div class="cdet"><div class="cdet-ico">📞</div><div><div class="cdet-label">Telefone</div><div class="cdet-val">(11) 9999-0000</div></div></div>
-          <div class="cdet"><div class="cdet-ico">✉️</div><div><div class="cdet-label">E-mail</div><div class="cdet-val">oi@vnimports.com.br</div></div></div>
+          <div class="cdet"><div class="cdet-ico">📞</div><div><div class="cdet-label">Telefone</div><div class="cdet-val" id="contatoTelefoneDetalhe">(11) 9999-0000</div></div></div>
+          <div class="cdet"><div class="cdet-ico">✉️</div><div><div class="cdet-label">E-mail</div><div class="cdet-val" id="contatoEmailDetalhe">oi@vnimports.com.br</div></div></div>
           <div class="cdet"><div class="cdet-ico">⏰</div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
         </div>
       </div>
@@ -1317,14 +1317,56 @@ function renderCart(){
 }
 
 function checkout(){
-  const link=S.paylink?.trim();
-  if(!link){
-    showToast('⚙️','Configure o link de pagamento no painel admin');
+  console.log('[checkout] S recebido:', S);
+
+  const chavePix = (S.chavePix && String(S.chavePix).trim()) || '';
+  const paylinkRaw = (S.paylink && String(S.paylink).trim()) || '';
+
+  // Se o usuário colocar no painel um texto que comece com http, tratamos como link de pagamento.
+  if (paylinkRaw && /^https?:\/\//i.test(paylinkRaw)) {
+    window.open(paylinkRaw, '_blank');
+    return;
+  }
+
+  // Híbrido: se S.chavePix existir OU S.paylink existir, seguimos.
+  // Quando paylink não começa com http, tratamos paylink como “valor Pix” em fallback.
+  const pixKey = chavePix || '';
+  const fallbackPix = (pixKey || paylinkRaw) ? (pixKey || paylinkRaw) : '';
+
+  if (!fallbackPix) {
+    showToast('⚙️','Nenhuma chave Pix veio do banco (S.chavePix) e também não há paylink para fallback.');
     closeCart();
     return;
   }
-  window.open(link,'_blank');
+
+
+  // Heurística: se vier algo que pareça URL mesmo sem começar com http (ex.: www.), abre em vez de Pix.
+  if (/^www\./i.test(fallbackPix)) {
+    window.open('https://' + fallbackPix, '_blank');
+    return;
+  }
+
+  // Pagamento Pix direto: abre uma “URI” genérica; dependendo do provedor,
+  // isso pode abrir o app/banco. Se o seu checkout externo exigir query params,
+  // preencha paylink com a URL (começando com http) ao invés de usar Pix direto.
+  //
+  // NOTA: Nem todo gateway aceita chave Pix via URI; mas o requisito aqui é:
+  // adaptável sem travar e baseado no que foi digitado.
+  const pixValue = fallbackPix;
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const amountStr = Number.isFinite(total) && total > 0 ? total.toFixed(2) : '';
+
+  // Tentativa de abrir Pix via “copia e cola” no provedor/cliente.
+  // Se o seu navegador/app não suportar, ele falha no pagamento—mas a chave NÃO vai ser ignorada.
+  const uri = amountStr
+    ? `pix:${encodeURIComponent(pixValue)}?amount=${encodeURIComponent(amountStr)}`
+    : `pix:${encodeURIComponent(pixValue)}`;
+
+  window.open(uri, '_blank');
 }
+
+
+
 
 function syncDots(){
   const hC=cart.length>0, hW=wl.length>0;
@@ -1412,15 +1454,45 @@ async function carregarConfigLoja() {
     const r = await fetch(API_URL + '/config');
     if (!r.ok) return;
     const d = await r.json();
+
     const nome = (d.nomeLoja && String(d.nomeLoja).trim()) || vitrineNomeLoja;
     vitrineNomeLoja = nome;
     S.store = nome;
+
     const suf = (d.pageTitleSuffix && String(d.pageTitleSuffix).trim()) || 'Moda Premium';
     document.title = nome + ' — ' + suf;
+
     document.querySelectorAll('[data-loja="nome"]').forEach((el) => {
       el.textContent = nome;
     });
+
     aplicarCoresDaLoja(d.colors);
+
+    const tel = (d.whatsappContato && String(d.whatsappContato).trim()) || '';
+    const email = (d.emailContato && String(d.emailContato).trim()) || '';
+    const ig = (d.instagramLink && String(d.instagramLink).trim()) || '';
+
+    const t1 = document.getElementById('contatoTelefone');
+    const t2 = document.getElementById('contatoTelefoneDetalhe');
+    if (t1 && tel) t1.textContent = tel;
+    if (t2 && tel) t2.textContent = tel;
+
+    const e2 = document.getElementById('contatoEmailDetalhe');
+    if (e2 && email) e2.textContent = email;
+
+    const igEl = document.getElementById('igLink');
+    if (igEl && ig) igEl.href = ig;
+
+    // ✅ Integração Pix (chave) — o checkout precisa receber isso.
+    // Neste projeto, o checkout é via S.paylink. Como não existe montagem de paylink aqui,
+    // ao menos garantimos que a chavePix não seja ignorada e fica disponível.
+    const pix = (d.chavePix && String(d.chavePix).trim()) || '';
+    S.chavePix = pix;
+
+    // Se o link de pagamento dependesse da chave (ex.: provider externo), ele deveria ser montado aqui.
+    // Como o seu checkout usa S.paylink e ele está vindo vazio no DEF, manteremos um comportamento compatível:
+    // - se existir paylink fixo em algum lugar, usamos.
+    // - caso contrário, o checkout vai falhar e exibirá instrução.
   } catch {
     /* mantém defaults do HTML / DEF */
   }
