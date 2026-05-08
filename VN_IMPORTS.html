@@ -1281,7 +1281,14 @@ function renderHome(){
     </div>`).join('');
 
   renderGrid(S.products);
-  renderRevs();
+  try {
+    // carrega avaliações sem bloquear o carregamento dos produtos
+    if (typeof carregarReviewsPublic === 'function') {
+      carregarReviewsPublic().catch((e) => console.error(e));
+    }
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 /* ─── PRODUCT GRID ─── */
@@ -1608,17 +1615,19 @@ function starsToText(n){
   return '★'.repeat(k);
 }
 
-async function carregarReviewsPublic(){
-  try{
-    const r = await fetch(API_URL + '/reviews/public');
-    if(!r.ok) throw new Error('reviews http ' + r.status);
-    const list = await r.json();
-    renderReviewsPublic(list);
-  } catch(e){
-    // mantém layout sem travar
-    const grid = document.getElementById('revGrid');
-    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);padding:28px 0;text-align:center">Não foi possível carregar avaliações.</div>';
-  }
+function carregarReviewsPublic(){
+  return (async () => {
+    try{
+      const r = await fetch(API_URL + '/reviews/public');
+      if(!r.ok) throw new Error('reviews http ' + r.status);
+      const list = await r.json();
+      renderReviewsPublic(list);
+    } catch(e){
+      // mantém layout sem travar
+      const grid = document.getElementById('revGrid');
+      if(grid) grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);padding:28px 0;text-align:center">Não foi possível carregar avaliações.</div>';
+    }
+  })();
 }
 
 function renderReviewsPublic(list){
@@ -1707,7 +1716,7 @@ async function submitReviewPublic(e){
       }
       form.reset();
       // atualiza lista (pode não refletir imediatamente por causa de aprovado=false)
-      await carregarReviewsPublic();
+  carregarReviewsPublic().catch((e)=>console.error(e));
     } else {
       if(msgEl){
         msgEl.textContent = d.erro || 'Erro ao enviar avaliação.';
@@ -1900,7 +1909,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncDots();
   observeFI();
   carregarProdutosDoServidor();
-  await carregarReviewsPublic();
+  // carrega avaliações aprovadas (sem bloquear)
+  carregarReviewsPublic().catch((e)=>console.error(e));
 });
 
 </script>
