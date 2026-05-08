@@ -315,6 +315,86 @@ nav{
   padding-bottom:48px;margin-bottom:48px;
   border-bottom:1px solid var(--border);flex-wrap:wrap;
 }
+
+/* Luxo preto + dourado (vitrine de depoimentos) */
+.reviews-lux{
+  background:#0F0F0F;
+  border:1px solid rgba(196,165,90,.35);
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 18px 70px rgba(0,0,0,.25);
+  margin-bottom:40px;
+}
+.reviews-lux-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+
+.reviews-lux .rev-card{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(217,212,204,.22);
+  padding:22px;
+  color:var(--bg);
+}
+.reviews-lux .rc-stars{color:var(--gold);font-size:14px;letter-spacing:2px;}
+.reviews-lux .rc-text{color:rgba(247,244,240,.82)}
+.reviews-lux .rc-date{color:rgba(247,244,240,.6)}
+.reviews-lux .rc-name{color:rgba(247,244,240,.92)}
+.reviews-lux .rc-badge{color:rgba(46,107,71,.95)}
+.reviews-lux .rc-av{
+  border-color:rgba(196,165,90,.28);
+  background:rgba(196,165,90,.08);
+}
+
+/* Form público */
+.reviews-form{
+  background:rgba(0,0,0,.12);
+  border:1px solid var(--border);
+  padding:26px;
+  border-radius:18px;
+}
+.reviews-form-title{
+  font-family:var(--serif);
+  font-size:26px;
+  font-weight:400;
+  margin-bottom:6px;
+}
+.reviews-form-sub{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:18px;
+  line-height:1.6;
+}
+
+.rev-fg{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.rev-fg:last-child{margin-bottom:0}
+.rev-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rev-fl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rev-inp{
+  width:100%;
+  background:rgba(255,255,255,.92);
+  border:1px solid var(--border);
+  padding:12px 15px;
+  font-size:14px;
+  color:var(--ink);
+  outline:none;
+  transition:border-color .2s, background .2s;
+}
+.rev-inp:focus{border-color:var(--gold2);background:#fff}
+.rev-area{min-height:110px;resize:vertical;line-height:1.6}
+.rev-stars-hint{font-size:12px;letter-spacing:2px;color:var(--gold);padding:10px 0}
+.rev-actions{margin-top:18px}
+.rev-form-msg{margin-top:12px;font-size:13px;font-weight:600}
+
+@media(max-width:1024px){
+  .reviews-lux-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .reviews-lux-grid{grid-template-columns:1fr}
+  .rev-2{grid-template-columns:1fr}
+}
+
 .rev-avg-num{font-family:var(--serif);font-size:76px;font-weight:400;line-height:1;color:var(--ink)}
 .rev-avg-stars{font-size:20px;color:var(--gold);letter-spacing:3px}
 .rev-avg-label{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.06em}
@@ -873,21 +953,67 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <h2 class="sec-title">O que dizem sobre <em>nós</em></h2>
       </div>
     </div>
-    <div class="rev-summary fi">
+    <div class="rev-summary fi" id="revSummary">
       <div>
-        <div class="rev-avg-num">4.9</div>
-        <div class="rev-avg-stars">★★★★★</div>
-        <div class="rev-avg-label">127 avaliações verificadas</div>
+        <div class="rev-avg-num" id="revAvgNum">—</div>
+        <div class="rev-avg-stars" id="revAvgStars">★★★★★</div>
+        <div class="rev-avg-label" id="revAvgLabel">—</div>
       </div>
-      <div class="rev-bars">
-        <div class="rbar-row">5★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="93%"></div></div>93%</div>
-        <div class="rbar-row">4★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="5%"></div></div>5%</div>
-        <div class="rbar-row">3★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
-        <div class="rbar-row">2★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="1%"></div></div>1%</div>
-        <div class="rbar-row">1★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%"></div></div>0%</div>
+      <div class="rev-bars" id="revBars">
+        <div class="rbar-row">5★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar5"></div></div><span id="revBar5Txt">0%</span></div>
+        <div class="rbar-row">4★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar4"></div></div><span id="revBar4Txt">0%</span></div>
+        <div class="rbar-row">3★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar3"></div></div><span id="revBar3Txt">0%</span></div>
+        <div class="rbar-row">2★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar2"></div></div><span id="revBar2Txt">0%</span></div>
+        <div class="rbar-row">1★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar1"></div></div><span id="revBar1Txt">0%</span></div>
       </div>
     </div>
-    <div class="rev-grid" id="revGrid"></div>
+
+    <!-- Seção luxuosa (preto e dourado) para depoimentos aprovados -->
+    <div class="reviews-lux" id="reviewsLuxWrap">
+      <div class="reviews-lux-grid" id="revGrid"></div>
+    </div>
+
+    <!-- Formulário público -->
+    <div class="reviews-form" id="revForm">
+      <div class="reviews-form-title">Envie sua avaliação</div>
+      <div class="reviews-form-sub">Seu feedback ajuda outras clientes a escolher com segurança.</div>
+
+      <form id="revPublicForm" onsubmit="submitReviewPublic(event)">
+        <div class="rev-fg">
+          <label class="rev-fl">Seu nome</label>
+          <input class="rev-inp" id="revNome" type="text" maxlength="80" required placeholder="Ex: Mariana C.">
+        </div>
+
+        <div class="rev-fg rev-2">
+          <div class="rev-fg">
+            <label class="rev-fl">Estrelas (1 a 5)</label>
+            <select class="rev-inp" id="revEstrelas" required>
+              <option value="">Selecione</option>
+              <option value="1">1 ★</option>
+              <option value="2">2 ★</option>
+              <option value="3">3 ★</option>
+              <option value="4">4 ★</option>
+              <option value="5">5 ★</option>
+            </select>
+          </div>
+          <div class="rev-fg">
+            <label class="rev-fl">Amostra de carinho</label>
+            <div class="rev-stars-hint">★ ★ ★ ★ ★</div>
+          </div>
+        </div>
+
+        <div class="rev-fg">
+          <label class="rev-fl">Comentário</label>
+          <textarea class="rev-inp rev-area" id="revComentario" maxlength="2000" required placeholder="Conte rapidamente como foi sua experiência…"></textarea>
+        </div>
+
+        <div class="rev-actions">
+          <button type="submit" class="btn-fill">Enviar avaliação →</button>
+        </div>
+        <div class="rev-form-msg" id="revFormMsg" style="display:none"></div>
+      </form>
+    </div>
+
   </div>
 </div>
 
@@ -1467,19 +1593,137 @@ function doSearch(q){
     : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${q}"</div>`;
 }
 
-/* ─── REVIEWS ─── */
-function renderRevs(){
-  document.getElementById('revGrid').innerHTML=S.reviews.map(r=>`
-    <div class="rev-card fi">
-      <div class="rc-stars">${'★'.repeat(r.stars)}</div>
-      <div class="rc-text">"${r.text}"</div>
-      <div class="rc-author">
-        <div class="rc-av">${r.av}</div>
-        <div><div class="rc-name">${r.name}</div><div class="rc-date">${r.date}</div><div class="rc-badge">✓ Compra verificada</div></div>
-      </div>
-    </div>`).join('');
+/* ─── REVIEWS (Dinâmicas) ─── */
+function escHtml(s){
+  return String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'<')
+    .replace(/>/g,'>')
+    .replace(/"/g,'"')
+    .replace(/'/g,'&#039;');
+}
+
+function starsToText(n){
+  const k = Math.max(1, Math.min(5, Number(n)||0));
+  return '★'.repeat(k);
+}
+
+async function carregarReviewsPublic(){
+  try{
+    const r = await fetch(API_URL + '/reviews/public');
+    if(!r.ok) throw new Error('reviews http ' + r.status);
+    const list = await r.json();
+    renderReviewsPublic(list);
+  } catch(e){
+    // mantém layout sem travar
+    const grid = document.getElementById('revGrid');
+    if(grid) grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);padding:28px 0;text-align:center">Não foi possível carregar avaliações.</div>';
+  }
+}
+
+function renderReviewsPublic(list){
+  const safe = Array.isArray(list) ? list : [];
+
+  // Summary
+  const total = safe.length;
+  if(total === 0){
+    document.getElementById('revAvgNum').textContent = '—';
+    document.getElementById('revAvgLabel').textContent = '0 avaliações';
+    [1,2,3,4,5].forEach(i=>{
+      const bar = document.getElementById('revBar'+i);
+      const txt = document.getElementById('revBar'+i+'Txt');
+      if(bar){ bar.style.width = '0%'; bar.dataset.w = '0%'; }
+      if(txt) txt.textContent = '0%';
+    });
+  } else {
+    const avg = safe.reduce((s,x)=>s + (Number(x.estrelas)||0),0) / total;
+    document.getElementById('revAvgNum').textContent = (Math.round(avg*10)/10).toString();
+    document.getElementById('revAvgLabel').textContent = `${total} avaliação${total===1?'':'es'}`;
+
+    // Distribuição por estrela
+    const counts = {1:0,2:0,3:0,4:0,5:0};
+    safe.forEach(r=>{ counts[Number(r.estrelas)||0] = (counts[Number(r.estrelas)||0]||0) + 1; });
+    [1,2,3,4,5].forEach(i=>{
+      const pct = Math.round((counts[i] / total) * 100);
+      const bar = document.getElementById('revBar'+i);
+      const txt = document.getElementById('revBar'+i+'Txt');
+      if(bar){ bar.style.width = pct+'%'; bar.dataset.w = pct+'%'; }
+      if(txt) txt.textContent = pct+'%';
+    });
+  }
+
+  // Grid luxuoso
+  const grid = document.getElementById('revGrid');
+  if(!grid) return;
+
+  grid.innerHTML = safe.map(r=>{
+    const stars = '★'.repeat(Math.max(1, Math.min(5, Number(r.estrelas)||0)));
+    const texto = escHtml(r.comentario);
+    const nome = escHtml(r.nome);
+    const dt = r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '';
+    return `
+      <div class="rev-card fi">
+        <div class="rc-stars">${stars}</div>
+        <div class="rc-text">"${texto}"</div>
+        <div class="rc-author">
+          <div class="rc-av">${nome.trim().slice(0,1).toUpperCase()}</div>
+          <div>
+            <div class="rc-name">${nome}</div>
+            <div class="rc-date">${dt}</div>
+            <div class="rc-badge">✓ Depoimento</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
   observeFI();
 }
+
+async function submitReviewPublic(e){
+  e.preventDefault();
+  const msgEl = document.getElementById('revFormMsg');
+  const form = document.getElementById('revPublicForm');
+
+  const nome = document.getElementById('revNome').value.trim();
+  const estrelas = Number(document.getElementById('revEstrelas').value);
+  const comentario = document.getElementById('revComentario').value.trim();
+
+  if(!nome){ if(msgEl){ msgEl.textContent='Informe seu nome.'; msgEl.style.display='block'; msgEl.style.color='var(--red)'; } return; }
+  if(!Number.isFinite(estrelas) || estrelas < 1 || estrelas > 5){ if(msgEl){ msgEl.textContent='Escolha estrelas entre 1 e 5.'; msgEl.style.display='block'; msgEl.style.color='var(--red)'; } return; }
+  if(!comentario){ if(msgEl){ msgEl.textContent='Escreva um comentário.'; msgEl.style.display='block'; msgEl.style.color='var(--red)'; } return; }
+
+  try{
+    const r = await fetch(API_URL + '/reviews', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ nome, estrelas, comentario })
+    });
+    const d = await r.json().catch(()=>({}));
+    if(r.ok){
+      if(msgEl){
+        msgEl.textContent='Recebido! Seu depoimento ficará disponível após aprovação.';
+        msgEl.style.display='block';
+        msgEl.style.color='var(--green)';
+      }
+      form.reset();
+      // atualiza lista (pode não refletir imediatamente por causa de aprovado=false)
+      await carregarReviewsPublic();
+    } else {
+      if(msgEl){
+        msgEl.textContent = d.erro || 'Erro ao enviar avaliação.';
+        msgEl.style.display='block';
+        msgEl.style.color='var(--red)';
+      }
+    }
+  } catch{
+    if(msgEl){
+      msgEl.textContent='Servidor offline. Tente novamente mais tarde.';
+      msgEl.style.display='block';
+      msgEl.style.color='var(--red)';
+    }
+  }
+}
+
 
 /* ─── CONTACT ─── */
 function submitForm(e){ e.preventDefault(); const ok=document.getElementById('formOk'); ok.classList.add('on'); e.target.reset(); setTimeout(()=>ok.classList.remove('on'),5000); }
@@ -1656,6 +1900,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncDots();
   observeFI();
   carregarProdutosDoServidor();
+  await carregarReviewsPublic();
 });
+
 </script>
 </body>

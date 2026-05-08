@@ -170,7 +170,9 @@ tr:hover td{background:#FAFAF8}
       <div class="sb-item" onclick="showPanel('produtos',this);loadTable()">Gerenciar Produtos</div>
       <div class="sb-item" onclick="showPanel('categorias',this);loadListaCategorias()">Gerenciar Categorias</div>
       <div class="sb-item" onclick="showPanel('banners',this);loadListaBanners()">Gerenciar Banners</div>
+      <div class="sb-item" onclick="showPanel('reviews',this);loadReviewsAdmin()">Gerenciar Avaliações</div>
       <div class="sb-item" onclick="showPanel('config',this);loadConfig()">Configuração</div>
+
     </nav>
     <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">Ver loja</a></div>
   </aside>
@@ -291,6 +293,25 @@ tr:hover td{background:#FAFAF8}
             <span class="tbl-head-title">Banners cadastrados</span>
           </div>
           <div id="banTableBody"><div class="empty">Carregando…</div></div>
+        </div>
+      </div>
+
+      <!-- AVALIAÇÕES -->
+      <div class="panel" id="panel-reviews">
+        <div class="card">
+          <div class="card-title">Gerenciar Avaliações</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">
+            Aprovar torna o depoimento visível na vitrine.
+          </p>
+          <div class="tbl-wrap">
+            <div class="tbl-head">
+              <span class="tbl-head-title">Avaliações cadastradas</span>
+              <button class="btn btn-g" onclick="loadReviewsAdmin()">Atualizar</button>
+            </div>
+            <div id="reviewsAdminBody" class="" style="padding:18px">
+              <div class="empty">Carregando…</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -880,6 +901,120 @@ async function loadTable() {
       '<div class="empty">Servidor offline. Rode: node server.js</div>';
   }
 }
+
+// ── AVALIAÇÕES (Admin) ─────────────────────────────────
+async function loadReviewsAdmin() {
+  const body = document.getElementById('reviewsAdminBody');
+  if (!body) return;
+  body.innerHTML = '<div class="empty">Carregando…</div>';
+
+  try {
+    const r = await fetch(API + '/admin/reviews', {
+      method: 'GET',
+      headers: headersComJwt({})
+    });
+
+    if (r.status === 401) {
+      relogar();
+      body.innerHTML = '<div class="empty">Sessão inválida. Faça login novamente.</div>';
+      return;
+    }
+
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.erro || 'Erro ao carregar reviews');
+
+    renderReviewsAdmin(d);
+  } catch (e) {
+    body.innerHTML = '<div class="empty">Servidor offline. Rode: node server.js</div>';
+  }
+}
+
+function renderReviewsAdmin(list) {
+  const body = document.getElementById('reviewsAdminBody');
+  if (!body) return;
+
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) {
+    body.innerHTML = '<div class="empty">Nenhuma avaliação cadastrada.</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Estrelas</th>
+          <th>Comentário</th>
+          <th>Data</th>
+          <th>Aprovado</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${arr.map(r => `
+          <tr>
+            <td class="td-name">${escHtml(r.nome || '')}</td>
+            <td style="color:#9A7A3A;font-weight:700">${'★'.repeat(Math.max(1, Math.min(5, Number(r.estrelas) || 0)))}</td>
+            <td style="max-width:420px">${escHtml((r.comentario || '').slice(0, 140))}${(r.comentario || '').length > 140 ? '…' : ''}</td>
+            <td>${r.data ? new Date(r.data).toLocaleDateString('pt-BR') : ''}</td>
+            <td>${r.aprovado ? 'Sim' : 'Não'}</td>
+            <td>
+              ${r.aprovado ? '' : `<button class="btn btn-e btn-sm" onclick="aprovarReview(${JSON.stringify(String(r._id))})">Aprovar</button>`}
+              <button class="btn btn-d btn-sm" onclick="excluirReview(${JSON.stringify(String(r._id))})">Excluir</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function aprovarReview(id) {
+  if (!confirm('Aprovar esta avaliação? Ela passará a aparecer na vitrine.')) return;
+  try {
+    const r = await fetch(API + '/admin/reviews/' + encodeURIComponent(id), {
+      method: 'PUT',
+      headers: headersComJwt({})
+    });
+
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) {
+      relogar();
+      toast('Sessão inválida. Faça login novamente.');
+      return;
+    }
+
+    if (!r.ok) throw new Error(d.erro || 'Erro ao aprovar');
+    toast('Avaliação aprovada');
+    await loadReviewsAdmin();
+  } catch {
+    toast('Servidor offline');
+  }
+}
+
+async function excluirReview(id) {
+  if (!confirm('Excluir esta avaliação?')) return;
+  try {
+    const r = await fetch(API + '/admin/reviews/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: headersComJwt({})
+    });
+
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) {
+      relogar();
+      toast('Sessão inválida. Faça login novamente.');
+      return;
+    }
+
+    if (!r.ok) throw new Error(d.erro || 'Erro ao excluir');
+    toast('Avaliação excluída');
+    await loadReviewsAdmin();
+  } catch {
+    toast('Servidor offline');
+  }
+}
+
 
 function renderTable(list) {
   if (!list.length) {
