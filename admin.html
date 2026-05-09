@@ -1239,6 +1239,44 @@ async function deletar(id, nome) {
 
 // ── HELPERS ───────────────────────────────────────────
 
+function getTamanhosFromUI(prefix) {
+  // prefix: 'f' (cadastro) ou 'e' (edição)
+  // Checkboxes: ${prefix}-tam-P, -tam-M, -tam-G, -tam-GG
+  // Campo texto: ${prefix}-tam-outros
+  const sizes = [];
+
+  const map = [
+    { id: prefix + '-tam-P', val: 'P' },
+    { id: prefix + '-tam-M', val: 'M' },
+    { id: prefix + '-tam-G', val: 'G' },
+    { id: prefix + '-tam-GG', val: 'GG' }
+  ];
+
+  for (const it of map) {
+    const cb = document.getElementById(it.id);
+    if (cb && cb.checked) sizes.push(it.val);
+  }
+
+  const outrosEl = document.getElementById(prefix + '-tam-outros');
+  const outrosRaw = outrosEl ? outrosEl.value : '';
+  if (outrosRaw) {
+    // Aceita vírgulas e a palavra 'ou'
+    const normalized = outrosRaw.replace(/\bou\b/gi, ',');
+    const tokens = normalized
+      .split(/[,\n\r]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    for (const t of tokens) {
+      const cleaned = t.replace(/\s+/g, ' ').trim();
+      if (cleaned) sizes.push(cleaned);
+    }
+  }
+
+  // remove duplicados preservando ordem
+  return sizes.filter((v, i) => sizes.indexOf(v) === i);
+}
+
 function showMsg(el, txt, cls) {
   el.textContent = txt;
   el.className = 'fmsg ' + cls;
