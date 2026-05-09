@@ -18,7 +18,6 @@ const crypto = require('crypto');
 const shopConfig = require('./config');
 const Review = require('./models/Review');
 
-
 /** Normaliza valor de JWT vindo do painel (.trim(), BOM, aspas externas opcionais). */
 function normalizeJwtEnvValue(raw) {
   if (raw == null) return '';
@@ -684,7 +683,126 @@ app.delete('/api/admin/reviews/:id', verificarJWT, async (req, res) => {
   }
 });
 
+// --- SETTINGS (tokens) + ORDERS (pedidos) ---
+
+const SettingsSchema = new mongoose.Schema(
+  {
+    mp_token: { type: String, default: '' },
+    me_token: { type: String, default: '' },
+    pix_key: { type: String, default: '' }
+  },
+  { timestamps: true }
+);
+
+const OrderSchema = new mongoose.Schema(
+  {
+    customerName: { type: String, default: '' },
+    items: {
+      type: [
+        {
+          name: { type: String, required: true },
+          qty: { type: Number, required: true, min: 1 },
+          price: { type: Number, required: true }
+        }
+      ],
+      default: []
+    },
+    total: { type: Number, required: true },
+    cep: { type: String, default: '' },
+    status: { type: String, default: 'Pendente' }
+  },
+  { timestamps: true }
+);
+
+const Settings = mongoose.models.Settings || mongoose.model('Settings', SettingsSchema);
+const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
+
+function mergePublicSettings(doc) {
+  return {
+    pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : ''
+  };
+}
+
+// GET /api/settings (público filtrado: apenas pix_key)
+app.get('/api/settings', async (req, res) => {
+  let doc = null;
+  try {
+    if (await tryConnectDb()) {
+      doc = await Settings.findOne().lean();
+    }
+  } catch (e) {
+    // ignora
+  }
+  if (!doc) doc = { pix_key: '' };
+  res.json(mergePublicSettings(doc));
+});
+
+// POST /api/settings (admin via x-admin-password)
+app.post('/api/settings', verificarSenha, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const mp_token = req.body?.mp_token != null ? String(req.body.mp_token).trim() : '';
+    const me_token = req.body?.me_token != null ? String(req.body.me_token).trim() : '';
+    const pix_key = req.body?.pix_key != null ? String(req.body.pix_key).trim() : '';
+
+    const updated = await Settings.findOneAndUpdate(
+      {},
+      { mp_token, me_token, pix_key },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.json({ mensagem: 'Configurações salvas!', config: mergePublicSettings(updated) });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar settings', detalhe: err.message });
+  }
+});
+
+// POST /api/orders (criação automática pelo front após finalizar compra)
+app.post('/api/orders', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const customerName = req.body?.customerName != null ? String(req.body.customerName).trim() : '';
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    const total = req.body?.total;
+    const cep = req.body?.cep != null ? String(req.body.cep).trim() : '';
+    const status = req.body?.status != null ? String(req.body.status).trim() : 'Pendente';
+
+    const totalNum = typeof total === 'number' ? total : Number(total);
+    if (!Number.isFinite(totalNum)) {
+      return res.status(400).json({ erro: 'total inválido' });
+    }
+
+    const order = await Order.create({
+      customerName,
+      items: items.map(i => ({
+        name: String(i.name || '').trim(),
+        qty: Number(i.qty || 1),
+        price: Number(i.price || 0)
+      })),
+      total: totalNum,
+      cep,
+      status
+    });
+
+    res.status(201).json({ mensagem: 'Pedido criado!', order });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao criar pedido', detalhe: err.message });
+  }
+});
+
+// GET /api/orders (admin - listar)
+app.get('/api/orders', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const list = await Order.find().sort({ createdAt: -1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar pedidos', detalhe: err.message });
+  }
+});
+
 // --- CONFIGURAÇÃO DA LOJA ---
+
 
 const ConfigSchema = new mongoose.Schema({
   nomeLoja: { type: String, default: shopConfig.nomeLoja },

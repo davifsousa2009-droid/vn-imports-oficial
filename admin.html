@@ -171,7 +171,10 @@ tr:hover td{background:#FAFAF8}
       <div class="sb-item" onclick="showPanel('categorias',this);loadListaCategorias()">Gerenciar Categorias</div>
       <div class="sb-item" onclick="showPanel('banners',this);loadListaBanners()">Gerenciar Banners</div>
       <div class="sb-item" onclick="showPanel('reviews',this);loadReviewsAdmin()">Gerenciar Avaliações</div>
+      <div class="sb-item" onclick="showPanel('settings',this);loadSettings()">⚙️ Configurações do Sistema</div>
+      <div class="sb-item" onclick="showPanel('orders',this);loadOrders()">📦 Gestão de Pedidos</div>
       <div class="sb-item" onclick="showPanel('config',this);loadConfig()">Configuração</div>
+
 
     </nav>
     <div class="sb-foot"><a href="/VN_IMPORTS.html" target="_blank">Ver loja</a></div>
@@ -316,9 +319,50 @@ tr:hover td{background:#FAFAF8}
       </div>
 
       <!-- CONFIGURAÇÃO -->
+      <div class="panel" id="panel-settings">
+        <div class="card">
+          <div class="card-title">⚙️ Configurações do Sistema</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Tokens usados pelo servidor para integrações (Mercado Pago e Melhor Envio). A chave Pix é usada para pagamento no checkout.</p>
+          <div class="fg2">
+            <div class="fg fw">
+              <label class="fl">mp_token (Mercado Pago)</label>
+              <input class="fi" id="set-mpToken" placeholder="Cole seu mp_token" type="text" autocomplete="off">
+            </div>
+            <div class="fg fw">
+              <label class="fl">me_token (Melhor Envio)</label>
+              <input class="fi" id="set-meToken" placeholder="Cole seu me_token" type="text" autocomplete="off">
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">pix_key</label>
+            <input class="fi" id="set-pixKey" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" type="text" autocomplete="off">
+          </div>
+          <div class="form-btns">
+            <button class="btn btn-p" onclick="salvarSettings()">Salvar Configurações</button>
+          </div>
+          <div class="fmsg" id="setmsg"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-orders">
+        <div class="card">
+          <div class="card-title">📦 Gestão de Pedidos</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Lista os pedidos registrados no sistema.</p>
+          <div class="tbl-wrap">
+            <div class="tbl-head">
+              <span class="tbl-head-title">Pedidos</span>
+              <button class="btn btn-g" onclick="loadOrders()">Atualizar</button>
+            </div>
+            <div id="ordersBody" style="padding:18px"> <div class="empty">Carregando…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURAÇÃO (loja) -->
       <div class="panel" id="panel-config">
         <div class="card">
           <div class="card-title">Identidade da Loja (White-Label)</div>
+
           <div class="fg2">
             <div class="fg fw">
               <label class="fl">Nome da Loja</label>
@@ -1181,6 +1225,128 @@ function toast(msg) {
   toastT = setTimeout(() => t.classList.remove('on'), 3500);
 }
 
+// ── CONFIGURAÇÕES DO SISTEMA (settings) ──────────────
+async function loadSettings() {
+  const msg = document.getElementById('setmsg');
+  if (msg) { msg.style.display = 'none'; msg.className = 'fmsg'; }
+
+  try {
+    const r = await fetch(API + '/settings');
+    if (!r.ok) throw new Error('settings http ' + r.status);
+    const d = await r.json();
+
+    // pix_key vem pública; tokens ficam escondidos (por segurança)
+    document.getElementById('set-pixKey').value = d?.pix_key != null ? String(d.pix_key) : '';
+
+    // mp_token/me_token não são expostos publicamente
+    document.getElementById('set-mpToken').value = '';
+    document.getElementById('set-meToken').value = '';
+  } catch {
+    showMsg(document.getElementById('setmsg'), 'Servidor offline. Rode: node server.js', 'er');
+  }
+}
+
+async function salvarSettings() {
+  const msg = document.getElementById('setmsg');
+  const mp_token = document.getElementById('set-mpToken').value.trim();
+  const me_token = document.getElementById('set-meToken').value.trim();
+  const pix_key = document.getElementById('set-pixKey').value.trim();
+
+  if (!mp_token && !me_token && !pix_key) {
+    showMsg(msg, 'Informe pelo menos um valor para salvar.', 'er');
+    return;
+  }
+
+  try {
+    const r = await fetch(API + '/settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': obterSenha()
+      },
+      body: JSON.stringify({ mp_token, me_token, pix_key })
+    });
+
+    const d = await r.json().catch(() => ({}));
+
+    if (r.ok) {
+      showMsg(msg, 'Configurações salvas.', 'ok');
+      await loadSettings();
+      toast('Configurações do sistema atualizadas');
+    } else if (r.status === 401) {
+      relogar();
+      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
+    } else {
+      showMsg(msg, d.erro || 'Erro ao salvar.', 'er');
+    }
+  } catch {
+    showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
+  }
+}
+
+// ── GESTÃO DE PEDIDOS (orders) ─────────────────────────
+async function loadOrders() {
+  const body = document.getElementById('ordersBody');
+  if (!body) return;
+  body.innerHTML = '<div class="empty">Carregando…</div>';
+
+  try {
+    const r = await fetch(API + '/orders', {
+      method: 'GET',
+      headers: headersComJwt({})
+    });
+
+    if (r.status === 401) {
+      relogar();
+      body.innerHTML = '<div class="empty">Sessão inválida. Faça login novamente.</div>';
+      return;
+    }
+
+    const list = await r.json().catch(() => []);
+    if (!r.ok) throw new Error('orders http ' + r.status);
+
+    const safe = Array.isArray(list) ? list : [];
+
+    if (!safe.length) {
+      body.innerHTML = '<div class="empty">Nenhum pedido encontrado.</div>';
+      return;
+    }
+
+    body.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Nome do Cliente</th>
+            <th>Itens</th>
+            <th>Valor Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${safe.map(o => {
+            const customer = o.customerName ? String(o.customerName) : '—';
+            const items = Array.isArray(o.items) ? o.items : [];
+            const itemsTxt = items.length
+              ? items.map(i => `${escHtml(i.name || 'Item')} (${i.qty ?? 1})`).join(' • ')
+              : '—';
+            const total = Number(o.total);
+            const totalTxt = Number.isFinite(total) ? fmt(total) : '—';
+            const status = o.status ? escHtml(o.status) : '—';
+            return `
+              <tr>
+                <td class="td-name">${customer}</td>
+                <td>${itemsTxt}</td>
+                <td class="td-price">${totalTxt}</td>
+                <td>${status}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  } catch {
+    body.innerHTML = '<div class="empty">Servidor offline. Rode: node server.js</div>';
+  }
+}
+
 // ── CONFIGURAÇÃO DA LOJA ──────────────────────────────
 async function loadConfig() {
   try {
@@ -1262,6 +1428,7 @@ checkStatus();
 loadStats();
 refreshCategorias();
 loadConfig();
+loadSettings();
 setInterval(checkStatus, 30000);
 </script>
 </body>

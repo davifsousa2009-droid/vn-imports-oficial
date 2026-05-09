@@ -1460,6 +1460,36 @@ function checkout(){
 
   // Confirmação + limpeza imediata do carrinho.
   // (A mensagem aparece e o carrinho é esvaziado logo em seguida.)
+  // cria pedido automaticamente no Mongo assim que o cliente clicar em finalizar
+  // (status inicial: 'Pendente')
+  const pedidoCreatedAt = new Date();
+  try {
+    if (typeof API_URL === 'string' && API_URL.length) {
+      const payload = {
+customerName: (S && S.customerName && String(S.customerName).trim()) || 'Cliente',
+        items: cart.map(it => ({ 
+
+          name: it.name,
+          qty: it.qty ?? 1,
+          price: it.price
+        })),
+        total: cartTotal,
+        cep: '',
+        status: 'Pendente',
+        createdAt: pedidoCreatedAt
+      };
+
+      // chamamos sem bloqueio (o pagamento ainda será realizado em seguida via PIX)
+      fetch(API_URL + '/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(()=>{});
+    }
+  } catch {
+    // não trava checkout se falhar a criação do pedido
+  }
+
   showToast('✓','Compra realizada com sucesso! Estamos aguardando a confirmação do pagamento.');
   S.cart = [];
   cart = [];
@@ -1468,6 +1498,7 @@ function checkout(){
   syncDots();
 
   const raw = (S.chavePix && String(S.chavePix).trim()) || '';
+
 
 
   if (!raw) {
@@ -1778,6 +1809,10 @@ function observeFI(){ document.querySelectorAll('.fi').forEach(el=>io.observe(el
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
   : `${window.location.origin}/api`;
+
+// Garante que checkout consiga criar pedidos mesmo que chamado antes do DOMContentLoaded.
+// (API_URL é definida no final do arquivo, mas checkout só é acionado por clique do usuário.)
+
 
 let vitrineNomeLoja = DEF.store;
 
