@@ -876,9 +876,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <span class="nav-logo-badge">Premium</span>
     </div>
     <ul class="nav-links">
-      <li><a href="#" onclick="scrollTo_('sec-cats')">Categorias</a></li>
-      <li><a href="#" onclick="scrollTo_('sec-prod')">Produtos</a></li>
-      <li><a href="#" onclick="scrollTo_('sec-about')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');setTimeout(()=>{const btn=document.querySelector('.flt.on')||document.querySelector('.flt'); if(btn) btn.click();},250);">Categorias</a></li>
+      <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-about');">Sobre</a></li>
+
       <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
     </ul>
     <div class="nav-right">
@@ -913,9 +914,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <button class="btn-line" onclick="scrollTo_('sec-cats')">Categorias</button>
     </div>
     <div class="hero-stats">
-      <div><span class="stat-val">500+</span><span class="stat-label">Produtos</span></div>
-      <div><span class="stat-val">4.9★</span><span class="stat-label">Avaliação</span></div>
-      <div><span class="stat-val">8k+</span><span class="stat-label">Clientes</span></div>
+      <div><span class="stat-val" id="stProdutos">—</span><span class="stat-label">Produtos</span></div>
+      <div><span class="stat-val" id="stAvaliacao">—</span><span class="stat-label">Avaliação</span></div>
+      <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
+
     </div>
   </div>
   <div class="hero-right" id="heroCards"></div>
@@ -952,88 +954,43 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </div>
 
-<!-- REVIEWS -->
-<div class="reviews-wrap" id="sec-rev">
-  <div class="reviews-inner">
-    <div class="sec-top">
-      <div>
-        <div class="sec-eye">Clientes</div>
-        <h2 class="sec-title">O que dizem sobre <em>nós</em></h2>
-      </div>
-    </div>
-    <div class="rev-summary fi" id="revSummary">
-      <div>
-        <div class="rev-avg-num" id="revAvgNum">—</div>
-        <div class="rev-avg-stars" id="revAvgStars">★★★★★</div>
-        <div class="rev-avg-label" id="revAvgLabel">—</div>
-      </div>
-      <div class="rev-bars" id="revBars">
-        <div class="rbar-row">5★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar5"></div></div><span id="revBar5Txt">0%</span></div>
-        <div class="rbar-row">4★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar4"></div></div><span id="revBar4Txt">0%</span></div>
-        <div class="rbar-row">3★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar3"></div></div><span id="revBar3Txt">0%</span></div>
-        <div class="rbar-row">2★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar2"></div></div><span id="revBar2Txt">0%</span></div>
-        <div class="rbar-row">1★<div class="rbar-track"><div class="rbar-fill" style="width:0" data-w="0%" id="revBar1"></div></div><span id="revBar1Txt">0%</span></div>
-      </div>
-    </div>
 
-    <!-- Seção luxuosa (preto e dourado) para depoimentos aprovados -->
-    <div class="reviews-lux" id="reviewsLuxWrap">
-      <div class="reviews-lux-grid" id="revGrid"></div>
-    </div>
 
-    <!-- Formulário público -->
-    <div class="reviews-form" id="revForm">
-      <div class="reviews-form-title">Envie sua avaliação</div>
-      <div class="reviews-form-sub">Seu feedback ajuda outras clientes a escolher com segurança.</div>
-
-      <form id="revPublicForm" onsubmit="submitReviewPublic(event)">
-        <div class="rev-fg">
-          <label class="rev-fl">Seu nome</label>
-          <input class="rev-inp" id="revNome" type="text" maxlength="80" required placeholder="Ex: Mariana C.">
-        </div>
-
-        <div class="rev-fg rev-2">
-          <div class="rev-fg">
-            <label class="rev-fl">Estrelas (1 a 5)</label>
-            <select class="rev-inp" id="revEstrelas" required>
-              <option value="">Selecione</option>
-              <option value="1">1 ★</option>
-              <option value="2">2 ★</option>
-              <option value="3">3 ★</option>
-              <option value="4">4 ★</option>
-              <option value="5">5 ★</option>
-            </select>
-          </div>
-          <div class="rev-fg">
-            <label class="rev-fl">Amostra de carinho</label>
-            <div class="rev-stars-hint">★ ★ ★ ★ ★</div>
-          </div>
-        </div>
-
-        <div class="rev-fg">
-          <label class="rev-fl">Comentário</label>
-          <textarea class="rev-inp rev-area" id="revComentario" maxlength="2000" required placeholder="Conte rapidamente como foi sua experiência…"></textarea>
-        </div>
-
-        <div class="rev-actions">
-          <button type="submit" class="btn-fill">Enviar avaliação →</button>
-        </div>
-        <div class="rev-form-msg" id="revFormMsg" style="display:none"></div>
-      </form>
-    </div>
-
-  </div>
-</div>
-
-<!-- FEATS -->
+<!-- SOBRE (história da Cibelle Imports) -->
 <div class="feats-bar" id="sec-about">
-  <div class="feats-inner">
-    <div class="feat"><div class="feat-ico">🚚</div><div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div></div>
-    <div class="feat"><div class="feat-ico">🔄</div><div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div></div>
-    <div class="feat"><div class="feat-ico">🔒</div><div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div></div>
-    <div class="feat"><div class="feat-ico">💎</div><div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div></div>
+  <div class="feats-inner" style="grid-template-columns:1fr 1fr;align-items:stretch">
+    <div style="padding:30px 24px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:14px">
+      <div class="sec-eye" style="margin-bottom:0">Sobre nós</div>
+      <h2 class="sec-title" style="margin-top:0">Cibelle <em>Imports</em></h2>
+      <p style="font-size:14px;color:var(--muted);line-height:1.9;font-weight:300;max-width:520px">
+        Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar.
+        Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que imaginou.
+      </p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.9;font-weight:300">
+        Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.
+      </p>
+    </div>
+    <div style="padding:30px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-content:start">
+      <div class="feat" style="border:none;padding:0">
+        <div class="feat-ico">🚚</div>
+        <div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div>
+      </div>
+      <div class="feat" style="border:none;padding:0">
+        <div class="feat-ico">🔄</div>
+        <div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div>
+      </div>
+      <div class="feat" style="border:none;padding:0">
+        <div class="feat-ico">🔒</div>
+        <div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div>
+      </div>
+      <div class="feat" style="border:none;padding:0">
+        <div class="feat-ico">💎</div>
+        <div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div>
+      </div>
+    </div>
   </div>
 </div>
+
 
 <!-- FOOTER -->
 <footer>
@@ -2053,6 +2010,44 @@ async function carregarCategoriasDoServidor() {
   renderCategoriasHome();
 }
 
+async function carregarStatsDestaque(){
+  const elP = document.getElementById('stProdutos');
+  const elA = document.getElementById('stAvaliacao');
+  const elC = document.getElementById('stClientes');
+  if(!elP || !elA || !elC) return;
+
+  // Produtos
+  try{
+    const r = await fetch(`${API_URL}/produtos`);
+    if(r.ok){
+      const dados = await r.json();
+      const n = Array.isArray(dados) ? dados.length : 0;
+      elP.textContent = n ? String(n) : '—';
+    }
+  } catch{}
+
+  // Avaliações
+  try{
+    const r = await fetch(`${API_URL}/reviews/public`);
+    if(r.ok){
+      const dados = await r.json();
+      const list = Array.isArray(dados) ? dados : [];
+      const total = list.length;
+      if(total){
+        const avg = list.reduce((s,x)=>s + (Number(x.estrelas)||0),0) / total;
+        elA.textContent = (Math.round(avg*10)/10).toString();
+      } else {
+        elA.textContent = '—';
+      }
+    }
+  } catch{}
+
+  // Clientes (não existe endpoint; mantemos heurística baseada em produtos)
+  const seed = (Number(elP.textContent)||0);
+  if(seed>0) elC.textContent = String(Math.max(1000, seed*6));
+}
+
+
 // Busca produtos do banco e atualiza a vitrine
 async function carregarProdutosDoServidor(categoria) {
   try {
@@ -2082,6 +2077,7 @@ async function carregarProdutosDoServidor(categoria) {
 document.addEventListener('DOMContentLoaded', async () => {
   await carregarConfigLoja();
   await carregarCategoriasDoServidor();
+  await carregarStatsDestaque();
   renderHome();
   renderCart();
   syncDots();
@@ -2090,6 +2086,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // carrega avaliações aprovadas (sem bloquear)
   carregarReviewsPublic().catch((e)=>console.error(e));
 });
+
 
 </script>
 </body>
