@@ -527,10 +527,20 @@ app.get('/api/produtos/:id', async (req, res) => {
 app.post('/api/produtos', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco } = req.body;
+    const { nome, preco, sizes } = req.body;
     if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório' });
     if (!preco || isNaN(preco)) return res.status(400).json({ erro: 'Preço inválido' });
-    const novo = new Produto(req.body);
+
+    // Garante que sizes chegue como array (ex: ['P','M','G'])
+    const normalizedSizes = Array.isArray(sizes)
+      ? sizes.map((s) => String(s).trim()).filter(Boolean)
+      : [];
+
+    const novo = new Produto({
+      ...req.body,
+      sizes: normalizedSizes
+    });
+
     await novo.save();
     res.status(201).json({ mensagem: 'Produto salvo!', produto: novo });
   } catch (err) {

@@ -58,6 +58,16 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fw{grid-column:1/-1}
 
+/* CHIPS TAMANHOS (substitui checkboxes) */
+.size-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid #E0DBD4;background:#F7F4F0;border-radius:999px;cursor:pointer;transition:all .15s;user-select:none}
+.size-chip input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:0;height:0;position:absolute;opacity:0}
+.size-chip{box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.size-chip:hover{border-color:#9A7A3A;transform:translateY(-1px)}
+.size-chip:focus{outline:2px solid rgba(154,122,58,.25);outline-offset:2px}
+.size-chip:has(input:checked){border-color:#9A7A3A;background:#fff}
+.size-chip:has(input:checked)::after{content:'✓';margin-left:2px;color:#9A7A3A;font-weight:800;font-size:12px}
+
+
 .img-preview{display:none;align-items:center;gap:12px;margin-top:8px;padding:10px;background:#F7F4F0;border:1px solid #E0DBD4}
 .img-preview.on{display:flex}
 .img-preview img{width:52px;height:66px;object-fit:cover;border:1px solid #E0DBD4}
@@ -230,16 +240,16 @@ tr:hover td{background:#FAFAF8}
             <div class="fg fw">
               <label class="fl">Tamanhos Disponíveis</label>
               <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                <label class="size-chip" role="button" tabindex="0">
                   <input type="checkbox" id="f-tam-P" value="P"> P
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                <label class="size-chip" role="button" tabindex="0">
                   <input type="checkbox" id="f-tam-M" value="M"> M
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                <label class="size-chip" role="button" tabindex="0">
                   <input type="checkbox" id="f-tam-G" value="G"> G
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                <label class="size-chip" role="button" tabindex="0">
                   <input type="checkbox" id="f-tam-GG" value="GG"> GG
                 </label>
               </div>
@@ -1241,7 +1251,8 @@ async function deletar(id, nome) {
 
 function getTamanhosFromUI(prefix) {
   // prefix: 'f' (cadastro) ou 'e' (edição)
-  // Checkboxes: ${prefix}-tam-P, -tam-M, -tam-G, -tam-GG
+  // Checkboxes/Chips: ${prefix}-tam-P, -tam-M, -tam-G, -tam-GG
+
   // Campo texto: ${prefix}-tam-outros
   const sizes = [];
 
