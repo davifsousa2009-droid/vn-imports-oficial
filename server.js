@@ -180,28 +180,57 @@ function slugifyTenantTag(v) {
 app.use(cors());
 app.use(express.json());
 
-// ── CONEXÃO COM MONGODB ────────────────────────────────
+// ── CONEXÃO COM MONGODB (singleton) ────────────────────
+// Na Vercel, o mesmo código pode ser executado em múltiplas invocações.
+// Guardamos a conexão/promise para evitar reconectar a cada request (causa comum de 503).
 let isConnected = false;
+let connectPromise = null;
 
 async function connectDB() {
-  if (isConnected && mongoose.connection.readyState === 1) return;
+  // Se já conectou e a conexão está ativa, não reconecta.
+  if (mongoose.connection.readyState === 1 && isConnected) return;
   if (mongoose.connection.readyState === 1) {
     isConnected = true;
     return;
   }
 
-  await mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 10000,
-    retryWrites: true,
-    w: 'majority',
-    maxPoolSize: 1,
-    minPoolSize: 0
-  });
+  // Se uma conexão já está em andamento, reaproveita a promise.
+  if (connectPromise) return connectPromise;
 
-  isConnected = true;
-  console.log('MongoDB conectado');
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) {
+    throw new Error('MONGODB_URI não definido no ambiente.');
+  }
+
+  connectPromise = mongoose
+    .connect(mongoUri, {
+      // aumenta timeout para reduzir falhas em cold start / Atlas instável
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      w: 'majority',
+      // pool pequeno para reduzir agressividade; singleton evita reconexões
+      maxPoolSize: 1,
+      minPoolSize: 0
+    })
+    .then(() => {
+      isConnected = true;
+      console.log('MongoDB conectado');
+      return mongoose;
+    })
+    .catch((err) => {
+      // libera promise para próximas tentativas
+      isConnected = false;
+      connectPromise = null;
+      throw err;
+    })
+    .finally(() => {
+      // mantém isConnected, mas não prende connectPromise após sucesso
+      connectPromise = null;
+    });
+
+  return connectPromise;
 }
 
 async function tryConnectDb() {
@@ -230,6 +259,7 @@ async function ensureDbConnected(res) {
     return false;
   }
 }
+
 
 if (process.env.NODE_ENV === 'production') {
   connectDB().catch((e) => console.error('MongoDB (startup):', e.message));
