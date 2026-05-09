@@ -56,8 +56,7 @@ function invalidateJwtSecretCache() {
 /** Ordem: JWT_SECRET → JWT_SECRET_FALLBACK (painel alternativo) → literal de teste. */
 function resolveJwtSecretWithSourceOnce() {
   const fromJwt = normalizeJwtEnvValue(process.env.JWT_SECRET);
-  if (fromJwt)
-    return { secret: fromJwt, sourceLabel: 'process.env.JWT_SECRET' };
+  if (fromJwt) return { secret: fromJwt, sourceLabel: 'process.env.JWT_SECRET' };
 
   const fromFb = normalizeJwtEnvValue(process.env.JWT_SECRET_FALLBACK);
   if (fromFb)
@@ -87,7 +86,7 @@ function getJwtSecret() {
   return jwtSecretCache;
 }
 
-/** Poucas leituras de JWT_SECRET antes de usar fallback / HARDCODED (principalmente na Vercel). */
+/** Poucas leituras de JWT_SECRET antes de usar fallback / HARDCODED. */
 async function probeEnvJwtSecretWithDelay(maxMs = 600) {
   const step = 30;
   for (let t = 0; t < maxMs; t += step) {
@@ -144,7 +143,7 @@ const uploadMem = multer({
   }
 });
 
-/** Extrai public_id a partir da secure_url padrão do Cloudinary (upload sem transformações). */
+/** Extrai public_id a partir da secure_url padrão do Cloudinary. */
 function cloudinaryPublicIdFromUrl(url) {
   if (!url || typeof url !== 'string') return null;
   const cloud = process.env.CLOUDINARY_CLOUD_NAME;
@@ -185,36 +184,26 @@ app.use(express.json());
 let isConnected = false;
 
 async function connectDB() {
-  if (isConnected && mongoose.connection.readyState === 1) {
-    return;
-  }
-
+  if (isConnected && mongoose.connection.readyState === 1) return;
   if (mongoose.connection.readyState === 1) {
     isConnected = true;
     return;
   }
 
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      retryWrites: true,
-      w: 'majority',
-      maxPoolSize: 1,
-      minPoolSize: 0
-    });
+  await mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    retryWrites: true,
+    w: 'majority',
+    maxPoolSize: 1,
+    minPoolSize: 0
+  });
 
-    isConnected = true;
-    console.log('MongoDB conectado');
-  } catch (err) {
-    isConnected = false;
-    console.error('MongoDB erro:', err.message);
-    throw err;
-  }
+  isConnected = true;
+  console.log('MongoDB conectado');
 }
 
-/** Tenta conectar sem enviar resposta HTTP (útil para GET públicos como /api/config). */
 async function tryConnectDb() {
   try {
     await connectDB();
@@ -225,7 +214,6 @@ async function tryConnectDb() {
   }
 }
 
-/** Evita 500 genérico: responde 503 se URI/chave estiver incorreta ou rede falhar. */
 async function ensureDbConnected(res) {
   try {
     await connectDB();
@@ -235,7 +223,6 @@ async function ensureDbConnected(res) {
     }
     return true;
   } catch (err) {
-    console.error('MongoDB:', err.message);
     res.status(503).json({
       erro: 'Não foi possível conectar ao banco de dados.',
       detalhe: err.message
@@ -247,12 +234,10 @@ async function ensureDbConnected(res) {
 if (process.env.NODE_ENV === 'production') {
   connectDB().catch((e) => console.error('MongoDB (startup):', e.message));
 } else {
-  connectDB().catch((err) => {
-    console.error('Erro initial MongoDB:', err.message);
-  });
+  connectDB().catch((err) => console.error('Erro initial MongoDB:', err.message));
 }
 
-// ── LOGIN (rate limit: contagem por IP só em falhas) ───
+// ── LOGIN ─────────────────────────────────────────────
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -266,7 +251,6 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
   try {
     const masterRaw = process.env.ADMIN_PASSWORD;
     if (masterRaw == null || String(masterRaw).length === 0) {
-      console.error('ADMIN_PASSWORD não configurada');
       return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
     }
 
@@ -286,6 +270,7 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
     if (!peek && process.env.VERCEL) {
       peek = await probeEnvJwtSecretWithDelay(600);
     }
+
     if (peek) {
       jwtSecretCache = peek;
       jwtSourceLoggedLabel = 'process.env.JWT_SECRET';
@@ -293,11 +278,9 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
     }
 
     const secret = getJwtSecret();
-
     const token = jwt.sign({ role: 'admin' }, secret, { expiresIn: '8h' });
     res.json({ token, expiresIn: '8h' });
   } catch (e) {
-    console.error('admin/login:', e.message);
     res.status(500).json({ erro: 'Erro ao processar login.' });
   }
 });
@@ -305,19 +288,17 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
 function verificarJWT(req, res, next) {
   const secret = getJwtSecret();
   if (!secret) {
-    return res.status(500).json({
-      erro: 'Falha interna ao obter segredo JWT após fluxo de fallback.'
-    });
+    return res.status(500).json({ erro: 'Falha interna ao obter segredo JWT.' });
   }
+
   const auth = req.headers.authorization;
   const token = auth && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
-  if (!token) {
-    return res.status(401).json({ erro: 'Token não fornecido. Faça login no painel.' });
-  }
+  if (!token) return res.status(401).json({ erro: 'Token não fornecido. Faça login no painel.' });
+
   try {
     jwt.verify(token, secret);
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ erro: 'Token inválido ou expirado.' });
   }
 }
@@ -325,38 +306,34 @@ function verificarJWT(req, res, next) {
 const verificarSenha = (req, res, next) => {
   const masterRaw = process.env.ADMIN_PASSWORD;
   if (masterRaw == null || String(masterRaw).length === 0) {
-    console.error('ADMIN_PASSWORD não configurada');
     return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
   }
 
   const hdr = req.headers['x-admin-password'];
   const recebida = hdr == null ? '' : String(hdr);
-
   if (!timingSafePasswordEqual(recebida, String(masterRaw))) {
     return res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
   }
   next();
 };
 
-// POST /api/upload — admin envia imagem; sobe para Cloudinary e retorna secure_url (campo path para compatibilidade com o admin)
+// POST /api/upload
 app.post('/api/upload', verificarSenha, (req, res) => {
   const missing =
     !process.env.CLOUDINARY_CLOUD_NAME ||
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET;
+
   if (missing) {
     return res.status(503).json({
-      erro: 'Cloudinary não configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET no ambiente.'
+      erro: 'Cloudinary não configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET.'
     });
   }
 
   uploadMem.single('arquivo')(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ erro: err.message || 'Erro no upload.' });
-    }
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
-    }
+    if (err) return res.status(400).json({ erro: err.message || 'Erro no upload.' });
+    if (!req.file?.buffer) return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
+
     try {
       let tenantTag = slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja);
       try {
@@ -367,7 +344,7 @@ app.post('/api/upload', verificarSenha, (req, res) => {
           );
         }
       } catch (e) {
-        console.warn('Cloudinary tenant tag fallback:', e.message);
+        // ignore
       }
 
       const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -378,16 +355,15 @@ app.post('/api/upload', verificarSenha, (req, res) => {
         tags: [`shop:${tenantTag}`, `tenant:${tenantTag}`],
         public_id_prefix: `tenant-${tenantTag}`
       });
-      const secureUrl = result.secure_url;
-      res.status(201).json({ path: secureUrl, mensagem: 'Upload concluído.' });
+
+      res.status(201).json({ path: result.secure_url, mensagem: 'Upload concluído.' });
     } catch (e) {
-      console.error('Cloudinary upload:', e.message);
       res.status(503).json({ erro: e.message || 'Erro ao enviar imagem para o Cloudinary.' });
     }
   });
 });
 
-// ── MODEL DO PRODUTO ───────────────────────────────────
+// ── MODELS ─────────────────────────────────────────────
 const produtoSchema = new mongoose.Schema(
   {
     nome: { type: String, required: true },
@@ -399,10 +375,8 @@ const produtoSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const Produto = mongoose.models.Produto || mongoose.model('Produto', produtoSchema);
 
-// ── MODEL CATEGORIA ───────────────────────────────────
 function slugifyNome(nome) {
   const s = String(nome)
     .normalize('NFD')
@@ -421,10 +395,8 @@ const CategorySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const Category = mongoose.models.Category || mongoose.model('Category', CategorySchema);
 
-// ── MODEL BANNER (carousel vitrine) ───────────────────
 const BannerSchema = new mongoose.Schema(
   {
     imagem: { type: String, required: true, trim: true },
@@ -432,259 +404,9 @@ const BannerSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const Banner = mongoose.models.Banner || mongoose.model('Banner', BannerSchema);
 
-// ══════════════════════════════════════════════════════
-//   ROTAS DA API
-// ══════════════════════════════════════════════════════
-
-// GET /api/status
-app.get('/api/status', async (req, res) => {
-  const ok = await tryConnectDb();
-  const estado = mongoose.connection.readyState;
-  res.json({
-    status: 'online',
-    banco: ok && estado === 1 ? 'conectado' : `desconectado (${estado})`,
-    isConnected: ok && estado === 1,
-    hora: new Date().toLocaleString('pt-BR')
-  });
-});
-
-// GET /api/produtos
-app.get('/api/produtos', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const filtro = req.query.categoria ? { categoria: req.query.categoria } : {};
-    const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
-    res.json(produtos);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar produtos', detalhe: err.message });
-  }
-});
-
-// GET /api/produtos/:id
-app.get('/api/produtos/:id', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const produto = await Produto.findById(req.params.id);
-    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json(produto);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar produto', detalhe: err.message });
-  }
-});
-
-// POST /api/produtos
-app.post('/api/produtos', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const { nome, preco } = req.body;
-    if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório' });
-    if (!preco || isNaN(preco)) return res.status(400).json({ erro: 'Preço inválido' });
-    const novo = new Produto(req.body);
-    await novo.save();
-    res.status(201).json({ mensagem: 'Produto salvo!', produto: novo });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao salvar', detalhe: err.message });
-  }
-});
-
-// PUT /api/produtos/:id
-app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const atualizado = await Produto.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!atualizado) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json({ mensagem: 'Produto atualizado!', produto: atualizado });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao atualizar', detalhe: err.message });
-  }
-});
-
-// DELETE /api/produtos/:id
-app.delete('/api/produtos/:id', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const removido = await Produto.findById(req.params.id);
-    if (!removido) return res.status(404).json({ erro: 'Produto não encontrado' });
-    await deleteCloudinaryAssetIfApplicable(removido.imagem);
-    await Produto.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: 'Produto removido!' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao remover', detalhe: err.message });
-  }
-});
-
-// GET /api/categories — lista (público; garante ao menos "Geral" se vazio)
-app.get('/api/categories', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    let list = await Category.find().sort({ nome: 1 }).lean();
-    if (!list.length) {
-      await Category.create({ nome: 'Geral', slug: 'geral' });
-      list = await Category.find().sort({ nome: 1 }).lean();
-    }
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao listar categorias', detalhe: err.message });
-  }
-});
-
-// POST /api/categories — criar (admin)
-app.post('/api/categories', verificarSenha, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const nome = req.body.nome?.trim();
-    if (!nome) return res.status(400).json({ erro: 'Nome da categoria é obrigatório' });
-    const slug = req.body.slug?.trim() ? slugifyNome(req.body.slug) : slugifyNome(nome);
-    const exists = await Category.findOne({ slug });
-    if (exists) return res.status(409).json({ erro: 'Já existe uma categoria com este nome/slug.' });
-    const cat = await Category.create({ nome, slug });
-    res.status(201).json({ mensagem: 'Categoria criada!', categoria: cat });
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ erro: 'Slug já cadastrado.' });
-    }
-    res.status(500).json({ erro: 'Erro ao criar categoria', detalhe: err.message });
-  }
-});
-
-// DELETE /api/categories/:id — remover (admin)
-app.delete('/api/categories/:id', verificarSenha, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const removido = await Category.findByIdAndDelete(req.params.id);
-    if (!removido) return res.status(404).json({ erro: 'Categoria não encontrada' });
-    res.json({ mensagem: 'Categoria removida!' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao remover categoria', detalhe: err.message });
-  }
-});
-
-// GET /api/banners — listar (público), ordenado por ordem
-app.get('/api/banners', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const list = await Banner.find().sort({ ordem: 1, createdAt: 1 }).lean();
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao listar banners', detalhe: err.message });
-  }
-});
-
-// POST /api/banners — criar (admin)
-app.post('/api/banners', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const imagem = req.body.imagem?.trim();
-    if (!imagem) return res.status(400).json({ erro: 'Imagem é obrigatória (faça upload no admin).' });
-    const ordem = Number.parseInt(req.body.ordem, 10);
-    const banner = await Banner.create({
-      imagem,
-      ordem: Number.isFinite(ordem) ? ordem : 0
-    });
-    res.status(201).json({ mensagem: 'Banner salvo!', banner });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao salvar banner', detalhe: err.message });
-  }
-});
-
-// DELETE /api/banners/:id — remover (admin)
-app.delete('/api/banners/:id', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const removido = await Banner.findById(req.params.id);
-    if (!removido) return res.status(404).json({ erro: 'Banner não encontrado' });
-    await deleteCloudinaryAssetIfApplicable(removido.imagem);
-    await Banner.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: 'Banner removido!' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao remover banner', detalhe: err.message });
-  }
-});
-
-// ══════════════════════════════════════════════════════
-//   REVIEWS (Avaliações)
-// ══════════════════════════════════════════════════════
-
-// POST /api/reviews (público)
-app.post('/api/reviews', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const nome = req.body?.nome?.trim ? req.body.nome.trim() : '';
-    const comentario = req.body?.comentario?.trim ? req.body.comentario.trim() : '';
-    const estrelasRaw = req.body?.estrelas;
-    const estrelas = typeof estrelasRaw === 'number' ? estrelasRaw : Number(estrelasRaw);
-
-    if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório.' });
-    if (!comentario) return res.status(400).json({ erro: 'Comentário é obrigatório.' });
-    if (!Number.isFinite(estrelas) || estrelas < 1 || estrelas > 5) {
-      return res.status(400).json({ erro: 'Estrelas devem ser um número entre 1 e 5.' });
-    }
-
-    const review = await Review.create({ nome, comentario, estrelas, aprovado: false });
-    res.status(201).json({ mensagem: 'Avaliação recebida! Aguardando aprovação.', review });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao salvar avaliação', detalhe: err.message });
-  }
-});
-
-// GET /api/reviews/public (somente aprovados)
-app.get('/api/reviews/public', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const list = await Review.find({ aprovado: true })
-      .sort({ data: -1, createdAt: -1 })
-      .lean();
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao listar avaliações', detalhe: err.message });
-  }
-});
-
-// GET /api/admin/reviews (protegida com JWT)
-app.get('/api/admin/reviews', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const list = await Review.find().sort({ data: -1, createdAt: -1 }).lean();
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao listar avaliações (admin)', detalhe: err.message });
-  }
-});
-
-// PUT /api/admin/reviews/:id (protegida com JWT para aprovar)
-app.put('/api/admin/reviews/:id', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const updated = await Review.findByIdAndUpdate(
-      req.params.id,
-      { aprovado: true },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ erro: 'Avaliação não encontrada' });
-    res.json({ mensagem: 'Avaliação aprovada!', review: updated });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao aprovar avaliação', detalhe: err.message });
-  }
-});
-
-// DELETE /api/admin/reviews/:id (protegida com JWT)
-app.delete('/api/admin/reviews/:id', verificarJWT, async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const removed = await Review.findById(req.params.id);
-    if (!removed) return res.status(404).json({ erro: 'Avaliação não encontrada' });
-    await Review.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: 'Avaliação removida!' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao remover avaliação', detalhe: err.message });
-  }
-});
-
-// --- SETTINGS (tokens) + ORDERS (pedidos) ---
-
+// Settings + Orders
 const SettingsSchema = new mongoose.Schema(
   {
     mp_token: { type: String, default: '' },
@@ -693,7 +415,6 @@ const SettingsSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 const OrderSchema = new mongoose.Schema(
   {
     customerName: { type: String, default: '' },
@@ -717,27 +438,282 @@ const OrderSchema = new mongoose.Schema(
 const Settings = mongoose.models.Settings || mongoose.model('Settings', SettingsSchema);
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
+const ConfigSchema = new mongoose.Schema({
+  nomeLoja: { type: String, default: shopConfig.nomeLoja },
+  chavePix: { type: String, default: '' },
+  corPrimaria: { type: String, default: shopConfig.corPrimaria },
+  corSecundaria: { type: String, default: shopConfig.corSecundaria },
+  whatsappContato: { type: String, default: shopConfig.whatsappContato },
+  instagramLink: { type: String, default: shopConfig.instagramLink },
+  emailContato: { type: String, default: shopConfig.emailContato },
+  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) }
+});
+const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
+
 function mergePublicSettings(doc) {
   return {
     pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : ''
   };
 }
 
-// GET /api/settings (público filtrado: apenas pix_key)
+function mergePublicConfig(doc) {
+  const nomeDb = doc?.nomeLoja?.trim();
+  const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
+  const corPrimaria = String(doc?.corPrimaria || shopConfig.corPrimaria || '').trim();
+  const corSecundaria = String(doc?.corSecundaria || shopConfig.corSecundaria || '').trim();
+  const colorsMerged = {
+    ...(shopConfig.colors || {}),
+    ...(corPrimaria ? { gold: corPrimaria } : {}),
+    ...(corSecundaria ? { gold2: corSecundaria } : {})
+  };
+  return {
+    nomeLoja: nomeDb || shopConfig.nomeLoja,
+    chavePix: pixDb || (shopConfig.chavePix || '').trim(),
+    corPrimaria,
+    corSecundaria,
+    whatsappContato: String(doc?.whatsappContato || shopConfig.whatsappContato || '').trim(),
+    instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
+    emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
+    clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
+    colors: colorsMerged,
+    pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium'
+  };
+}
+
+function temMpTokenSalvo(doc) {
+  if (!doc) return false;
+  const mp = doc?.mp_token != null ? String(doc.mp_token).trim() : '';
+  return mp.length > 0;
+}
+
+// ── ROTAS DA API ─────────────────────────────────────────
+app.get('/api/status', async (req, res) => {
+  const ok = await tryConnectDb();
+  const estado = mongoose.connection.readyState;
+  res.json({
+    status: 'online',
+    banco: ok && estado === 1 ? 'conectado' : `desconectado (${estado})`,
+    isConnected: ok && estado === 1,
+    hora: new Date().toLocaleString('pt-BR')
+  });
+});
+
+app.get('/api/produtos', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const filtro = req.query.categoria ? { categoria: req.query.categoria } : {};
+    const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
+    res.json(produtos);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao buscar produtos', detalhe: err.message });
+  }
+});
+
+app.get('/api/produtos/:id', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
+    res.json(produto);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao buscar produto', detalhe: err.message });
+  }
+});
+
+app.post('/api/produtos', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const { nome, preco } = req.body;
+    if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório' });
+    if (!preco || isNaN(preco)) return res.status(400).json({ erro: 'Preço inválido' });
+    const novo = new Produto(req.body);
+    await novo.save();
+    res.status(201).json({ mensagem: 'Produto salvo!', produto: novo });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar', detalhe: err.message });
+  }
+});
+
+app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const atualizado = await Produto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!atualizado) return res.status(404).json({ erro: 'Produto não encontrado' });
+    res.json({ mensagem: 'Produto atualizado!', produto: atualizado });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao atualizar', detalhe: err.message });
+  }
+});
+
+app.delete('/api/produtos/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const removido = await Produto.findById(req.params.id);
+    if (!removido) return res.status(404).json({ erro: 'Produto não encontrado' });
+    await deleteCloudinaryAssetIfApplicable(removido.imagem);
+    await Produto.findByIdAndDelete(req.params.id);
+    res.json({ mensagem: 'Produto removido!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover', detalhe: err.message });
+  }
+});
+
+app.get('/api/categories', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    let list = await Category.find().sort({ nome: 1 }).lean();
+    if (!list.length) {
+      await Category.create({ nome: 'Geral', slug: 'geral' });
+      list = await Category.find().sort({ nome: 1 }).lean();
+    }
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar categorias', detalhe: err.message });
+  }
+});
+
+app.post('/api/categories', verificarSenha, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const nome = req.body.nome?.trim();
+    if (!nome) return res.status(400).json({ erro: 'Nome da categoria é obrigatório' });
+    const slug = req.body.slug?.trim() ? slugifyNome(req.body.slug) : slugifyNome(nome);
+    const exists = await Category.findOne({ slug });
+    if (exists) return res.status(409).json({ erro: 'Já existe uma categoria com este nome/slug.' });
+    const cat = await Category.create({ nome, slug });
+    res.status(201).json({ mensagem: 'Categoria criada!', categoria: cat });
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ erro: 'Slug já cadastrado.' });
+    res.status(500).json({ erro: 'Erro ao criar categoria', detalhe: err.message });
+  }
+});
+
+app.delete('/api/categories/:id', verificarSenha, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const removido = await Category.findByIdAndDelete(req.params.id);
+    if (!removido) return res.status(404).json({ erro: 'Categoria não encontrada' });
+    res.json({ mensagem: 'Categoria removida!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover categoria', detalhe: err.message });
+  }
+});
+
+app.get('/api/banners', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const list = await Banner.find().sort({ ordem: 1, createdAt: 1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar banners', detalhe: err.message });
+  }
+});
+
+app.post('/api/banners', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const imagem = req.body.imagem?.trim();
+    if (!imagem) return res.status(400).json({ erro: 'Imagem é obrigatória (faça upload no admin).' });
+    const ordem = Number.parseInt(req.body.ordem, 10);
+    const banner = await Banner.create({ imagem, ordem: Number.isFinite(ordem) ? ordem : 0 });
+    res.status(201).json({ mensagem: 'Banner salvo!', banner });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar banner', detalhe: err.message });
+  }
+});
+
+app.delete('/api/banners/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const removido = await Banner.findById(req.params.id);
+    if (!removido) return res.status(404).json({ erro: 'Banner não encontrado' });
+    await deleteCloudinaryAssetIfApplicable(removido.imagem);
+    await Banner.findByIdAndDelete(req.params.id);
+    res.json({ mensagem: 'Banner removido!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover banner', detalhe: err.message });
+  }
+});
+
+// Reviews
+app.post('/api/reviews', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const nome = req.body?.nome?.trim ? req.body.nome.trim() : '';
+    const comentario = req.body?.comentario?.trim ? req.body.comentario.trim() : '';
+    const estrelasRaw = req.body?.estrelas;
+    const estrelas = typeof estrelasRaw === 'number' ? estrelasRaw : Number(estrelasRaw);
+
+    if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório.' });
+    if (!comentario) return res.status(400).json({ erro: 'Comentário é obrigatório.' });
+    if (!Number.isFinite(estrelas) || estrelas < 1 || estrelas > 5) {
+      return res.status(400).json({ erro: 'Estrelas devem ser um número entre 1 e 5.' });
+    }
+
+    const review = await Review.create({ nome, comentario, estrelas, aprovado: false });
+    res.status(201).json({ mensagem: 'Avaliação recebida! Aguardando aprovação.', review });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao salvar avaliação', detalhe: err.message });
+  }
+});
+
+app.get('/api/reviews/public', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const list = await Review.find({ aprovado: true })
+      .sort({ data: -1, createdAt: -1 })
+      .lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar avaliações', detalhe: err.message });
+  }
+});
+
+app.get('/api/admin/reviews', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const list = await Review.find().sort({ data: -1, createdAt: -1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao listar avaliações (admin)', detalhe: err.message });
+  }
+});
+
+app.put('/api/admin/reviews/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const updated = await Review.findByIdAndUpdate(req.params.id, { aprovado: true }, { new: true });
+    if (!updated) return res.status(404).json({ erro: 'Avaliação não encontrada' });
+    res.json({ mensagem: 'Avaliação aprovada!', review: updated });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao aprovar avaliação', detalhe: err.message });
+  }
+});
+
+app.delete('/api/admin/reviews/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const removed = await Review.findById(req.params.id);
+    if (!removed) return res.status(404).json({ erro: 'Avaliação não encontrada' });
+    await Review.findByIdAndDelete(req.params.id);
+    res.json({ mensagem: 'Avaliação removida!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao remover avaliação', detalhe: err.message });
+  }
+});
+
+// Settings (public)
 app.get('/api/settings', async (req, res) => {
   let doc = null;
   try {
-    if (await tryConnectDb()) {
-      doc = await Settings.findOne().lean();
-    }
-  } catch (e) {
-    // ignora
+    if (await tryConnectDb()) doc = await Settings.findOne().lean();
+  } catch {
+    // ignore
   }
   if (!doc) doc = { pix_key: '' };
   res.json(mergePublicSettings(doc));
 });
 
-// POST /api/settings (admin via x-admin-password)
 app.post('/api/settings', verificarSenha, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
@@ -757,7 +733,7 @@ app.post('/api/settings', verificarSenha, async (req, res) => {
   }
 });
 
-// POST /api/orders (criação automática pelo front após finalizar compra)
+// Orders
 app.post('/api/orders', async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
@@ -768,13 +744,11 @@ app.post('/api/orders', async (req, res) => {
     const status = req.body?.status != null ? String(req.body.status).trim() : 'Pendente';
 
     const totalNum = typeof total === 'number' ? total : Number(total);
-    if (!Number.isFinite(totalNum)) {
-      return res.status(400).json({ erro: 'total inválido' });
-    }
+    if (!Number.isFinite(totalNum)) return res.status(400).json({ erro: 'total inválido' });
 
     const order = await Order.create({
       customerName,
-      items: items.map(i => ({
+      items: items.map((i) => ({
         name: String(i.name || '').trim(),
         qty: Number(i.qty || 1),
         price: Number(i.price || 0)
@@ -790,7 +764,6 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// GET /api/orders (admin - listar)
 app.get('/api/orders', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
@@ -801,49 +774,7 @@ app.get('/api/orders', verificarJWT, async (req, res) => {
   }
 });
 
-// --- CONFIGURAÇÃO DA LOJA ---
-
-
-const ConfigSchema = new mongoose.Schema({
-  nomeLoja: { type: String, default: shopConfig.nomeLoja },
-  chavePix: { type: String, default: '' },
-  corPrimaria: { type: String, default: shopConfig.corPrimaria },
-  corSecundaria: { type: String, default: shopConfig.corSecundaria },
-  whatsappContato: { type: String, default: shopConfig.whatsappContato },
-  instagramLink: { type: String, default: shopConfig.instagramLink },
-  emailContato: { type: String, default: shopConfig.emailContato },
-  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) }
-});
-
-const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
-
-function mergePublicConfig(doc) {
-  const nomeDb = doc?.nomeLoja?.trim();
-  const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
-  const corPrimaria = String(doc?.corPrimaria || shopConfig.corPrimaria || '').trim();
-  const corSecundaria = String(doc?.corSecundaria || shopConfig.corSecundaria || '').trim();
-  const colorsMerged = {
-    ...(shopConfig.colors || {}),
-    ...(corPrimaria ? { gold: corPrimaria } : {}),
-    ...(corSecundaria ? { gold2: corSecundaria } : {})
-  };
-  return {
-    nomeLoja: nomeDb || shopConfig.nomeLoja,
-    chavePix: pixDb || (shopConfig.chavePix || '').trim(),
-    corPrimaria: corPrimaria || shopConfig.corPrimaria || '',
-    corSecundaria: corSecundaria || shopConfig.corSecundaria || '',
-    whatsappContato: String(doc?.whatsappContato || shopConfig.whatsappContato || '').trim(),
-    instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
-    emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
-    clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
-    colors: colorsMerged,
-    pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium'
-  };
-}
-
-// Rota pública para o site ler nome da loja, PIX e tema (shopConfig + Mongo)
-// Observação: não usamos cache para garantir que alterações feitas no admin
-// sejam refletidas imediatamente na vitrine.
+// Loja config
 app.get('/api/config', async (req, res) => {
   let doc = null;
   try {
@@ -866,12 +797,9 @@ app.get('/api/config', async (req, res) => {
   } catch (e) {
     console.warn('GET /api/config:', e.message);
   }
-
   res.json(mergePublicConfig(doc));
 });
 
-
-// Rota protegida para o admin salvar configurações
 app.post('/api/config', verificarSenha, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
@@ -885,31 +813,136 @@ app.post('/api/config', verificarSenha, async (req, res) => {
       emailContato,
       clienteTag
     } = req.body;
+
     const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
-    if (chavePix !== undefined) {
-      dados.chavePix = String(chavePix).trim();
-    }
+    if (chavePix !== undefined) dados.chavePix = String(chavePix).trim();
     if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
     if (whatsappContato !== undefined) dados.whatsappContato = String(whatsappContato).trim();
     if (instagramLink !== undefined) dados.instagramLink = String(instagramLink).trim();
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
-    if (!dados.clienteTag) {
-      dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
-    }
+    if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
+
     const atualizado = await Config.findOneAndUpdate({}, dados, {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true
     });
+
     res.json({ mensagem: 'Configuração atualizada!', config: mergePublicConfig(atualizado) });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 });
 
-// ── INICIAR SERVIDOR (LOCAL)
+// ── PIX AUTOMÁTICO ─────────────────────────────────────
+
+app.get('/api/pix/automatic', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.json({ hasMpToken: false, pixKeyFallback: '' });
+    }
+
+    const doc = await Settings.findOne().lean();
+    const hasMpToken = temMpTokenSalvo(doc);
+    const pixKeyFallback = mergePublicSettings(doc).pix_key;
+
+    return res.json({ hasMpToken, pixKeyFallback });
+  } catch {
+    return res.json({ hasMpToken: false, pixKeyFallback: '' });
+  }
+});
+
+app.post('/api/pix/qr-mp', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE', pixKeyFallback: '' });
+    }
+
+    const doc = await Settings.findOne().lean();
+    const pixKeyFallback = mergePublicSettings(doc).pix_key;
+
+    if (!temMpTokenSalvo(doc)) {
+      return res.json({ ok: false, reason: 'NO_MP_TOKEN', pixKeyFallback });
+    }
+
+    const totalNum = req.body?.total;
+    const amount = typeof totalNum === 'number' ? totalNum : Number(totalNum);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({
+        ok: false,
+        reason: 'INVALID_AMOUNT',
+        pixKeyFallback
+      });
+    }
+
+    const mpToken = String(doc.mp_token).trim();
+
+    const payload = {
+      transaction_amount: amount,
+      description: 'Compra na VN Imports',
+      payment_method_id: 'pix',
+      payer: {
+        email: req.body?.payerEmail || 'test@test.com'
+      }
+    };
+
+    const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mpToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const mpJson = await mpRes.json().catch(() => ({}));
+
+    if (!mpRes.ok) {
+      return res.status(502).json({
+        ok: false,
+        reason: 'MP_PAYMENT_CREATE_FAILED',
+        mpStatus: mpRes.status,
+        mpError: mpJson,
+        pixKeyFallback
+      });
+    }
+
+    const qrCode =
+      mpJson?.point_of_interaction?.transaction_data?.qr_code ||
+      mpJson?.point_of_interaction?.transaction_data?.qr_code_base64 ||
+      mpJson?.qr_code ||
+      mpJson?.qr_code_base64 ||
+      '';
+
+    const qrCodeBase64 =
+      mpJson?.point_of_interaction?.transaction_data?.qr_code_base64 ||
+      mpJson?.qr_code_base64 ||
+      '';
+
+    if (!qrCode && !qrCodeBase64) {
+      return res.status(502).json({
+        ok: false,
+        reason: 'MP_QR_NOT_FOUND',
+        mpPayment: mpJson,
+        pixKeyFallback
+      });
+    }
+
+    // O front hoje usa apenas qrCode, mas retornamos também qrCodeBase64.
+    return res.json({
+      ok: true,
+      qrCode,
+      qrCodeBase64,
+      pixKeyFallback
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, reason: 'ERROR', pixKeyFallback: '' });
+  }
+});
+
+// ── INICIAR SERVIDOR (LOCAL) ───────────────────────────
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
@@ -919,26 +952,15 @@ if (process.env.NODE_ENV !== 'production') {
 
 const lojaHtml = path.join(__dirname, 'VN_IMPORTS.html');
 
-// ── SERVIR OS HTMLS (obrigatório na Vercel) ────────────
-app.get('/', (req, res) => {
-  res.sendFile(lojaHtml);
-});
+// SERVIR HTMLS
+app.get('/', (req, res) => res.sendFile(lojaHtml));
+app.get('/index.html', (req, res) => res.sendFile(lojaHtml));
+app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/VN_IMPORTS.html', (req, res) => res.sendFile(lojaHtml));
 
-app.get('/index.html', (req, res) => {
-  res.sendFile(lojaHtml);
-});
-
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
-app.get('/VN_IMPORTS.html', (req, res) => {
-  res.sendFile(lojaHtml);
-});
-
-// Arquivos estáticos por último (evita index.html na raiz roubar GET /)
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
 
 module.exports = app;
+

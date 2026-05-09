@@ -1449,8 +1449,9 @@ function renderCart(){
     </div>`).join('');
 }
 
-function checkout(){
+async function checkout(){
   // Deve ser 100% controlado pelo Admin via /api/config.
+
   // Regra dinâmica:
   // 1) Se o valor do Admin começar com 'http' => abre em nova aba.
   // 2) Se NÃO começar com 'http' (telefone/chave/número) => abre modal luxuoso exibindo a chave.
@@ -1497,28 +1498,82 @@ customerName: (S && S.customerName && String(S.customerName).trim()) || 'Cliente
   renderCart();
   syncDots();
 
-  const raw = (S.chavePix && String(S.chavePix).trim()) || '';
+  // Transi     o autom  tica (MP token -> QR din  mico / sen    o -> chave Pix manual)
+  try {
+    const autoR = await fetch(API_URL + '/pix/automatic');
+    const auto = await autoR.json().catch(() => ({}));
 
+    const pixFallback = (auto?.pixKeyFallback && String(auto.pixKeyFallback).trim()) || '';
 
+    if (auto?.hasMpToken) {
+      try {
+        const qrR = await fetch(API_URL + '/pix/qr-mp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ total: cartTotal })
+        });
 
-  if (!raw) {
-    showPixModal('', true, cartTotal);
-    closeCart();
+        const qrD = await qrR.json().catch(() => ({}));
+
+        if (qrR.ok && qrD?.ok && qrD?.qrCode) {
+          // Nesta codebase, por enquanto o front exibe o QR como imagem URL/base64 (campo qrCode)
+          // caso a implementa     o retorne QR em formato string.
+          showToast('✓','Gerando pagamento PIX (QR din mico)...');
+
+          showPixModal(qrD.qrCode, false, cartTotal);
+          closeCart();
+          return;
+        }
+      } catch (e) {
+        // se falhar, cai no fallback
+      }
+    }
+
+    // fallback Pix manual
+    const raw = (pixFallback && String(pixFallback).trim()) || '';
+    if (!raw) {
+      showPixModal('', true, cartTotal);
+      closeCart();
+      return;
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      window.open(raw, '_blank');
+      return;
+    }
+
+    if (/^www\./i.test(raw)) {
+      window.open('https://' + raw, '_blank');
+      return;
+    }
+
+    showPixModal(raw, false, cartTotal);
+    return;
+  } catch {
+    // fallback final: usa chave Pix do S (config antiga)
+    const raw = (S.chavePix && String(S.chavePix).trim()) || '';
+
+    if (!raw) {
+      showPixModal('', true, cartTotal);
+      closeCart();
+      return;
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      window.open(raw, '_blank');
+      return;
+    }
+
+    if (/^www\./i.test(raw)) {
+      window.open('https://' + raw, '_blank');
+      return;
+    }
+
+    showPixModal(raw, false, cartTotal);
     return;
   }
-
-  if (/^https?:\/\//i.test(raw)) {
-    window.open(raw, '_blank');
-    return;
-  }
-
-  if (/^www\./i.test(raw)) {
-    window.open('https://' + raw, '_blank');
-    return;
-  }
-
-  showPixModal(raw, false, cartTotal);
 }
+
 
 
 function showPixModal(pixValue, isEmpty, cartTotal){
