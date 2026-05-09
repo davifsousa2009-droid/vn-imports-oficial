@@ -505,11 +505,13 @@ footer{background:var(--ink);color:var(--bg)}
 .pv-div{border:none;border-top:1px solid var(--border);margin:24px 0}
 .pv-opt-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .pv-sizes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
-.pv-size{
+  .pv-size{
   width:50px;height:50px;border:1.5px solid var(--border);background:transparent;
   font-size:13px;font-weight:500;color:var(--ink);transition:all .2s;
+  border-radius:10px;
 }
-.pv-size:hover,.pv-size.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pv-size:hover,.pv-size.on{background:var(--ink2);color:var(--bg);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(196,165,90,.25) inset}
+.pv-size.on{transform:translateY(-1px)}
 .pv-desc{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:24px;font-weight:300}
 .pv-btns{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
 .btn-full{width:100%;padding:16px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
@@ -1365,6 +1367,8 @@ function filterAndGo(cat){
 /* ─── PRODUCT PAGE ─── */
 function openProd(id){
   const p = S.products[id]; curProd=p;
+  let selectedSize = '';
+  window.__vn_selectedSize = selectedSize;
   const main = document.getElementById('pvMain');
   main.innerHTML = p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`;
   document.getElementById('pvBrand').textContent = p.brand;
@@ -1373,6 +1377,7 @@ function openProd(id){
   const parc = (p.price/S.parc).toFixed(2);
   document.getElementById('pvPrice').innerHTML = `${R$(p.price)}${p.old?`<span>${R$(p.old)}</span>`:''}`;
   document.getElementById('pvInst').innerHTML  = `ou <b>${S.parc}x de ${R$(parc)}</b> sem juros`;
+
 
   // thumbs
   document.getElementById('pvThumbs').innerHTML =
@@ -1384,16 +1389,37 @@ function openProd(id){
 
   // sizes
   const sg = document.getElementById('pvSizes');
-  sg.innerHTML = p.sizes.length
-    ? p.sizes.map((s,i)=>`<button class="pv-size ${i===0?'on':''}" onclick="selSize(this)">${s}</button>`).join('')
+  const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+  sg.innerHTML = sizes.length
+    ? sizes.map((s,i)=>`<button class="pv-size ${i===0?'on':''}" onclick="selSize(this)">${s}</button>`).join('')
     : '<span style="font-size:13px;color:var(--muted)">Tamanho único</span>';
+
+  // default selection: if exists sizes, preselect first for UX; but still enforce on add.
+  if(sizes.length){
+    window.__vn_selectedSize = (sizes[0] || '').trim();
+  } else {
+    window.__vn_selectedSize = '';
+  }
+
 
   // wishlist btn
   const wb = document.getElementById('pvWishBtn');
   const inWL = wl.find(w=>w.id===p.id);
   wb.innerHTML = inWL?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos';
   wb.onclick = ()=>{ toggleWL(p.id); wb.innerHTML=wl.find(w=>w.id===p.id)?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos'; };
-  document.getElementById('pvAddBtn').onclick = ()=>addCart(p);
+  document.getElementById('pvAddBtn').onclick = ()=>{
+    const sel = (window.__vn_selectedSize || '').trim();
+    if(!sel){
+      const box = document.getElementById('pvSizes');
+      if(box){
+        box.insertAdjacentHTML('afterend', '<div class="pv-alert-tam" style="margin-top:-12px;margin-bottom:18px;font-size:12px;color:#fff;background:#A0391E;border:1px solid rgba(160,57,30,.75);padding:10px 12px;border-radius:12px;">Selecione um tamanho para adicionar ao carrinho.</div>');
+      }
+      box?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    addCart(p);
+  };
+
 
   goView('view-product');
 }
@@ -1404,7 +1430,13 @@ function switchThumb(el,img){
   document.querySelectorAll('.pv-thumb').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
 }
-function selSize(el){ document.querySelectorAll('.pv-size').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+function selSize(el){
+  document.querySelectorAll('.pv-size').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  const v = (el.textContent || '').trim();
+  window.__vn_selectedSize = v || '';
+  el?.closest('.pv-info')?.querySelectorAll('.pv-alert-tam')?.forEach(a=>a.remove());
+}
 
 /* ─── WISHLIST ─── */
 function toggleWL(id){
@@ -1436,9 +1468,22 @@ function renderWL(){
 
 /* ─── CART ─── */
 function addCart(p){
-  const ex=cart.find(i=>i.id===p.id);
-  ex ? ex.qty++ : cart.push({...p,qty:1});
-  saveC(); syncDots(); renderCart();
+  const sel = (window.__vn_selectedSize || '').trim();
+  if(!sel){
+    showToast('⚠️','Selecione um tamanho.');
+    return;
+  }
+
+  const ex = cart.find(i=>i.id===p.id && (i.tamanhoSelecionado||'')===sel);
+  if(ex){
+    ex.qty++;
+  } else {
+    cart.push({...p, qty: 1, tamanhoSelecionado: sel});
+  }
+
+  saveC();
+  syncDots();
+  renderCart();
   showToast('✓', p.name+' adicionado!');
   setTimeout(openCart,350);
 }
@@ -1460,7 +1505,9 @@ function renderCart(){
       <div class="ci-img">${it.img?`<img src="${it.img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
       <div class="ci-body">
         <div class="ci-name">${it.name}</div>
+        ${it.tamanhoSelecionado ? `<div class="ci-sizepick" style="margin-bottom:8px;font-size:11px;color:var(--gold);font-weight:700">Tam: ${it.tamanhoSelecionado}</div>` : ''}
         <div class="ci-price">${R$(it.price)}</div>
+
         <div class="ci-qrow">
           <button class="cqb" onclick="chQty(${i},-1)">−</button>
           <span class="cqn">${it.qty}</span>
@@ -1494,7 +1541,8 @@ customerName: (S && S.customerName && String(S.customerName).trim()) || 'Cliente
 
           name: it.name,
           qty: it.qty ?? 1,
-          price: it.price
+          price: it.price,
+          tamanhoSelecionado: (it.tamanhoSelecionado || '').trim()
         })),
         total: cartTotal,
         cep: '',

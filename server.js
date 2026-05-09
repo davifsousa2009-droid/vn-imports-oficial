@@ -371,11 +371,14 @@ const produtoSchema = new mongoose.Schema(
     imagem: { type: String, default: '' },
     descricao: { type: String, default: '' },
     categoria: { type: String, default: 'geral' },
-    estoque: { type: Number, default: 0 }
+    estoque: { type: Number, default: 0 },
+    // Array de tamanhos disponíveis para o produto (ex: ['P','M','G'])
+    sizes: { type: [String], default: [] }
   },
   { timestamps: true }
 );
 const Produto = mongoose.models.Produto || mongoose.model('Produto', produtoSchema);
+
 
 function slugifyNome(nome) {
   const s = String(nome)
@@ -423,7 +426,8 @@ const OrderSchema = new mongoose.Schema(
         {
           name: { type: String, required: true },
           qty: { type: Number, required: true, min: 1 },
-          price: { type: Number, required: true }
+          price: { type: Number, required: true },
+          tamanhoSelecionado: { type: String, default: '' }
         }
       ],
       default: []
@@ -751,7 +755,8 @@ app.post('/api/orders', async (req, res) => {
       items: items.map((i) => ({
         name: String(i.name || '').trim(),
         qty: Number(i.qty || 1),
-        price: Number(i.price || 0)
+        price: Number(i.price || 0),
+        tamanhoSelecionado: i.tamanhoSelecionado ? String(i.tamanhoSelecionado) : ''
       })),
       total: totalNum,
       cep,

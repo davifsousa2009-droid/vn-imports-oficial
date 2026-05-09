@@ -226,6 +226,28 @@ tr:hover td{background:#FAFAF8}
             </div>
             <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="f-desc" placeholder="Descreva o produto…"></textarea></div>
             <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
+
+            <div class="fg fw">
+              <label class="fl">Tamanhos Disponíveis</label>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                  <input type="checkbox" id="f-tam-P" value="P"> P
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                  <input type="checkbox" id="f-tam-M" value="M"> M
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                  <input type="checkbox" id="f-tam-G" value="G"> G
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#111;user-select:none">
+                  <input type="checkbox" id="f-tam-GG" value="GG"> GG
+                </label>
+              </div>
+              <div style="margin-top:10px">
+                <label class="fl" style="color:#888">Outros Tamanhos</label>
+                <input class="fi" id="f-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
+              </div>
+            </div>
           </div>
           <div class="form-btns">
             <button class="btn btn-p" id="btnSalvarProduto" onclick="salvar()">Salvar produto</button>
@@ -890,12 +912,15 @@ async function salvar() {
     }
   }
 
+  const tamanhos = getTamanhosFromUI('f');
+
   try {
     const r = await fetch(API + '/produtos', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, imagem, descricao, categoria, estoque })
+      body: JSON.stringify({ nome, preco, imagem, descricao, categoria, estoque, sizes: tamanhos })
     });
+
 
     const d = await r.json();
 
@@ -1147,6 +1172,9 @@ async function salvarEdicao() {
   const descricao = document.getElementById('edesc').value.trim();
   const estoque   = parseInt(document.getElementById('eest').value) || 0;
 
+  const tamanhos = getTamanhosFromUI('e');
+
+
   if (!nome || !preco) { toast('Nome e preço são obrigatórios'); return; }
 
   const ef = document.getElementById('e-file');
@@ -1163,8 +1191,9 @@ async function salvarEdicao() {
     const r = await fetch(`${API}/produtos/${id}`, {
       method: 'PUT',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, categoria, imagem, descricao, estoque })
+      body: JSON.stringify({ nome, preco, categoria, imagem, descricao, estoque, sizes: tamanhos })
     });
+
 
     if (r.ok) {
       toast('Atualizado: ' + nome);
