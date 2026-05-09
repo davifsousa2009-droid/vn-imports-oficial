@@ -1454,10 +1454,24 @@ function checkout(){
   // Regra dinâmica:
   // 1) Se o valor do Admin começar com 'http' => abre em nova aba.
   // 2) Se NÃO começar com 'http' (telefone/chave/número) => abre modal luxuoso exibindo a chave.
+
+  // Pix com valor travado: sempre use o total exato do carrinho no momento do clique.
+  const cartTotal = cart.reduce((s,i)=>s + i.price*i.qty, 0);
+
+  // Confirmação + limpeza imediata do carrinho.
+  // (A mensagem aparece e o carrinho é esvaziado logo em seguida.)
+  showToast('✓','Compra realizada com sucesso! Estamos aguardando a confirmação do pagamento.');
+  S.cart = [];
+  cart = [];
+  saveC();
+  renderCart();
+  syncDots();
+
   const raw = (S.chavePix && String(S.chavePix).trim()) || '';
 
+
   if (!raw) {
-    showPixModal('', true);
+    showPixModal('', true, cartTotal);
     closeCart();
     return;
   }
@@ -1472,11 +1486,13 @@ function checkout(){
     return;
   }
 
-  showPixModal(raw, false);
+  showPixModal(raw, false, cartTotal);
 }
 
-function showPixModal(pixValue, isEmpty){
+
+function showPixModal(pixValue, isEmpty, cartTotal){
   const EXIST_ID = 'pixModalVn';
+
   const existing = document.getElementById(EXIST_ID);
   if (existing) existing.remove();
 
@@ -1529,6 +1545,8 @@ function showPixModal(pixValue, isEmpty){
     <div class="vn-pix-body">
       <div class="vn-pix-label">Chave Pix para pagamento</div>
       <div class="vn-pix-value">${isEmpty ? '— (não configurada)' : String(pixValue)}</div>
+      <div class="vn-pix-label" style="margin-top:6px">Valor total (pagamento)</div>
+      <div class="vn-pix-value">${cartTotal != null ? 'R$ ' + Number(cartTotal).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</div>
       <div class="vn-pix-actions">
         <button class="vn-pix-btn primary" id="vnPixCopyBtn" ${isEmpty ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>Copiar Chave Pix</button>
         <button class="vn-pix-btn ghost" onclick="(function(){var o=document.getElementById('pixModalVn'); if(o) o.parentElement && o.parentElement.remove();})()">Fechar</button>
