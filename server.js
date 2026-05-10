@@ -1003,6 +1003,9 @@ app.get('/index.html', (req, res) => res.sendFile(lojaHtml));
 app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/VN_IMPORTS.html', (req, res) => res.sendFile(lojaHtml));
 
+// serve também a raiz do app estático (garante consistência)
+app.get('/VN_IMPORTS', (req, res) => res.sendFile(lojaHtml));
+
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
