@@ -137,12 +137,55 @@ nav{
 }
 .hero-season::before{content:'';display:block;width:36px;height:1px;background:var(--silver)}
 .hero-title{
-  font-family:var(--serif);
+  font-family:var(--sans);
   font-size:clamp(48px,5.5vw,80px);
-  font-weight:400;line-height:1.03;
-  letter-spacing:-.02em;margin-bottom:26px;
+  font-weight:900;line-height:1.03;
+  letter-spacing:-.03em;margin-bottom:26px;
 }
-.hero-title em{font-style:italic;color:var(--gold)}
+.hero-title em{font-style:italic;color:var(--gold);font-weight:600;
+  text-shadow:0 8px 30px rgba(196,165,90,.18);
+}
+
+/* Hero media (slider/video substituto) */
+.hero-media{position:absolute;inset:0;overflow:hidden;z-index:-1;}
+.hero-media-layer{position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,244,240,.96) 0%, rgba(247,244,240,.68) 38%, rgba(247,244,240,.15) 70%, rgba(247,244,240,0) 100%);}
+.hero-kenburns{
+  position:absolute;inset:-20px;
+  background-image:url('https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1800&q=80');
+  background-size:cover;
+  background-position:center;
+  filter:saturate(1.05) contrast(1.02);
+  transform:scale(1.08);
+  animation:kenburns 14s ease-in-out infinite;
+}
+@keyframes kenburns{
+  0%{transform:scale(1.08) translate3d(0,0,0)}
+  50%{transform:scale(1.16) translate3d(-2%,2%,0)}
+  100%{transform:scale(1.08) translate3d(0,0,0)}
+}
+.hero-badges{position:absolute;left:36px;top:118px;display:flex;flex-direction:column;gap:12px;z-index:5;}
+.hero-fadebadge{background:rgba(255,255,255,.6);border:1px solid rgba(217,212,204,.75);backdrop-filter:blur(10px);padding:10px 14px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink);opacity:0;transform:translateY(10px);animation:fadeUp .7s ease forwards;}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+
+.btn-cta-premium{
+  box-shadow:0 14px 45px rgba(0,0,0,.12);
+  position:relative;
+}
+.btn-cta-premium::after{
+  content:'';
+  position:absolute;inset:-2px;
+  background:radial-gradient(circle at 30% 20%, rgba(196,165,90,.35), transparent 45%),
+             radial-gradient(circle at 70% 80%, rgba(0,0,0,.08), transparent 55%);
+  opacity:.0;
+  transition:opacity .25s;
+  pointer-events:none;
+  border-radius:0;
+}
+.btn-cta-premium:hover::after{opacity:1}
+
+/* glassmorphism search */
+#main-nav{background:rgba(247,244,240,.85);}
+.search-wrap{background:rgba(247,244,240,.92);backdrop-filter:blur(18px);border-top:1px solid rgba(217,212,204,.75)}
 .hero-lead{
   font-size:16px;color:var(--muted);line-height:1.8;
   max-width:420px;margin-bottom:44px;font-weight:300;
@@ -1027,12 +1070,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-left">
+    <div class="hero-media" aria-hidden="true">
+      <div class="hero-media-layer"></div>
+      <div class="hero-kenburns" aria-hidden="true"></div>
+      <div class="hero-badges" aria-hidden="true">
+        <div class="hero-fadebadge" style="animation-delay:.15s">🛍️ <b style="font-weight:900">Autenticidade</b> garantida</div>
+        <div class="hero-fadebadge" style="animation-delay:.35s">🚚 <b style="font-weight:900">Frete grátis</b> acima de R$299</div>
+      </div>
+    </div>
+
+    <div class="hero-left">
     <div class="hero-season">Coleção Inverno 2026</div>
-    <h1 class="hero-title">Vista-se<br>com <em>intenção.</em></h1>
+    <h1 class="hero-title">Vista-se<br>com <em>Exclusividade</em> e intenção.</h1>
     <p class="hero-lead">Peças importadas selecionadas para quem exige qualidade, estilo e personalidade em cada look.</p>
     <div class="hero-btns">
-      <button class="btn-fill" onclick="scrollTo_('sec-prod')">Ver Coleção →</button>
+      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')">Ver Coleção →</button>
       <button class="btn-line" onclick="scrollTo_('sec-cats')">Categorias</button>
     </div>
     <div class="hero-stats">
