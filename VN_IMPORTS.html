@@ -119,7 +119,7 @@ nav{
 }
 .nav-dot.on{display:block}
 
-/* ─── HERO (minimalista/clean, split editável) ─── */
+/* ─── HERO (Split 50/50) ─── */
 .hero{
   max-width:1240px;
   margin:0 auto;
@@ -128,6 +128,7 @@ nav{
   min-height:calc(100vh - 90px);
   padding:0 36px;
   align-items:stretch;
+  gap:0;
 }
 
 .hero-left{
@@ -136,8 +137,12 @@ nav{
   justify-content:center;
   gap:14px;
   padding:72px 56px 72px 0;
-  border-right:1px solid var(--border);
-  background:linear-gradient(180deg, rgba(247,244,240,.98) 0%, rgba(247,244,240,.92) 100%);
+  background:#F7F4F0;
+}
+
+/* Substitui o antigo separador visual por respiro (luxo/minimal) */
+.hero-left{
+  border-right:none;
 }
 
 .hero-season{
@@ -160,12 +165,12 @@ nav{
   line-height:1.08;
   letter-spacing:-.02em;
   margin-bottom:0;
+  color:var(--ink);
 }
 .hero-title em{
   font-style:italic;
   color:var(--gold2);
   font-weight:900;
-  text-shadow:none;
 }
 
 .hero-lead{
@@ -219,30 +224,32 @@ nav{
   justify-content:center;
 }
 
-/* Imagem de destaque (100% editável) */
+/* Coluna direita: imagem ocupa toda a altura do container */
 .hero-media{
   width:100%;
-  max-width:540px;
-  aspect-ratio: 4 / 5;
+  height:100%;
+  max-height:none;
+  aspect-ratio: auto;
   border:1px solid var(--border);
   background:var(--bg2);
   overflow:hidden;
 }
 .hero-media img{width:100%;height:100%;object-fit:cover;display:block}
 
-/* Barra de benefícios (abaixo do hero) */
+/* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
   max-width:1240px;
-  margin:0 auto;
-  padding:0 36px 24px;
+  margin:-16px auto 0;
+  padding:0 36px;
 }
 .hero-benefits{
-  border:1px solid var(--border);
-  background:rgba(247,244,240,.85);
-  backdrop-filter:blur(14px);
+  border:1px solid rgba(217,212,204,.75);
+  background:rgba(247,244,240,.72);
+  backdrop-filter:blur(12px);
   display:flex;
   gap:24px;
-  justify-content:flex-start;
+  justify-content:space-between;
+  align-items:center;
   padding:12px 18px;
 }
 .hero-benefit{
@@ -251,23 +258,27 @@ nav{
   gap:10px;
   font-size:12px;
   color:var(--ink);
-  font-weight:700;
+  font-weight:650;
   letter-spacing:.02em;
   white-space:nowrap;
+  flex:1;
+  justify-content:flex-start;
 }
-.hero-benefit span{color:var(--muted);font-weight:700}
+.hero-benefit span{color:var(--muted);font-weight:650}
 
 /* remover estilos antigos do hero poluído */
 .hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
 
 @media(max-width:768px){
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
-  .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
-  .hero-right{padding:20px 20px 0 20px;}
-  .hero-media{max-width:none;}
-  .hero-benefits-bar{padding:0 20px 24px}
-  .hero-benefits{flex-direction:column;gap:10px}
+  .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid transparent;}
+  .hero-right{padding:0 20px 24px 20px;}
+  .hero-media{height:340px;}
+  .hero-benefits-bar{padding:0 20px;margin-top:0}
+  .hero-benefits{flex-direction:row;gap:10px;overflow:auto;justify-content:flex-start}
+  .hero-benefit{flex:none}
 }
+
 
 
 .btn-cta-premium{
@@ -1206,6 +1217,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="hero-benefits" id="heroBenefits">
     <div class="hero-benefit">🛍️ <span id="hb1">Autenticidade</span> garantida</div>
     <div class="hero-benefit">🚚 <span id="hb2">Frete grátis</span> acima de R$299</div>
+    <div class="hero-benefit">💳 <span id="hb3">Parcelamento</span> em até 12x</div>
   </div>
 </div>
 
