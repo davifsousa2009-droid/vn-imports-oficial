@@ -1603,8 +1603,18 @@ function renderHome(){
       </div>
     </div>`).join('');
 
-  renderGrid(S.products);
+  // Renderização segura: alguns layouts antigos/rascunhos podem não ter o container de vitrine presente.
+  const containerHome = document.getElementById('prodGrid') || document.getElementById('lista-produtos-real');
+  if(containerHome){
+    renderGrid(S.products);
+  } else {
+    console.warn('Aviso: Container de produtos não encontrado na função renderHome. Abortando renderização segura.', {
+      prodGrid: !!document.getElementById('prodGrid'),
+      listaProdutosReal: !!document.getElementById('lista-produtos-real')
+    });
+  }
   try {
+
     // carrega avaliações sem bloquear o carregamento dos produtos
     if (typeof carregarReviewsPublic === 'function') {
       carregarReviewsPublic().catch((e) => console.error(e));
