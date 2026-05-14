@@ -820,6 +820,7 @@ app.get('/api/orders', verificarJWT, async (req, res) => {
 });
 
 // Loja config
+// Inclui: nome, whatsapp, imagem do hero (banco) e demais tokens usados pelo template.
 app.get('/api/config', async (req, res) => {
   let doc = null;
   try {
@@ -842,7 +843,24 @@ app.get('/api/config', async (req, res) => {
   } catch (e) {
     console.warn('GET /api/config:', e.message);
   }
-  res.json(mergePublicConfig(doc));
+
+  // Para preservar compatibilidade, garantimos campos extras se existirem no banco.
+  // Se o banco estiver vazio, /api/config precisa retornar um objeto padrão.
+  // Mantemos também o nome do campo heroImagem (consistência Admin -> Server -> Banco -> Vitrine).
+  const publicCfg = mergePublicConfig(doc);
+
+  // default (exemplo) caso não exista no banco
+  const defaultHeroImagem =
+    'https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=80';
+
+  const heroImagem = doc?.heroImagem
+    ? String(doc.heroImagem).trim()
+    : defaultHeroImagem;
+
+  return res.json({
+    ...publicCfg,
+    heroImagem
+  });
 });
 
 app.post('/api/config', verificarSenha, async (req, res) => {

@@ -119,53 +119,156 @@ nav{
 }
 .nav-dot.on{display:block}
 
-/* ─── HERO ─── */
+/* ─── HERO (minimalista/clean, split editável) ─── */
 .hero{
-  max-width:1240px;margin:0 auto;
-  display:grid;grid-template-columns:55fr 45fr;
-  min-height:calc(100vh - 90px);padding:0 36px;
-}
-.hero-left{
-  display:flex;flex-direction:column;justify-content:center;
-  padding:72px 64px 72px 0;
-  border-right:1px solid var(--border);
-}
-.hero-season{
-  display:flex;align-items:center;gap:14px;
-  font-size:11px;font-weight:600;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:32px;
-}
-.hero-season::before{content:'';display:block;width:36px;height:1px;background:var(--silver)}
-.hero-title{
-  font-family:var(--sans);
-  font-size:clamp(48px,5.5vw,80px);
-  font-weight:900;line-height:1.03;
-  letter-spacing:-.03em;margin-bottom:26px;
-}
-.hero-title em{font-style:italic;color:var(--gold);font-weight:600;
-  text-shadow:0 8px 30px rgba(196,165,90,.18);
+  max-width:1240px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  min-height:calc(100vh - 90px);
+  padding:0 36px;
+  align-items:stretch;
 }
 
-/* Hero media (slider/video substituto) */
-.hero-media{position:absolute;inset:0;overflow:hidden;z-index:-1;}
-.hero-media-layer{position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,244,240,.96) 0%, rgba(247,244,240,.68) 38%, rgba(247,244,240,.15) 70%, rgba(247,244,240,0) 100%);}
-.hero-kenburns{
-  position:absolute;inset:-20px;
-  background-image:url('https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1800&q=80');
-  background-size:cover;
-  background-position:center;
-  filter:saturate(1.05) contrast(1.02);
-  transform:scale(1.08);
-  animation:kenburns 14s ease-in-out infinite;
+.hero-left{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:14px;
+  padding:72px 56px 72px 0;
+  border-right:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(247,244,240,.98) 0%, rgba(247,244,240,.92) 100%);
 }
-@keyframes kenburns{
-  0%{transform:scale(1.08) translate3d(0,0,0)}
-  50%{transform:scale(1.16) translate3d(-2%,2%,0)}
-  100%{transform:scale(1.08) translate3d(0,0,0)}
+
+.hero-season{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:2px;
 }
-.hero-badges{position:absolute;left:36px;top:118px;display:flex;flex-direction:column;gap:12px;z-index:5;}
-.hero-fadebadge{background:rgba(255,255,255,.6);border:1px solid rgba(217,212,204,.75);backdrop-filter:blur(10px);padding:10px 14px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink);opacity:0;transform:translateY(10px);animation:fadeUp .7s ease forwards;}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.hero-season::before{content:'';display:block;width:36px;height:1px;background:var(--silver)}
+
+.hero-title{
+  font-family:var(--sans);
+  font-size:clamp(28px,3.2vw,48px);
+  font-weight:900;
+  line-height:1.08;
+  letter-spacing:-.02em;
+  margin-bottom:0;
+}
+.hero-title em{
+  font-style:italic;
+  color:var(--gold2);
+  font-weight:900;
+  text-shadow:none;
+}
+
+.hero-lead{
+  font-size:15px;
+  color:var(--muted);
+  line-height:1.8;
+  max-width:520px;
+  font-weight:300;
+  margin-top:2px;
+}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+
+/* Botões clean */
+.btn-fill{
+  background:var(--ink);
+  color:var(--bg);
+  border:1px solid var(--ink);
+  padding:14px 28px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  transition:all .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btn-fill:hover{background:var(--ink2);border-color:var(--ink2)}
+
+.btn-line{
+  background:transparent;
+  color:var(--ink);
+  border:1px solid var(--border);
+  padding:13px 22px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  transition:all .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btn-line:hover{border-color:var(--ink);color:var(--ink)}
+
+.hero-right{
+  padding:54px 0 54px 56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Imagem de destaque (100% editável) */
+.hero-media{
+  width:100%;
+  max-width:540px;
+  aspect-ratio: 4 / 5;
+  border:1px solid var(--border);
+  background:var(--bg2);
+  overflow:hidden;
+}
+.hero-media img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Barra de benefícios (abaixo do hero) */
+.hero-benefits-bar{
+  max-width:1240px;
+  margin:0 auto;
+  padding:0 36px 24px;
+}
+.hero-benefits{
+  border:1px solid var(--border);
+  background:rgba(247,244,240,.85);
+  backdrop-filter:blur(14px);
+  display:flex;
+  gap:24px;
+  justify-content:flex-start;
+  padding:12px 18px;
+}
+.hero-benefit{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12px;
+  color:var(--ink);
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+.hero-benefit span{color:var(--muted);font-weight:700}
+
+/* remover estilos antigos do hero poluído */
+.hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr;min-height:auto;padding:0}
+  .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
+  .hero-right{padding:20px 20px 0 20px;}
+  .hero-media{max-width:none;}
+  .hero-benefits-bar{padding:0 20px 24px}
+  .hero-benefits{flex-direction:column;gap:10px}
+}
+
 
 .btn-cta-premium{
   box-shadow:0 14px 45px rgba(0,0,0,.12);
@@ -1070,32 +1173,42 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- HERO -->
 <div class="hero">
-    <div class="hero-media" aria-hidden="true">
-      <div class="hero-media-layer"></div>
-      <div class="hero-kenburns" aria-hidden="true"></div>
-      <div class="hero-badges" aria-hidden="true">
-        <div class="hero-fadebadge" style="animation-delay:.15s">🛍️ <b style="font-weight:900">Autenticidade</b> garantida</div>
-        <div class="hero-fadebadge" style="animation-delay:.35s">🚚 <b style="font-weight:900">Frete grátis</b> acima de R$299</div>
-      </div>
+  <!-- LEFT: texto -->
+  <div class="hero-left">
+    <div class="hero-season" id="heroSeason">Coleção Inverno 2026</div>
+    <h1 class="hero-title" id="heroTitle">
+      Vista-se<br>com <em id="heroTitleEm">Exclusividade</em> e intenção.
+    </h1>
+    <p class="hero-lead" id="heroDesc">Peças importadas selecionadas para quem exige qualidade, estilo e personalidade em cada look.</p>
+
+    <div class="hero-btns">
+      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção →</button>
+      <button class="btn-line" onclick="scrollTo_('sec-cats')" id="heroCtaSecondary">Categorias</button>
     </div>
 
-    <div class="hero-left">
-    <div class="hero-season">Coleção Inverno 2026</div>
-    <h1 class="hero-title">Vista-se<br>com <em>Exclusividade</em> e intenção.</h1>
-    <p class="hero-lead">Peças importadas selecionadas para quem exige qualidade, estilo e personalidade em cada look.</p>
-    <div class="hero-btns">
-      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')">Ver Coleção →</button>
-      <button class="btn-line" onclick="scrollTo_('sec-cats')">Categorias</button>
-    </div>
     <div class="hero-stats">
       <div><span class="stat-val" id="stProdutos">—</span><span class="stat-label">Produtos</span></div>
       <div><span class="stat-val" id="stAvaliacao">—</span><span class="stat-label">Avaliação</span></div>
       <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
-
     </div>
   </div>
-  <div class="hero-right" id="heroCards"></div>
+
+  <!-- RIGHT: imagem -->
+  <div class="hero-right">
+    <div class="hero-media" aria-label="Imagem principal" role="img">
+      <img id="heroImage" alt="Imagem do Hero" src="https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=80" />
+    </div>
+  </div>
 </div>
+
+<!-- Barra fina de benefícios (abaixo do hero) -->
+<div class="hero-benefits-bar" aria-label="Benefícios">
+  <div class="hero-benefits" id="heroBenefits">
+    <div class="hero-benefit">🛍️ <span id="hb1">Autenticidade</span> garantida</div>
+    <div class="hero-benefit">🚚 <span id="hb2">Frete grátis</span> acima de R$299</div>
+  </div>
+</div>
+
 
 <!-- CATS -->
 <div class="cats-wrap" id="sec-cats">
@@ -2217,6 +2330,13 @@ async function carregarConfigLoja() {
     // ao menos garantimos que a chavePix não seja ignorada e fica disponível.
     const pix = (d.chavePix && String(d.chavePix).trim()) || '';
     S.chavePix = pix;
+
+    // HERO imagem: se existir dados.heroImagem, usa; se não, mantém a src já no HTML.
+    const heroImg = d.heroImagem ? String(d.heroImagem).trim() : '';
+    if (heroImg) {
+      const heroImgEl = document.getElementById('heroImage');
+      if (heroImgEl) heroImgEl.src = heroImg;
+    }
 
     // Se o link de pagamento dependesse da chave (ex.: provider externo), ele deveria ser montado aqui.
     // Como o seu checkout usa S.paylink e ele está vindo vazio no DEF, manteremos um comportamento compatível:
