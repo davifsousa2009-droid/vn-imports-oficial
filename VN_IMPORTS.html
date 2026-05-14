@@ -1616,13 +1616,23 @@ function renderHome(){
 
 /* ─── PRODUCT GRID ─── */
 function renderGrid(list){
-  const g = document.getElementById('prodGrid');
+  // Garantia de compatibilidade com layouts antigos:
+  // - layout atual: #prodGrid
+  // - layout antigo: #lista-produtos-real
+  const g = document.getElementById('prodGrid') || document.getElementById('lista-produtos-real');
+
+  if(!g){
+    console.error('renderGrid: container de produtos não encontrado. Procurei #prodGrid e #lista-produtos-real.');
+    return;
+  }
+
   if(!list.length){
     g.innerHTML=`<div style="padding:40px;color:var(--muted);grid-column:1/-1">Nenhum produto encontrado com os filtros atuais</div>`;
     return;
   }
 
   g.innerHTML = list.map(p=>`
+
     <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}">
       <div class="prod-img-wrap">
         ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
