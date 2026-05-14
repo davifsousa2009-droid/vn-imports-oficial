@@ -1619,12 +1619,25 @@ function renderGrid(list){
   // Garantia de compatibilidade com layouts antigos:
   // - layout atual: #prodGrid
   // - layout antigo: #lista-produtos-real
-  const g = document.getElementById('prodGrid') || document.getElementById('lista-produtos-real');
+  // - seletor extra (caso exista em algum rascunho): .grid-produtos
+  const container = document.getElementById('prodGrid') ||
+    document.getElementById('lista-produtos-real') ||
+    document.querySelector('.grid-produtos');
 
-  if(!g){
-    console.error('renderGrid: container de produtos não encontrado. Procurei #prodGrid e #lista-produtos-real.');
+  console.log('Procurando container de produtos...', {
+    prodGrid: !!document.getElementById('prodGrid'),
+    listaProdutosReal: !!document.getElementById('lista-produtos-real'),
+    gridProdutosClass: !!document.querySelector('.grid-produtos')
+  });
+
+  if(!container){
+    console.error('renderGrid: container de produtos não encontrado.');
     return;
   }
+
+  // manter semântico antigo
+  const g = container;
+
 
   if(!list.length){
     g.innerHTML=`<div style="padding:40px;color:var(--muted);grid-column:1/-1">Nenhum produto encontrado com os filtros atuais</div>`;
