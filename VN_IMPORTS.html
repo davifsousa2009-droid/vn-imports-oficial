@@ -1628,13 +1628,68 @@ function renderHome(){
 
 /* ─── PRODUCT GRID ─── */
 function renderGrid(list){
-  // Garantia de compatibilidade com layouts antigos:
-  // - layout atual: #prodGrid
-  // - layout antigo: #lista-produtos-real
-  // - seletor extra (caso exista em algum rascunho): .grid-produtos
-  const container = document.getElementById('prodGrid') ||
-    document.getElementById('lista-produtos-real') ||
-    document.querySelector('.grid-produtos');
+  console.log('renderGrid recebendo produtos:', list);
+
+  const container = document.getElementById('prodGrid');
+  if(!container){
+    console.error('renderGrid: container #prodGrid não encontrado.');
+    return;
+  }
+
+  // limpar sempre para evitar conteúdo duplicado
+  container.innerHTML = '';
+
+  if(!Array.isArray(list) || list.length === 0){
+    container.innerHTML = '<div style="padding:40px;color:var(--muted);grid-column:1/-1">Nenhum produto encontrado com os filtros atuais</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(p=>`
+    <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}">
+      <div class="prod-img-wrap">
+        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
+        <div class="prod-badges">
+          ${p.badge==='new' ? '<span class="pb pb-new">Novo</span>' : ''}
+          ${p.badge==='sale'&&p.old ? `<span class="pb pb-sale">-${Math.round(100-(p.price/p.old*100))}%</span>` : ''}
+          ${p.badge==='hot' ? '<span class="pb pb-hot">Hot</span>' : ''}
+        </div>
+
+        <div class="prod-hover-btns">
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:10px 10px;background:rgba(247,244,240,.85);">
+            <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
+              <button class="phb phb-cart" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>
+              <button class="phb phb-wish ${wl.find(w=>w.id===p.id)?'on':''}" onclick="event.stopPropagation();toggleWL(${p.id})">${wl.find(w=>w.id===p.id)?'♥':'♡'}</button>
+            </div>
+
+            <div class="quick-sizes" style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${(Array.isArray(p.sizes)?p.sizes:[]).map(s=>{
+                return `<button type="button" class="quick-sch ${s}" onclick="event.stopPropagation();setQuickSize(${p.id},'${s}')">${s}</button>`;
+              }).join('')}
+            </div>
+
+            <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">
+              ${p.sizes && p.sizes.length ? 'Selecione o tamanho' : 'Tamanho indisponível'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="prod-info">
+        <div class="prod-brand">${p.brand}</div>
+        <div class="prod-name" style="font-weight:700">${p.name}</div>
+        <div class="prod-foot" style="margin-top:6px;">
+          <div>
+            <span class="prod-price">${R$(p.price)}</span>
+            ${p.old?`<span class="prod-old">${R$(p.old)}</span>`:''}
+          </div>
+          <div class="prod-stars" style="font-size:12px;letter-spacing:.04em;">
+            ★★★★★ <span style="color:var(--muted);font-weight:600">&nbsp;Avaliação</span>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+
+}
 
   console.log('Procurando container de produtos...', {
     prodGrid: !!document.getElementById('prodGrid'),
@@ -1656,7 +1711,8 @@ function renderGrid(list){
     return;
   }
 
-  g.innerHTML = list.map(p=>`
+  try{
+    g.innerHTML = list.map(p=>`
 
     <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}">
       <div class="prod-img-wrap">
@@ -2700,6 +2756,7 @@ async function carregarProdutosDoServidor(categoria) {
       ? S.products.filter(p => p.cat === categoria)
       : S.products;
 
+    console.log('renderGrid: lista carregada', { total: lista.length, categoria, first: lista[0] });
     renderGrid(lista);
   } catch (err) {
     console.warn('⚠️ Servidor offline.', err.message);
