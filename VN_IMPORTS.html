@@ -1636,7 +1636,6 @@ function renderGrid(list){
     return;
   }
 
-  // limpar sempre para evitar conteúdo duplicado
   container.innerHTML = '';
 
   if(!Array.isArray(list) || list.length === 0){
@@ -1644,52 +1643,95 @@ function renderGrid(list){
     return;
   }
 
-  container.innerHTML = list.map(p=>`
-    <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}">
-      <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
-        <div class="prod-badges">
-          ${p.badge==='new' ? '<span class="pb pb-new">Novo</span>' : ''}
-          ${p.badge==='sale'&&p.old ? `<span class="pb pb-sale">-${Math.round(100-(p.price/p.old*100))}%</span>` : ''}
-          ${p.badge==='hot' ? '<span class="pb pb-hot">Hot</span>' : ''}
-        </div>
+  const productCardHTML = list.map(p => {
+    const inWL = !!(wl && wl.find(w => w.id === p.id));
 
-        <div class="prod-hover-btns">
-          <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:10px 10px;background:rgba(247,244,240,.85);">
-            <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
-              <button class="phb phb-cart" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>
-              <button class="phb phb-wish ${wl.find(w=>w.id===p.id)?'on':''}" onclick="event.stopPropagation();toggleWL(${p.id})">${wl.find(w=>w.id===p.id)?'♥':'♡'}</button>
+    const badgePct = (p.badge==='sale' && p.old) ? Math.round(100 - (p.price / p.old * 100)) : 0;
+    const discountTxt = badgePct ? `${badgePct}% off` : (p.badge==='hot' ? 'Hot' : (p.badge==='new' ? 'Novo' : ''));
+
+    const rating = (typeof p.rating === 'number' && isFinite(p.rating))
+      ? p.rating
+      : (typeof p.stars === 'number' && isFinite(p.stars))
+        ? p.stars
+        : 4.6;
+
+    const stars = '★'.repeat(Math.max(1, Math.min(5, Math.round(rating))));
+
+    // Categoria/subtítulo minimalista (se existir, usa; se não, usa marca)
+    const subTxt = (p.cat && String(p.cat).trim() && p.cat !== 'geral') ? String(p.cat) : (p.brand || 'Produto');
+
+    return `
+      <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}" style="border:none;">
+        <div style="border-radius:4px;overflow:hidden;background:#f5f5f7;">
+
+          <div style="position:relative;aspect-ratio:1/1;width:100%;background:#f6f6f6;">
+            ${p.img
+              ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;transition:transform .3s ease;" />`
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:12px;">Sem imagem</div>`
+            }
+
+            <!-- Heart (favorito) no canto superior direito -->
+            <button
+              type="button"
+              aria-label="Favoritar"
+              onclick="event.stopPropagation();toggleWL(${p.id})"
+              style="position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:999px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.85);color:#111;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 8px 20px rgba(0,0,0,.08);transition:all .2s ease;"
+              onmouseover="this.style.transform='translateY(-1px) scale(1.04)';"
+              onmouseout="this.style.transform='translateY(0) scale(1)';"
+            >${inWL ? '♥' : '♡'}</button>
+
+            <!-- Micro-zoom no hover do card -->
+            <style>
+              /* escopo: apenas este card */
+              [data-pid="${p.id}"]:hover img{transform:scale(1.02)}
+            </style>
+          </div>
+
+          <div style="padding:12px 10px 14px;">
+            <div style="font-size:.85rem;color:#757575;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${subTxt}</div>
+
+            <div style="font-size:1rem;font-weight:600;color:#111;margin-top:6px;line-height:1.25;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.name}</div>
+
+            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+              ${p.old ? `<span style="text-decoration:line-through;color:#b0b0b0;font-weight:500;font-size:.95rem;">${R$(p.old)}</span>` : ''}
+              <span style="color:#111;font-weight:700;font-size:1.05rem;">${R$(p.price)}</span>
+              ${badgePct ? `<span style="color:#00875a;font-weight:700;font-size:.9rem;">${badgePct}% off</span>` : ''}
             </div>
 
-            <div class="quick-sizes" style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${(Array.isArray(p.sizes)?p.sizes:[]).map(s=>{
-                return `<button type="button" class="quick-sch ${s}" onclick="event.stopPropagation();setQuickSize(${p.id},'${s}')">${s}</button>`;
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+              <div style="color:#1f1f1f;letter-spacing:.08em;font-size:.95rem;line-height:1;">${stars}</div>
+              <div style="color:#1f1f1f;font-weight:600;font-size:.9rem;">${(Math.round(rating*10)/10).toFixed(1)}</div>
+            </div>
+
+            <!-- Quick sizing minimal (mantém compatibilidade com seu fluxo) -->
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+              ${(Array.isArray(p.sizes)?p.sizes:[]).map(s => {
+                const isSel = (window.__vn_selectedQuickSize__ && window.__vn_selectedQuickSize__[p.id] === String(s));
+                return `
+                  <button
+                    type="button"
+                    class="quick-sch ${s}"
+                    onclick="event.stopPropagation();setQuickSize(${p.id},'${s}')"
+                    style="border-radius:999px;padding:8px 10px;border:1px solid ${isSel ? 'rgba(0,0,0,.85)' : 'rgba(0,0,0,.12)'};background:${isSel ? '#111' : 'transparent'};color:${isSel ? 'white' : '#111'};font-weight:700;font-size:12px;letter-spacing:.04em;"
+                  >${s}</button>`;
               }).join('')}
             </div>
 
-            <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">
-              ${p.sizes && p.sizes.length ? 'Selecione o tamanho' : 'Tamanho indisponível'}
+            <div style="margin-top:10px;">
+              <button
+                class="btn-fill"
+                onclick="event.stopPropagation();quickAddCart(${p.id})"
+                style="width:100%;justify-content:center;letter-spacing:.12em;"
+              >Adicionar ao Carrinho</button>
             </div>
           </div>
         </div>
-      </div>
+      </div>`;
+  }).join('');
 
-      <div class="prod-info">
-        <div class="prod-brand">${p.brand}</div>
-        <div class="prod-name" style="font-weight:700">${p.name}</div>
-        <div class="prod-foot" style="margin-top:6px;">
-          <div>
-            <span class="prod-price">${R$(p.price)}</span>
-            ${p.old?`<span class="prod-old">${R$(p.old)}</span>`:''}
-          </div>
-          <div class="prod-stars" style="font-size:12px;letter-spacing:.04em;">
-            ★★★★★ <span style="color:var(--muted);font-weight:600">&nbsp;Avaliação</span>
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
-
+  container.innerHTML = productCardHTML;
 }
+
 
 // ─── Quick add (tamanho rápido no card) ───
 if(!window.__vn_selectedQuickSize__) window.__vn_selectedQuickSize__ = {};
