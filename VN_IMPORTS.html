@@ -1587,7 +1587,8 @@ function renderHome(){
 
   // hero cards (primeiros 2 produtos)
   const hc = document.getElementById('heroCards');
-  hc.innerHTML = S.products.slice(0,2).map(p=>`
+  if (hc) {
+    hc.innerHTML = S.products.slice(0,2).map(p=>`
     <div class="hero-feat-card" onclick="openProd(${p.id})">
       <div class="hfc-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
       <div class="hfc-body">
@@ -1602,6 +1603,7 @@ function renderHome(){
         </div>
       </div>
     </div>`).join('');
+  }
 
   // Renderização segura: alguns layouts antigos/rascunhos podem não ter o container de vitrine presente.
   const containerHome = document.getElementById('prodGrid') || document.getElementById('lista-produtos-real');
