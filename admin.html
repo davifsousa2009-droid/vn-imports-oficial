@@ -1463,7 +1463,19 @@ async function loadConfig() {
     document.getElementById('cfg-whatsappContato').value = d.whatsappContato || '';
     document.getElementById('cfg-instagramLink').value = d.instagramLink || '';
     document.getElementById('cfg-emailContato').value = d.emailContato || '';
+
+    // ✅ Hero do split
+    const heroImgEl = document.getElementById('cfg-heroPreview');
+    if (heroImgEl) heroImgEl.classList.add('on');
+    if (d.heroImagem) {
+      const heroPrevImg = document.getElementById('cfg-heroPreview-img');
+      const heroPrevUrl = document.getElementById('cfg-heroPreview-url');
+      if (heroPrevImg) heroPrevImg.src = d.heroImagem;
+      if (heroPrevUrl) heroPrevUrl.textContent = 'Imagem atual (da vitrine/config)';
+    }
+
     const logo = document.querySelector('.sb-logo');
+
     if (logo && d.nomeLoja) logo.childNodes[0].textContent = d.nomeLoja;
     if (d.nomeLoja) document.title = `Admin — ${d.nomeLoja}`;
   } catch {
@@ -1485,6 +1497,23 @@ async function salvarConfig() {
   const whatsappContato = document.getElementById('cfg-whatsappContato').value.trim();
   const instagramLink = document.getElementById('cfg-instagramLink').value.trim();
   const emailContato = document.getElementById('cfg-emailContato').value.trim();
+
+  // ✅ Hero do split
+  const cfgHeroFile = document.getElementById('cfg-heroFile');
+  const cfgHeroUrl = document.getElementById('cfg-heroUrl');
+
+  let heroImagem = '';
+  let heroImagemUrl = cfgHeroUrl ? cfgHeroUrl.value.trim() : '';
+
+  if (cfgHeroFile && cfgHeroFile.files && cfgHeroFile.files[0]) {
+    try {
+      heroImagem = await uploadArquivo(cfgHeroFile.files[0]);
+    } catch (e) {
+      showMsg(document.getElementById('cfgmsg'), e.message || 'Erro no upload da imagem do hero.', 'er');
+      return;
+    }
+  }
+
   const msg      = document.getElementById('cfgmsg');
 
   if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
@@ -1503,7 +1532,10 @@ async function salvarConfig() {
         corSecundaria,
         whatsappContato,
         instagramLink,
-        emailContato
+        emailContato,
+        // ✅ Hero do split
+        heroImagem,
+        heroImagemUrl
       })
     });
 

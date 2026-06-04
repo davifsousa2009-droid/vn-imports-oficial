@@ -480,7 +480,11 @@ const ConfigSchema = new mongoose.Schema({
   whatsappContato: { type: String, default: shopConfig.whatsappContato },
   instagramLink: { type: String, default: shopConfig.instagramLink },
   emailContato: { type: String, default: shopConfig.emailContato },
-  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) }
+  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) },
+
+  // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
+  heroImagem: { type: String, default: '' },
+  heroImagemUrl: { type: String, default: '' }
 });
 const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 
@@ -853,13 +857,14 @@ app.get('/api/config', async (req, res) => {
   const defaultHeroImagem =
     'https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=80';
 
-  const heroImagem = doc?.heroImagem
-    ? String(doc.heroImagem).trim()
-    : defaultHeroImagem;
+  const heroImagemFile = doc?.heroImagem ? String(doc.heroImagem).trim() : '';
+  const heroImagemUrl = doc?.heroImagemUrl ? String(doc.heroImagemUrl).trim() : '';
+
+  const heroImagemFinal = heroImagemFile || heroImagemUrl || defaultHeroImagem;
 
   return res.json({
     ...publicCfg,
-    heroImagem
+    heroImagem: heroImagemFinal
   });
 });
 
@@ -874,7 +879,11 @@ app.post('/api/config', verificarSenha, async (req, res) => {
       whatsappContato,
       instagramLink,
       emailContato,
-      clienteTag
+      clienteTag,
+
+      // ✅ NOVO: hero do split
+      heroImagem,
+      heroImagemUrl
     } = req.body;
 
     const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
@@ -886,6 +895,10 @@ app.post('/api/config', verificarSenha, async (req, res) => {
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
     if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
+
+    // ✅ NOVO: hero do split
+    if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
+    if (heroImagemUrl !== undefined) dados.heroImagemUrl = String(heroImagemUrl).trim();
 
     const atualizado = await Config.findOneAndUpdate({}, dados, {
       upsert: true,

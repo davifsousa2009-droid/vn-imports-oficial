@@ -2420,12 +2420,17 @@ async function carregarConfigLoja() {
     const pix = (d.chavePix && String(d.chavePix).trim()) || '';
     S.chavePix = pix;
 
-    // HERO imagem: se existir dados.heroImagem, usa; se não, mantém a src já no HTML.
-    const heroImg = d.heroImagem ? String(d.heroImagem).trim() : '';
-    if (heroImg) {
+    // HERO imagem (split): prioriza upload (heroImagem), depois URL direta (heroImagemUrl).
+    // Se ambos vierem vazios, mantém o fallback que já está no HTML.
+    const heroImgFile = d.heroImagem ? String(d.heroImagem).trim() : '';
+    const heroImgUrl = d.heroImagemUrl ? String(d.heroImagemUrl).trim() : '';
+
+    const heroImgFinal = heroImgFile || heroImgUrl;
+    if (heroImgFinal) {
       const heroImgEl = document.getElementById('heroImage');
-      if (heroImgEl) heroImgEl.src = heroImg;
+      if (heroImgEl) heroImgEl.src = heroImgFinal;
     }
+
 
     // Se o link de pagamento dependesse da chave (ex.: provider externo), ele deveria ser montado aqui.
     // Como o seu checkout usa S.paylink e ele está vindo vazio no DEF, manteremos um comportamento compatível:
