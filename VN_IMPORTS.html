@@ -1550,14 +1550,21 @@ let wl = [];
 let curProd = null;
 let categoriasVitrine = [];
 
-// ─── FILTROS (Nike) ───
-let F = {
-  cat: 'all',
-  sizes: new Set(), // PP, P, M, G, GG
+// ─── FILTROS — Lógica unificada (reativa) ───
+// Estado centralizado (o segredo): sempre fonte de verdade
+window.activeFilters = window.activeFilters || {
+  categories: [],
+  sizes: [],
+  maxPrice: Infinity
+};
+
+// Mantém valores numéricos do slider em um único lugar
+const filterRuntime = {
   priceMin: null,
   priceMax: null,
   priceCap: 0
 };
+
 
 
 const save  = ()=>localStorage.setItem('vn_data', JSON.stringify(S));
@@ -1765,20 +1772,28 @@ function quickAddCart(pid){
 
 
 function filter(btn, cat){
+  // legado: agora filtra de forma reativa via applyFilters
   document.querySelectorAll('.flt').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderGrid(cat==='all'?S.products:S.products.filter(p=>p.cat===cat));
+  if(btn) btn.classList.add('on');
+
+  // sincroniza estado central
+  window.activeFilters.categories = (cat && cat !== 'all') ? [String(cat)] : [];
+  syncFilterUI();
+  applyFilters();
 }
 
 function filterAndGo(cat){
   scrollTo_('sec-prod');
   setTimeout(()=>{
+    // mantém a UX de highlight do botão (se existir)
     const btns=document.querySelectorAll('.flt');
-    let b=btns[0];
-    btns.forEach(x=>{ if(x.textContent.toLowerCase().includes(cat)||cat==='all') b=x; });
-    filter(b,cat);
-  },400);
+    const pick = (cat && cat !== 'all')
+      ? Array.from(btns).find(x=>x.textContent.toLowerCase().includes(String(cat).toLowerCase()))
+      : (btns[0] || null);
+    filter(pick,cat);
+  },200);
 }
+
 
 /* ─── PRODUCT PAGE ─── */
 function openProd(id){
@@ -2462,57 +2477,76 @@ function renderCategoriasHome() {
     </div>`).join('');
 }
 
-function renderFilterSidebar(){
+function syncFilterUI(isClear=false){
   const catsEl = document.getElementById('fltCats');
   const sizesEl = document.getElementById('fltSizes');
+
+  const selectedCat = (window.activeFilters.categories && window.activeFilters.categories[0]) || null;
 
   if(catsEl){
     const cats = categoriasVitrine || [];
     catsEl.innerHTML = [
       `<label class="fcat" onclick="setCat('all')">
-        <input type="checkbox" class="fcat-ck" ${F.cat==='all'?'checked':''} onclick="event.stopPropagation();"/>
+        <input type="checkbox" class="fcat-ck" ${!selectedCat?'checked':''} onclick="event.stopPropagation();"/>
         Todos
       </label>`
-    ].concat(cats.map(c=>`
+    ].concat((cats || []).map(c=>`
       <label class="fcat" onclick="setCat('${c.slug}')">
-        <input type="checkbox" class="fcat-ck" ${F.cat===c.slug?'checked':''} onclick="event.stopPropagation();"/>
+        <input type="checkbox" class="fcat-ck" ${selectedCat===c.slug?'checked':''} onclick="event.stopPropagation();"/>
         ${c.nome}
       </label>`)).join('');
   }
 
   if(sizesEl){
     const sizeList = ['PP','P','M','G','GG'];
-    sizesEl.innerHTML = sizeList.map(s=>`
-      <button type="button" class="schip ${F.sizes.has(s)?'on':''}" onclick="toggleSize('${s}')">${s}</button>
-    `).join('');
+    const selSizes = window.activeFilters.sizes || [];
+    sizesEl.innerHTML = sizeList.map(s=>{
+      const on = selSizes.includes(s);
+      return `
+        <button type="button" class="schip ${on?'on':''}" onclick="toggleSize('${s}')">${s}</button>
+      `;
+    }).join('');
   }
 
   updatePriceSliders();
 }
 
+function renderFilterSidebar(){
+  syncFilterUI();
+}
+
 
 function setCat(slug){
-  F.cat = slug || 'all';
-  renderFilterSidebar();
+
+  // checkbox de categoria é do tipo single-select por categoria (via activeFilters.categories)
+  const val = slug && slug !== 'all' ? String(slug) : null;
+  window.activeFilters.categories = val ? [val] : [];
+  syncFilterUI();
   applyFilters();
 }
 
 function toggleSize(s){
-  if(!F.sizes.has(s)) F.sizes.add(s);
-  else F.sizes.delete(s);
-  renderFilterSidebar();
+  const size = String(s||'').trim();
+  if(!size) return;
+  const arr = window.activeFilters.sizes;
+  const idx = arr.indexOf(size);
+  if(idx >= 0) arr.splice(idx,1);
+  else arr.push(size);
+  syncFilterUI();
   applyFilters();
 }
 
 function resetFilters(){
-  F.cat='all';
-  F.sizes = new Set();
-  F.priceMin=null;
-  F.priceMax=null;
-  F.priceCap = getPriceCap();
-  renderFilterSidebar();
-  applyFilters();
+  window.activeFilters.categories = [];
+  window.activeFilters.sizes = [];
+  window.activeFilters.maxPrice = Infinity;
+  filterRuntime.priceMin = null;
+  filterRuntime.priceMax = null;
+  filterRuntime.priceCap = getPriceCap();
+  syncFilterUI(true);
+  applyFilters(true);
 }
+
 
 function getPriceCap(){
   const list = Array.isArray(S.products)?S.products:[];
@@ -2522,24 +2556,28 @@ function getPriceCap(){
 
 function updatePriceSliders(){
   const cap = getPriceCap();
-  F.priceCap = cap;
+  filterRuntime.priceCap = cap;
+  window.activeFilters.maxPrice = Infinity; // reset lógico; real aplicado via runtime
+
   const maxRange = document.getElementById('priceMaxRange');
   const minRange = document.getElementById('priceMinRange');
   const hint = document.getElementById('priceHint');
+
   if(maxRange){
     maxRange.min = 0;
     maxRange.max = String(cap);
-    const v = F.priceMax==null ? cap : Number(F.priceMax);
+    const v = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
     maxRange.value = String(v);
   }
   if(minRange){
     minRange.min = 0;
     minRange.max = String(cap);
-    const v = F.priceMin==null ? 0 : Number(F.priceMin);
+    const v = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
     minRange.value = String(v);
   }
-  const minV = F.priceMin==null ? 0 : Number(F.priceMin);
-  const maxV = F.priceMax==null ? cap : Number(F.priceMax);
+
+  const minV = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
+  const maxV = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
   if(hint){
     hint.textContent = cap? `R$ ${minV} — R$ ${maxV}` : '—';
   }
@@ -2547,55 +2585,68 @@ function updatePriceSliders(){
 
 function onPriceMin(v){
   const num = Number(v);
-  if(Number.isFinite(num)) F.priceMin = num;
-  if(F.priceMax!=null && F.priceMin>F.priceMax) F.priceMax = F.priceMin;
-  syncPriceHint();
-  applyFilters();
-}
-function onPriceMax(v){
-  const num = Number(v);
-  if(Number.isFinite(num)) F.priceMax = num;
-  if(F.priceMin!=null && F.priceMin>F.priceMax) F.priceMin = F.priceMax;
-  syncPriceHint();
+  if(Number.isFinite(num)) filterRuntime.priceMin = num;
+  if(filterRuntime.priceMax!=null && filterRuntime.priceMin>filterRuntime.priceMax) filterRuntime.priceMax = filterRuntime.priceMin;
   applyFilters();
 }
 
+function onPriceMax(v){
+  const num = Number(v);
+  if(Number.isFinite(num)) filterRuntime.priceMax = num;
+  if(filterRuntime.priceMin!=null && filterRuntime.priceMin>filterRuntime.priceMax) filterRuntime.priceMin = filterRuntime.priceMax;
+  applyFilters();
+}
+
+// Mantém hint sincronizado ao chamar applyFilters
 function syncPriceHint(){
-  const cap = F.priceCap || 0;
-  const minV = F.priceMin==null ? 0 : Number(F.priceMin);
-  const maxV = F.priceMax==null ? cap : Number(F.priceMax);
+  const cap = filterRuntime.priceCap || 0;
+  const minV = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
+  const maxV = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
   const hint = document.getElementById('priceHint');
   if(hint){
     hint.textContent = cap? `R$ ${minV} — R$ ${maxV}` : '—';
   }
 }
 
-function applyFilters(){
-  // garante que UI/slider já foram inicializados
-  updatePriceSliders();
 
-  let list = Array.isArray(S.products)?S.products:[];
+function applyFilters(forceRenderEmpty=false){
+  // fonte de verdade (dataset original completo)
+  const original = Array.isArray(S.products) ? S.products : [];
 
   // categoria
-  if(F.cat && F.cat!=='all'){
-    list = list.filter(p => p.cat===F.cat);
+  let list = original;
+  const cats = window.activeFilters.categories || [];
+  if(cats.length){
+    const setCats = new Set(cats);
+    list = list.filter(p => setCats.has(p.cat));
   }
 
-  // tamanhos
-  if(F.sizes && F.sizes.size>0){
-    list = list.filter(p => Array.isArray(p.sizes) && p.sizes.some(sz => F.sizes.has(sz)));
+  // tamanho
+  const sizes = window.activeFilters.sizes || [];
+  if(sizes.length){
+    const setSizes = new Set(sizes);
+    list = list.filter(p => Array.isArray(p.sizes) && p.sizes.some(sz => setSizes.has(sz)));
   }
 
-  // preço
-  const minV = F.priceMin==null ? 0 : Number(F.priceMin);
-  const maxV = F.priceMax==null ? (F.priceCap||0) : Number(F.priceMax);
+  // preço (maxPrice) — compat com o slider existente (runtime guarda min/max)
+  const cap = (filterRuntime.priceCap || getPriceCap() || 0);
+  const maxPrice = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
+  window.activeFilters.maxPrice = maxPrice;
+
   list = list.filter(p => {
-    const pr = Number(p.price)||0;
-    return pr>=minV && pr<=maxV;
+    const pr = Number(p.price) || 0;
+    return pr <= window.activeFilters.maxPrice;
   });
+
+  // opcional: minPrice também ajuda UX do range atual
+  const minPrice = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
+  if(filterRuntime.priceMin!=null){
+    list = list.filter(p => (Number(p.price)||0) >= minPrice);
+  }
 
   renderGrid(list);
 }
+
 
 function toggleMobileFilters(){
   const overlay = document.getElementById('mobileFiltersOverlayVn');
@@ -2605,6 +2656,7 @@ function toggleMobileFilters(){
   }
   showMobileFiltersOverlay();
 }
+
 
 function showMobileFiltersOverlay(){
   let overlay = document.getElementById('mobileFiltersOverlayVn');
