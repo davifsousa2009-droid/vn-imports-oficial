@@ -425,6 +425,30 @@ tr:hover td{background:#FAFAF8}
               <input class="fi" id="cfg-emailContato" placeholder="contato@sualoja.com" type="email">
             </div>
           </div>
+
+          <div style="height:18px"></div>
+
+          <div class="card-title" style="font-size:14px;margin-top:10px">Vitrine da Loja (Foto Principal do Hero)</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin:-6px 0 16px">
+            Selecione uma nova imagem (arquivo) para atualizar a foto principal do hero na Home.
+          </p>
+
+          <div class="fg2">
+            <div class="fg fw">
+              <label class="fl">Arquivo da capa (hero)</label>
+              <input class="fi fi-file" id="cfg-heroFile" type="file" accept="image/*" onchange="previewLocalFile(this,'cfg-heroPreview')">
+            </div>
+            <div class="fg fw">
+              <label class="fl">URL (opcional)</label>
+              <input class="fi" id="cfg-heroUrl" placeholder="https://... (opcional)" type="url" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="img-preview" id="cfg-heroPreview">
+            <img src="" id="cfg-heroPreview-img" class="preview-tall" alt="Prévia">
+            <span class="img-url" id="cfg-heroPreview-url"></span>
+          </div>
+
           <div class="form-btns">
             <button class="btn btn-p" onclick="salvarConfig()">Salvar configuração</button>
           </div>
@@ -432,9 +456,10 @@ tr:hover td{background:#FAFAF8}
         </div>
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">Como funciona</div>
-          <p style="font-size:13px;color:#888;line-height:1.75">O nome da loja e a chave PIX salvos aqui podem ser lidos pela vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>) via <code>/api/config</code> — use a chave no fluxo de pagamento PIX do seu site.</p>
+          <p style="font-size:13px;color:#888;line-height:1.75">O nome da loja, a chave PIX e a capa do hero salvos aqui podem ser lidos pela vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>) via <code>/api/config</code>.</p>
         </div>
       </div>
+
 
 
 <div class="modal-bg" id="modalBg" onclick="closeModal()">

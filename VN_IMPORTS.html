@@ -1772,11 +1772,10 @@ function quickAddCart(pid){
 
 
 function filter(btn, cat){
-  // legado: agora filtra de forma reativa via applyFilters
+  // legacy: apenas atualiza estado central (não renderiza lista por conta própria)
   document.querySelectorAll('.flt').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
 
-  // sincroniza estado central
   window.activeFilters.categories = (cat && cat !== 'all') ? [String(cat)] : [];
   syncFilterUI();
   applyFilters();
@@ -1785,14 +1784,14 @@ function filter(btn, cat){
 function filterAndGo(cat){
   scrollTo_('sec-prod');
   setTimeout(()=>{
-    // mantém a UX de highlight do botão (se existir)
-    const btns=document.querySelectorAll('.flt');
+    const btns = document.querySelectorAll('.flt');
     const pick = (cat && cat !== 'all')
       ? Array.from(btns).find(x=>x.textContent.toLowerCase().includes(String(cat).toLowerCase()))
       : (btns[0] || null);
-    filter(pick,cat);
-  },200);
+    filter(pick, cat);
+  }, 200);
 }
+
 
 
 /* ─── PRODUCT PAGE ─── */
