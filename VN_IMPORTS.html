@@ -11,8 +11,18 @@
 <meta property="og:description" content="Moda premium importada com curadoria exclusiva — descubra peças com qualidade real e estilo para destacar." />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="pt_BR" />
+<meta property="og:image" content="https://vnimports.com.br/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://vnimports.com.br/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VN IMPORTS — Moda Premium">
+<meta name="twitter:description" content="Moda importada premium. Peças selecionadas com qualidade, estilo e exclusividade.">
+<meta name="twitter:image" content="https://vnimports.com.br/og-image.jpg">
+<link rel="canonical" href="https://vnimports.com.br/">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
+
 
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -2504,6 +2514,33 @@ async function carregarConfigLoja() {
 
     const suf = (d.pageTitleSuffix && String(d.pageTitleSuffix).trim()) || 'Moda Premium';
     document.title = nome + ' — ' + suf;
+
+    // Atualiza OG tags dinamicamente com dados reais da loja
+    const _ogTitle   = document.querySelector('meta[property="og:title"]');
+    const _ogDesc    = document.querySelector('meta[property="og:description"]');
+    const _ogImg     = document.querySelector('meta[property="og:image"]');
+    const _twTitle   = document.querySelector('meta[name="twitter:title"]');
+    const _twDesc    = document.querySelector('meta[name="twitter:description"]');
+    const _twImg     = document.querySelector('meta[name="twitter:image"]');
+    const _metaDesc  = document.querySelector('meta[name="description"]');
+
+    const _lojaTitle = nome + ' — ' + suf;
+    const _lojaDesc  = 'Moda importada premium. Peças selecionadas com qualidade, estilo e exclusividade.';
+
+    if (_ogTitle)  _ogTitle.setAttribute('content', _lojaTitle);
+    if (_ogDesc)   _ogDesc.setAttribute('content', _lojaDesc);
+    if (_twTitle)  _twTitle.setAttribute('content', _lojaTitle);
+    if (_twDesc)   _twDesc.setAttribute('content', _lojaDesc);
+    if (_metaDesc) _metaDesc.setAttribute('content', _lojaDesc);
+
+    // Atualiza imagem OG com a hero image da loja (se existir)
+    const _heroImgFile = d.heroImagem ? String(d.heroImagem).trim() : '';
+    const _heroImgUrl  = d.heroImagemUrl ? String(d.heroImagemUrl).trim() : '';
+    const _heroFinal   = _heroImgFile || _heroImgUrl;
+    if (_heroFinal) {
+      if (_ogImg)  _ogImg.setAttribute('content', _heroFinal);
+      if (_twImg)  _twImg.setAttribute('content', _heroFinal);
+    }
 
     document.querySelectorAll('[data-loja="nome"]').forEach((el) => {
       el.textContent = nome;
