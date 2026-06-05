@@ -669,15 +669,7 @@ function escHtml(s) {
 // Senha: upload, categorias e config (header x-admin-password).
 // JWT: POST/PUT/DELETE de produtos e banners (Bearer), obtido em /api/admin/login.
 function obterSenha() {
-  let s = localStorage.getItem('vni_pass');
-  if (!s) {
-    s = prompt('Painel VN IMPORTS\nDigite a Senha Mestra:');
-    if (s) {
-      localStorage.setItem('vni_pass', s.trim());
-      return s.trim();
-    }
-  }
-  return s ? s.trim() : '';
+  return (localStorage.getItem('vni_pass') || '').trim();
 }
 
 function headersComJwt(extra) {
