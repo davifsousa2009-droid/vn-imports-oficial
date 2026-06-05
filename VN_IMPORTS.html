@@ -4,7 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VN IMPORTS — Moda Premium</title>
+<meta name="description" content="VN IMPORTS: moda premium importada, curadoria exclusiva e qualidade real. Garanta seu estilo com atendimento e entrega rápida." />
+<meta name="keywords" content="moda premium, importados, roupas femininas, estilo exclusivo, VN IMPORTS" />
+
+<meta property="og:title" content="VN Imports" />
+<meta property="og:description" content="Moda premium importada com curadoria exclusiva — descubra peças com qualidade real e estilo para destacar." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="pt_BR" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   /* --- ESTILO DOS PRODUTOS REAIS --- */
@@ -44,6 +53,28 @@ img{display:block;max-width:100%;object-fit:cover}
 button{font-family:'Barlow',sans-serif;cursor:pointer}
 a{text-decoration:none;color:inherit}
 input,textarea,select{font-family:'Barlow',sans-serif}
+
+/* ─── SKELETON (injetado logo após RESET) ─── */
+@keyframes sk-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.sk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+.sk-card{background:var(--bg);border:none;position:relative;overflow:hidden}
+.sk-card .sk-media{aspect-ratio:1/1;background:var(--bg2)}
+.sk-card .sk-line{height:12px;margin:10px 12px;border-radius:10px;background:linear-gradient(90deg, rgba(217,212,204,.25) 25%, rgba(217,212,204,.45) 50%, rgba(217,212,204,.25) 75%);background-size:200% 100%;animation:sk-shimmer 1.2s ease-in-out infinite}
+.sk-card .sk-line.sm{height:9px;width:60%}
+.sk-card .sk-line.md{height:10px;width:78%}
+.sk-card .sk-line.lg{height:12px;width:92%}
+.sk-card .sk-actions{display:flex;gap:10px;padding:0 12px 16px;margin-top:12px}
+.sk-card .sk-btn{height:34px;border-radius:999px;background:linear-gradient(90deg, rgba(217,212,204,.25) 25%, rgba(217,212,204,.45) 50%, rgba(217,212,204,.25) 75%);background-size:200% 100%;animation:sk-shimmer 1.2s ease-in-out infinite}
+
+@media(max-width:1024px){
+  .sk-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:768px){
+  .sk-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .sk-grid{grid-template-columns:repeat(2,1fr)}
+}
 
 /* ─── TOKENS ─── */
 :root{
@@ -1657,7 +1688,29 @@ function renderHome(){
   }
 }
 
-/* ─── PRODUCT GRID ─── */
+/* ─── SKELETON (função) ─── */
+function showSkeletonGrid(n=8){
+  const container = document.getElementById('prodGrid');
+  if(!container) return;
+  const count = Math.max(0, Number(n)||0);
+
+  // mantém container consistente com o grid real
+  container.innerHTML = `
+    <div class="sk-grid" role="status" aria-label="Carregando produtos...">
+      ${Array.from({length:count}).map(()=>`
+        <div class="sk-card">
+          <div class="sk-media"></div>
+          <div class="sk-line lg"></div>
+          <div class="sk-line md"></div>
+          <div class="sk-actions">
+            <div class="sk-btn" style="width:100%"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderGrid(list){
   console.log('renderGrid recebendo produtos:', list);
 
@@ -2858,6 +2911,7 @@ async function carregarStatsDestaque(){
 
 // Busca produtos do banco e atualiza a vitrine
 async function carregarProdutosDoServidor(categoria) {
+  showSkeletonGrid();
   try {
     const url = categoria && categoria !== 'all'
       ? `${API_URL}/produtos?categoria=${categoria}`
