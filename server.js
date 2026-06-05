@@ -484,7 +484,39 @@ const ConfigSchema = new mongoose.Schema({
 
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
-  heroImagemUrl: { type: String, default: '' }
+  heroImagemUrl: { type: String, default: '' },
+
+  // ✅ NOVO: Configurações dinâmicas de conteúdo do site (Admin → vitrine)
+  sobreTitulo: { type: String, default: 'Cibelle' },
+  sobreTexto: {
+    type: String,
+    default:
+      'Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que você imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.'
+  },
+
+  // Benefício 1: Entrega Rápida
+  benef1Titulo: { type: String, default: 'Entrega Rápida' },
+  benef1Texto: { type: String, default: 'Receba em até 3 dias úteis. Frete grátis acima de R$299.' },
+  benef1IcoEnabled: { type: Boolean, default: true },
+  benef1Ico: { type: String, default: '🚚' },
+
+  // Benefício 2: Troca em 30 Dias
+  benef2Titulo: { type: String, default: 'Troca em 30 Dias' },
+  benef2Texto: { type: String, default: 'Sem burocracia. Sua satisfação é nossa prioridade.' },
+  benef2IcoEnabled: { type: Boolean, default: true },
+  benef2Ico: { type: String, default: '🔄' },
+
+  // Benefício 3: Pagamento Seguro
+  benef3Titulo: { type: String, default: 'Pagamento Seguro' },
+  benef3Texto: { type: String, default: 'PIX, cartão e boleto com total segurança.' },
+  benef3IcoEnabled: { type: Boolean, default: true },
+  benef3Ico: { type: String, default: '🔒' },
+
+  // Benefício 4: Importado Selecionado
+  benef4Titulo: { type: String, default: 'Importado Selecionado' },
+  benef4Texto: { type: String, default: 'Curadoria rigorosa de produtos internacionais.' },
+  benef4IcoEnabled: { type: Boolean, default: true },
+  benef4Ico: { type: String, default: '💎' }
 });
 const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 
@@ -504,6 +536,12 @@ function mergePublicConfig(doc) {
     ...(corPrimaria ? { gold: corPrimaria } : {}),
     ...(corSecundaria ? { gold2: corSecundaria } : {})
   };
+
+  const bool = (v, dflt) => {
+    if (v === undefined) return dflt;
+    return !!v;
+  };
+
   return {
     nomeLoja: nomeDb || shopConfig.nomeLoja,
     chavePix: pixDb || (shopConfig.chavePix || '').trim(),
@@ -514,7 +552,32 @@ function mergePublicConfig(doc) {
     emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
     clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
     colors: colorsMerged,
-    pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium'
+    pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium',
+
+    // Conteúdo (About + Benefícios)
+    sobreTitulo: String(doc?.sobreTitulo ?? '').trim() || 'Cibelle',
+    sobreTexto: String(doc?.sobreTexto ?? '').trim() ||
+      'Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que você imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.',
+
+    benef1Titulo: String(doc?.benef1Titulo ?? '').trim() || 'Entrega Rápida',
+    benef1Texto: String(doc?.benef1Texto ?? '').trim() || 'Receba em até 3 dias úteis. Frete grátis acima de R$299.',
+    benef1IcoEnabled: bool(doc?.benef1IcoEnabled, true),
+    benef1Ico: String(doc?.benef1Ico ?? '').trim() || '🚚',
+
+    benef2Titulo: String(doc?.benef2Titulo ?? '').trim() || 'Troca em 30 Dias',
+    benef2Texto: String(doc?.benef2Texto ?? '').trim() || 'Sem burocracia. Sua satisfação é nossa prioridade.',
+    benef2IcoEnabled: bool(doc?.benef2IcoEnabled, true),
+    benef2Ico: String(doc?.benef2Ico ?? '').trim() || '🔄',
+
+    benef3Titulo: String(doc?.benef3Titulo ?? '').trim() || 'Pagamento Seguro',
+    benef3Texto: String(doc?.benef3Texto ?? '').trim() || 'PIX, cartão e boleto com total segurança.',
+    benef3IcoEnabled: bool(doc?.benef3IcoEnabled, true),
+    benef3Ico: String(doc?.benef3Ico ?? '').trim() || '🔒',
+
+    benef4Titulo: String(doc?.benef4Titulo ?? '').trim() || 'Importado Selecionado',
+    benef4Texto: String(doc?.benef4Texto ?? '').trim() || 'Curadoria rigorosa de produtos internacionais.',
+    benef4IcoEnabled: bool(doc?.benef4IcoEnabled, true),
+    benef4Ico: String(doc?.benef4Ico ?? '').trim() || '💎'
   };
 }
 
@@ -883,7 +946,31 @@ app.post('/api/config', verificarSenha, async (req, res) => {
 
       // ✅ NOVO: hero do split
       heroImagem,
-      heroImagemUrl
+      heroImagemUrl,
+
+      // ✅ NOVO: Conteúdo dinâmico
+      sobreTitulo,
+      sobreTexto,
+
+      benef1Titulo,
+      benef1Texto,
+      benef1IcoEnabled,
+      benef1Ico,
+
+      benef2Titulo,
+      benef2Texto,
+      benef2IcoEnabled,
+      benef2Ico,
+
+      benef3Titulo,
+      benef3Texto,
+      benef3IcoEnabled,
+      benef3Ico,
+
+      benef4Titulo,
+      benef4Texto,
+      benef4IcoEnabled,
+      benef4Ico
     } = req.body;
 
     const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
@@ -899,6 +986,30 @@ app.post('/api/config', verificarSenha, async (req, res) => {
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
     if (heroImagemUrl !== undefined) dados.heroImagemUrl = String(heroImagemUrl).trim();
+
+    // ✅ NOVO: Conteúdo dinâmico (About + Benefícios)
+    if (sobreTitulo !== undefined) dados.sobreTitulo = String(sobreTitulo).trim();
+    if (sobreTexto !== undefined) dados.sobreTexto = String(sobreTexto).trim();
+
+    if (benef1Titulo !== undefined) dados.benef1Titulo = String(benef1Titulo).trim();
+    if (benef1Texto !== undefined) dados.benef1Texto = String(benef1Texto).trim();
+    if (benef1IcoEnabled !== undefined) dados.benef1IcoEnabled = !!benef1IcoEnabled;
+    if (benef1Ico !== undefined) dados.benef1Ico = String(benef1Ico).trim();
+
+    if (benef2Titulo !== undefined) dados.benef2Titulo = String(benef2Titulo).trim();
+    if (benef2Texto !== undefined) dados.benef2Texto = String(benef2Texto).trim();
+    if (benef2IcoEnabled !== undefined) dados.benef2IcoEnabled = !!benef2IcoEnabled;
+    if (benef2Ico !== undefined) dados.benef2Ico = String(benef2Ico).trim();
+
+    if (benef3Titulo !== undefined) dados.benef3Titulo = String(benef3Titulo).trim();
+    if (benef3Texto !== undefined) dados.benef3Texto = String(benef3Texto).trim();
+    if (benef3IcoEnabled !== undefined) dados.benef3IcoEnabled = !!benef3IcoEnabled;
+    if (benef3Ico !== undefined) dados.benef3Ico = String(benef3Ico).trim();
+
+    if (benef4Titulo !== undefined) dados.benef4Titulo = String(benef4Titulo).trim();
+    if (benef4Texto !== undefined) dados.benef4Texto = String(benef4Texto).trim();
+    if (benef4IcoEnabled !== undefined) dados.benef4IcoEnabled = !!benef4IcoEnabled;
+    if (benef4Ico !== undefined) dados.benef4Ico = String(benef4Ico).trim();
 
     const atualizado = await Config.findOneAndUpdate({}, dados, {
       upsert: true,

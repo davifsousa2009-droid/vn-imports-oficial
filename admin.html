@@ -355,6 +355,118 @@ tr:hover td{background:#FAFAF8}
         <div class="card">
           <div class="card-title">⚙️ Configurações do Sistema</div>
           <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Tokens usados pelo servidor para integrações (Mercado Pago e Melhor Envio). A chave Pix é usada para pagamento no checkout.</p>
+
+          <!-- Conteúdo dinâmico -->
+          <div class="card-title" style="font-size:14px;margin-top:6px">Conteúdo Dinâmico (Sobre + Benefícios)</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin:-6px 0 16px">O texto e os ícones/emojis abaixo aparecem automaticamente na vitrine (<strong style="color:#111">VN_IMPORTS.html</strong>).</p>
+
+          <div class="fg2">
+            <div class="fg fw">
+              <label class="fl">Sobre Nós — Título</label>
+              <input class="fi" id="sys-sobreTitulo" placeholder="Ex: Cibelle Imports" type="text" autocomplete="off">
+            </div>
+            <div class="fg fw">
+              <label class="fl">Sobre Nós — Parágrafo</label>
+              <textarea class="fta" id="sys-sobreTexto" placeholder="Escreva o parágrafo descritivo da loja…" autocomplete="off"></textarea>
+            </div>
+          </div>
+
+          <div class="fg" style="margin-top:18px">
+            <div class="card-title" style="font-size:13px;margin:0 0 10px">Benefícios</div>
+
+            <div class="fg2">
+              <div class="fg">
+                <label class="fl">Entrega Rápida — Título</label>
+                <input class="fi" id="sys-b1Titulo" type="text" autocomplete="off">
+              </div>
+              <div class="fg">
+                <label class="fl">Entrega Rápida — Emoji/Ícone</label>
+                <input class="fi" id="sys-b1Ico" type="text" placeholder="Ex: 🚚" autocomplete="off">
+              </div>
+              <div class="fg fw">
+                <label class="fl">Entrega Rápida — Descrição</label>
+                <textarea class="fta" id="sys-b1Texto" autocomplete="off"></textarea>
+              </div>
+              <div class="fg fw">
+                <label class="fl" style="display:flex;align-items:center;gap:10px">
+                  <input type="checkbox" id="sys-b1IcoEnabled" checked>
+                  Ativar emoji/ícone
+                </label>
+              </div>
+            </div>
+
+            <div style="height:14px"></div>
+
+            <div class="fg2">
+              <div class="fg">
+                <label class="fl">Troca em 30 Dias — Título</label>
+                <input class="fi" id="sys-b2Titulo" type="text" autocomplete="off">
+              </div>
+              <div class="fg">
+                <label class="fl">Troca em 30 Dias — Emoji/Ícone</label>
+                <input class="fi" id="sys-b2Ico" type="text" placeholder="Ex: 🔄" autocomplete="off">
+              </div>
+              <div class="fg fw">
+                <label class="fl">Troca em 30 Dias — Descrição</label>
+                <textarea class="fta" id="sys-b2Texto" autocomplete="off"></textarea>
+              </div>
+              <div class="fg fw">
+                <label class="fl" style="display:flex;align-items:center;gap:10px">
+                  <input type="checkbox" id="sys-b2IcoEnabled" checked>
+                  Ativar emoji/ícone
+                </label>
+              </div>
+            </div>
+
+            <div style="height:14px"></div>
+
+            <div class="fg2">
+              <div class="fg">
+                <label class="fl">Pagamento Seguro — Título</label>
+                <input class="fi" id="sys-b3Titulo" type="text" autocomplete="off">
+              </div>
+              <div class="fg">
+                <label class="fl">Pagamento Seguro — Emoji/Ícone</label>
+                <input class="fi" id="sys-b3Ico" type="text" placeholder="Ex: 🔒" autocomplete="off">
+              </div>
+              <div class="fg fw">
+                <label class="fl">Pagamento Seguro — Descrição</label>
+                <textarea class="fta" id="sys-b3Texto" autocomplete="off"></textarea>
+              </div>
+              <div class="fg fw">
+                <label class="fl" style="display:flex;align-items:center;gap:10px">
+                  <input type="checkbox" id="sys-b3IcoEnabled" checked>
+                  Ativar emoji/ícone
+                </label>
+              </div>
+            </div>
+
+            <div style="height:14px"></div>
+
+            <div class="fg2">
+              <div class="fg">
+                <label class="fl">Importado Selecionado — Título</label>
+                <input class="fi" id="sys-b4Titulo" type="text" autocomplete="off">
+              </div>
+              <div class="fg">
+                <label class="fl">Importado Selecionado — Emoji/Ícone</label>
+                <input class="fi" id="sys-b4Ico" type="text" placeholder="Ex: 💎" autocomplete="off">
+              </div>
+              <div class="fg fw">
+                <label class="fl">Importado Selecionado — Descrição</label>
+                <textarea class="fta" id="sys-b4Texto" autocomplete="off"></textarea>
+              </div>
+              <div class="fg fw">
+                <label class="fl" style="display:flex;align-items:center;gap:10px">
+                  <input type="checkbox" id="sys-b4IcoEnabled" checked>
+                  Ativar emoji/ícone
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tokens -->
+          <div style="height:18px"></div>
           <div class="fg2">
             <div class="fg fw">
               <label class="fl">mp_token (Mercado Pago)</label>
@@ -1351,37 +1463,125 @@ async function loadSettings() {
 
 async function salvarSettings() {
   const msg = document.getElementById('setmsg');
+
+  // Tokens / Pix (collection Settings)
   const mp_token = document.getElementById('set-mpToken').value.trim();
   const me_token = document.getElementById('set-meToken').value.trim();
   const pix_key = document.getElementById('set-pixKey').value.trim();
 
-  if (!mp_token && !me_token && !pix_key) {
+  // Conteúdo dinâmico (collection Config via /api/config)
+  const sobreTitulo = document.getElementById('sys-sobreTitulo')?.value ?? '';
+  const sobreTexto = document.getElementById('sys-sobreTexto')?.value ?? '';
+
+  const benef1Titulo = document.getElementById('sys-b1Titulo')?.value ?? '';
+  const benef1Texto = document.getElementById('sys-b1Texto')?.value ?? '';
+  const benef1Ico = document.getElementById('sys-b1Ico')?.value ?? '';
+  const benef1IcoEnabled = !!document.getElementById('sys-b1IcoEnabled')?.checked;
+
+  const benef2Titulo = document.getElementById('sys-b2Titulo')?.value ?? '';
+  const benef2Texto = document.getElementById('sys-b2Texto')?.value ?? '';
+  const benef2Ico = document.getElementById('sys-b2Ico')?.value ?? '';
+  const benef2IcoEnabled = !!document.getElementById('sys-b2IcoEnabled')?.checked;
+
+  const benef3Titulo = document.getElementById('sys-b3Titulo')?.value ?? '';
+  const benef3Texto = document.getElementById('sys-b3Texto')?.value ?? '';
+  const benef3Ico = document.getElementById('sys-b3Ico')?.value ?? '';
+  const benef3IcoEnabled = !!document.getElementById('sys-b3IcoEnabled')?.checked;
+
+  const benef4Titulo = document.getElementById('sys-b4Titulo')?.value ?? '';
+  const benef4Texto = document.getElementById('sys-b4Texto')?.value ?? '';
+  const benef4Ico = document.getElementById('sys-b4Ico')?.value ?? '';
+  const benef4IcoEnabled = !!document.getElementById('sys-b4IcoEnabled')?.checked;
+
+  // Permite salvar conteúdo mesmo sem tokens preenchidos.
+  // Se tudo vazio em tokens e conteúdo também vazio, dá erro.
+  const anyTokens = !!(mp_token || me_token || pix_key);
+  const anyConteudo = !!(String(sobreTitulo).trim() || String(sobreTexto).trim() ||
+    String(benef1Titulo).trim() || String(benef1Texto).trim() || String(benef1Ico).trim() ||
+    String(benef2Titulo).trim() || String(benef2Texto).trim() || String(benef2Ico).trim() ||
+    String(benef3Titulo).trim() || String(benef3Texto).trim() || String(benef3Ico).trim() ||
+    String(benef4Titulo).trim() || String(benef4Texto).trim() || String(benef4Ico).trim());
+
+  if (!anyTokens && !anyConteudo) {
     showMsg(msg, 'Informe pelo menos um valor para salvar.', 'er');
     return;
   }
 
   try {
-    const r = await fetch(API + '/settings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-password': obterSenha()
-      },
-      body: JSON.stringify({ mp_token, me_token, pix_key })
-    });
+    // 1) Salva tokens/pix se houver
+    if (anyTokens) {
+      const r = await fetch(API + '/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': obterSenha()
+        },
+        body: JSON.stringify({ mp_token, me_token, pix_key })
+      });
 
-    const d = await r.json().catch(() => ({}));
+      const d = await r.json().catch(() => ({}));
 
-    if (r.ok) {
-      showMsg(msg, 'Configurações salvas.', 'ok');
+      if (r.status === 401) {
+        relogar();
+        showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
+        return;
+      }
+
+      if (!r.ok) {
+        showMsg(msg, d.erro || 'Erro ao salvar settings.', 'er');
+        return;
+      }
       await loadSettings();
-      toast('Configurações do sistema atualizadas');
-    } else if (r.status === 401) {
-      relogar();
-      showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
-    } else {
-      showMsg(msg, d.erro || 'Erro ao salvar.', 'er');
     }
+
+    // 2) Salva conteúdo dinâmico (Config)
+    if (anyConteudo) {
+      const payload = {
+        sobreTitulo,
+        sobreTexto,
+        benef1Titulo,
+        benef1Texto,
+        benef1IcoEnabled,
+        benef1Ico,
+        benef2Titulo,
+        benef2Texto,
+        benef2IcoEnabled,
+        benef2Ico,
+        benef3Titulo,
+        benef3Texto,
+        benef3IcoEnabled,
+        benef3Ico,
+        benef4Titulo,
+        benef4Texto,
+        benef4IcoEnabled,
+        benef4Ico
+      };
+
+      const r2 = await fetch(API + '/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': obterSenha()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const d2 = await r2.json().catch(() => ({}));
+
+      if (r2.status === 401) {
+        relogar();
+        showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
+        return;
+      }
+
+      if (!r2.ok) {
+        showMsg(msg, d2.erro || 'Erro ao salvar conteúdo.', 'er');
+        return;
+      }
+    }
+
+    showMsg(msg, 'Configurações do Sistema salvas.', 'ok');
+    toast('Configurações do Sistema atualizadas');
   } catch {
     showMsg(msg, 'Servidor offline. Rode: node server.js', 'er');
   }
