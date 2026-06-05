@@ -1186,7 +1186,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="hero">
   <!-- LEFT: texto -->
   <div class="hero-left">
-    <div class="hero-season" id="heroSeason">Coleção Inverno 2026</div>
+
     <h1 class="hero-title" id="heroTitle">
       Vista-se<br>com <em id="heroTitleEm">Exclusividade</em> e intenção.
     </h1>
@@ -1590,6 +1590,10 @@ function scrollTo_(id){
 /* ─── RENDER HOME ─── */
 function renderHome(){
   document.title = S.store + ' — Moda Premium';
+
+  // sincroniza a sidebar de filtros quando os produtos chegam/atualizam
+  try { renderFilterSidebar(); } catch(e) {}
+
   document.getElementById('footYear').textContent = new Date().getFullYear();
 
   document.getElementById('anParc').textContent = S.parc;
@@ -2192,18 +2196,36 @@ function toggleSearch(){
   else { document.getElementById('searchRes').classList.remove('on'); document.getElementById('searchInp').value=''; }
 }
 function doSearch(q){
-  const res=document.getElementById('searchRes');
-  if(!q.trim()){ res.classList.remove('on'); return; }
-  const found=S.products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.desc.toLowerCase().includes(q.toLowerCase()));
+  const query = String(q || '').trim();
+  const res = document.getElementById('searchRes');
+  if(!res) return;
+
+  if(!query){
+    res.classList.remove('on');
+    return;
+  }
+
+  const queryLc = query.toLowerCase();
+  const found = (Array.isArray(S.products) ? S.products : [])
+    .filter(p =>
+      String(p?.name || '').toLowerCase().includes(queryLc) ||
+      String(p?.desc || '').toLowerCase().includes(queryLc)
+    );
+
+  // Exibe sugestões no dropdown (como já existia)
   res.classList.add('on');
-  res.innerHTML=found.length
+  res.innerHTML = found.length
     ? `<div class="sr-wrap">${found.map(p=>`
         <div class="sr-item" onclick="toggleSearch();openProd(${p.id})">
           <div class="sr-img">${p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
           <div><div class="sr-name">${p.name}</div><div class="sr-price">${R$(p.price)}</div></div>
         </div>`).join('')}</div>`
-    : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${q}"</div>`;
+    : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${query}"</div>`;
+
+  // ✅ Filtra a vitrine em tempo real
+  renderGrid(found);
 }
+
 
 /* ─── REVIEWS (Dinâmicas) ─── */
 function escHtml(s){
