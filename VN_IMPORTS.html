@@ -1548,6 +1548,24 @@ const DEF = {
 /* ─── ESTADO ─── */
 let S = JSON.parse(localStorage.getItem('vn_data')||'null') || JSON.parse(JSON.stringify(DEF));
 let cart = JSON.parse(localStorage.getItem('vn_cart')||'[]');
+
+// persistência: ao carregar a página, recupere o carrinho e renderize
+window.addEventListener('load', () => {
+  try {
+    cart = JSON.parse(localStorage.getItem('vn_cart') || '[]');
+  } catch {
+    cart = [];
+  }
+  renderCart();
+  syncDots();
+});
+
+// Persistência do carrinho (localStorage)
+function persistCart(){
+  try { localStorage.setItem('vn_cart', JSON.stringify(cart || [])); } catch {}
+}
+
+
 let wl = [];
 let curProd = null;
 let categoriasVitrine = [];
@@ -1917,16 +1935,29 @@ function addCart(p){
     cart.push({...p, qty: 1, tamanhoSelecionado: sel});
   }
 
-  saveC();
+  persistCart();
   syncDots();
   renderCart();
   showToast('✓', p.name+' adicionado!');
   setTimeout(openCart,350);
 }
+
 function openCart(){  document.getElementById('cartDrawer').classList.add('on');  document.getElementById('overlay').classList.add('on'); }
 function closeCart(){ document.getElementById('cartDrawer').classList.remove('on'); document.getElementById('overlay').classList.remove('on'); }
-function chQty(i,d){ cart[i].qty+=d; if(cart[i].qty<1) cart.splice(i,1); saveC(); syncDots(); renderCart(); }
-function delItem(i){ cart.splice(i,1); saveC(); syncDots(); renderCart(); }
+function chQty(i,d){
+  cart[i].qty += d;
+  if (cart[i].qty < 1) cart.splice(i, 1);
+  persistCart();
+  syncDots();
+  renderCart();
+}
+function delItem(i){
+  cart.splice(i,1);
+  persistCart();
+  syncDots();
+  renderCart();
+}
+
 
 function renderCart(){
   const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -1964,39 +1995,43 @@ async function checkout(){
   // Pix com valor travado: sempre use o total exato do carrinho no momento do clique.
   const cartTotal = cart.reduce((s,i)=>s + i.price*i.qty, 0);
 
-  // Confirmação + limpeza imediata do carrinho.
-  // (A mensagem aparece e o carrinho é esvaziado logo em seguida.)
-  // cria pedido automaticamente no Mongo assim que o cliente clicar em finalizar
-  // (status inicial: 'Pendente')
-  const pedidoCreatedAt = new Date();
+  // Antes de gerar checkout/PIX, cria pedido no backend (status: Pendente)
+  // e trava fluxo caso falhe (ex.: falta estoque).
   try {
-    if (typeof API_URL === 'string' && API_URL.length) {
-      const payload = {
-        customerName: (S && S.customerName && String(S.customerName).trim()) || 'Cliente',
-        items: cart.map(it => ({
-          name: it.name,
-          qty: it.qty ?? 1,
-          price: it.price,
-          tamanhoSelecionado: (it.tamanhoSelecionado || '').trim()
-        })),
-        total: cartTotal,
-        cep: '',
-        status: 'Pendente',
-        createdAt: pedidoCreatedAt
-      };
+    const payload = {
+      customerName: (S && S.customerName && String(S.customerName).trim()) || 'Cliente',
+      items: cart.map(it => ({
+        name: it.name,
+        qty: it.qty ?? 1,
+        price: it.price,
+        tamanhoSelecionado: (it.tamanhoSelecionado || '').trim(),
+        productId: it._id || it.productId || undefined
+      })),
+      total: cartTotal,
+      cep: '',
+      status: 'Pendente'
+    };
 
-      // chamamos sem bloqueio (o pagamento ainda será realizado em seguida via PIX)
-      fetch(API_URL + '/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(()=>{});
+    const r = await fetch(API_URL + '/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const d = await r.json().catch(() => ({}));
+
+    if (!r.ok) {
+      const erro = d?.erro || d?.message || 'Falha ao criar pedido.';
+      showToast('⚠️', erro);
+      return;
     }
   } catch {
-    // não trava checkout se falhar a criação do pedido
+    showToast('⚠️', 'Falha ao criar pedido. Verifique estoque/servidor.');
+    return;
   }
 
   showToast('✓','Compra realizada com sucesso! Estamos aguardando a confirmação do pagamento.');
+
   S.cart = [];
   cart = [];
   saveC();

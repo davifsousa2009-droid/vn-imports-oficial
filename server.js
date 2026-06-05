@@ -41,9 +41,7 @@ function timingSafePasswordEqual(secretA, secretB) {
   return crypto.timingSafeEqual(b1, b2);
 }
 
-/** Último recurso se JWT_SECRET falhar — valor público; troque e remova assim que env estiver estável na Vercel. */
-const JWT_HARDCODED_TEST_FALLBACK =
-  'vn-imports-TEMP-JWT-HARDCODED-remove-after-env-fixed';
+
 
 let jwtSecretCache = '';
 let jwtSourceLoggedLabel = '';
@@ -53,27 +51,15 @@ function invalidateJwtSecretCache() {
   jwtSourceLoggedLabel = '';
 }
 
-/** Ordem: JWT_SECRET → JWT_SECRET_FALLBACK (painel alternativo) → literal de teste. */
+/** Ordem: JWT_SECRET (obrigatório). */
 function resolveJwtSecretWithSourceOnce() {
   const fromJwt = normalizeJwtEnvValue(process.env.JWT_SECRET);
   if (fromJwt) return { secret: fromJwt, sourceLabel: 'process.env.JWT_SECRET' };
 
-  const fromFb = normalizeJwtEnvValue(process.env.JWT_SECRET_FALLBACK);
-  if (fromFb)
-    return {
-      secret: fromFb,
-      sourceLabel:
-        'process.env.JWT_SECRET_FALLBACK (duplique valor em JWT_SECRET no painel e remova FALLBACK)'
-    };
-
-  console.error(
-    '[jwt] JWT_SECRET vazio → usando JWT_HARDCODED_TEST_FALLBACK (defina JWT_SECRET na Vercel e redeploy)'
-  );
-  return {
-    secret: JWT_HARDCODED_TEST_FALLBACK,
-    sourceLabel: 'HARDCODED_TEST_FALLBACK — não use em produção'
-  };
+  console.error('[jwt] JWT_SECRET não definido/está vazio. Bloqueando inicialização.');
+  return { secret: '', sourceLabel: 'MISSING_JWT_SECRET' };
 }
+
 
 function getJwtSecret() {
   if (jwtSecretCache) return jwtSecretCache;
@@ -85,6 +71,7 @@ function getJwtSecret() {
   }
   return jwtSecretCache;
 }
+
 
 /** Poucas leituras de JWT_SECRET antes de usar fallback / HARDCODED. */
 async function probeEnvJwtSecretWithDelay(maxMs = 600) {
@@ -102,13 +89,19 @@ const app = express();
 // Log só na Vercel (Functions → Logs). Não imprime o segredo.
 if (process.env.VERCEL) {
   const hasJwt = normalizeJwtEnvValue(process.env.JWT_SECRET).length > 0;
-  const hasFb = normalizeJwtEnvValue(process.env.JWT_SECRET_FALLBACK).length > 0;
   console.log('[vn-imports][Vercel] JWT_SECRET preenchido:', hasJwt ? 'sim' : 'não');
-  console.log('[vn-imports][Vercel] JWT_SECRET_FALLBACK preenchido:', hasFb ? 'sim' : 'não');
-  if (!hasJwt && JWT_HARDCODED_TEST_FALLBACK) {
-    console.warn('[vn-imports][Vercel] Se login falhar, o código pode cair em HARDCODED_TEST até JWT_SECRET ficar válido.');
-  }
 }
+
+// Segurança: JWT_SECRET é obrigatório. Se não existir, bloqueia inicialização.
+(function enforceJwtSecretAtStartup() {
+  const secret = normalizeJwtEnvValue(process.env.JWT_SECRET);
+  if (!secret) {
+    console.error('[startup] Erro: JWT_SECRET ausente. Defina JWT_SECRET no painel/ambiente.');
+    // evita que servidor rode em modo vulnerável
+    process.exit(1);
+  }
+})();
+
 
 app.set('trust proxy', 1);
 
@@ -298,16 +291,22 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
     invalidateJwtSecretCache();
     let peek = normalizeJwtEnvValue(process.env.JWT_SECRET);
     if (!peek && process.env.VERCEL) {
+      // mesmo em produção, faz poucas tentativas por cold-start
       peek = await probeEnvJwtSecretWithDelay(600);
     }
 
-    if (peek) {
-      jwtSecretCache = peek;
-      jwtSourceLoggedLabel = 'process.env.JWT_SECRET';
-      console.log('[jwt] segredo JWT ativo obtido via:', jwtSourceLoggedLabel);
+    if (!peek) {
+      return res
+        .status(500)
+        .json({ erro: 'JWT_SECRET não configurado no ambiente.' });
     }
 
+    jwtSecretCache = peek;
+    jwtSourceLoggedLabel = 'process.env.JWT_SECRET';
+    console.log('[jwt] segredo JWT ativo obtido via:', jwtSourceLoggedLabel);
+
     const secret = getJwtSecret();
+
     const token = jwt.sign({ role: 'admin' }, secret, { expiresIn: '8h' });
     res.json({ token, expiresIn: '8h' });
   } catch (e) {
@@ -333,22 +332,13 @@ function verificarJWT(req, res, next) {
   }
 }
 
-const verificarSenha = (req, res, next) => {
-  const masterRaw = process.env.ADMIN_PASSWORD;
-  if (masterRaw == null || String(masterRaw).length === 0) {
-    return res.status(500).json({ erro: 'Configuração do servidor incorreta.' });
-  }
+// (REMOVIDO) verificação por senha em texto puro via header x-admin-password.
+// Admin deve usar Bearer JWT nas rotas protegidas.
 
-  const hdr = req.headers['x-admin-password'];
-  const recebida = hdr == null ? '' : String(hdr);
-  if (!timingSafePasswordEqual(recebida, String(masterRaw))) {
-    return res.status(401).json({ erro: 'Senha incorreta ou não fornecida.' });
-  }
-  next();
-};
 
 // POST /api/upload
-app.post('/api/upload', verificarSenha, (req, res) => {
+app.post('/api/upload', verificarJWT, (req, res) => {
+
   const missing =
     !process.env.CLOUDINARY_CLOUD_NAME ||
     !process.env.CLOUDINARY_API_KEY ||
@@ -683,7 +673,8 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-app.post('/api/categories', verificarSenha, async (req, res) => {
+app.post('/api/categories', verificarJWT, async (req, res) => {
+
   if (!(await ensureDbConnected(res))) return;
   try {
     const nome = req.body.nome?.trim();
@@ -699,7 +690,8 @@ app.post('/api/categories', verificarSenha, async (req, res) => {
   }
 });
 
-app.delete('/api/categories/:id', verificarSenha, async (req, res) => {
+app.delete('/api/categories/:id', verificarJWT, async (req, res) => {
+
   if (!(await ensureDbConnected(res))) return;
   try {
     const removido = await Category.findByIdAndDelete(req.params.id);
@@ -825,7 +817,8 @@ app.get('/api/settings', async (req, res) => {
   res.json(mergePublicSettings(doc));
 });
 
-app.post('/api/settings', verificarSenha, async (req, res) => {
+app.post('/api/settings', verificarJWT, async (req, res) => {
+
   if (!(await ensureDbConnected(res))) return;
   try {
     const mp_token = req.body?.mp_token != null ? String(req.body.mp_token).trim() : '';
@@ -857,7 +850,50 @@ app.post('/api/orders', async (req, res) => {
     const totalNum = typeof total === 'number' ? total : Number(total);
     if (!Number.isFinite(totalNum)) return res.status(400).json({ erro: 'total inválido' });
 
+    if (!items.length) return res.status(400).json({ erro: 'items vazios' });
+
+    // Baixa de estoque real (por Product._id quando enviado)
+    // Obs: como o schema atual de Produto (models/Product.js) não possui 'estoque',
+    // usamos estoque como legado apenas se existir no documento (compat).
+    // Se não houver campo estoque, a rota não reduz e não bloqueia.
+    // Recomendação: adicionar estoque ao schema e persistir decrementos.
+for (const it of items) {
+
+      const qty = Number(it.qty || 1);
+      if (!Number.isFinite(qty) || qty < 1) {
+        return res.status(400).json({ erro: 'Quantidade inválida no carrinho.' });
+      }
+
+      const productId = it.productId ? String(it.productId) : (it._id ? String(it._id) : null);
+      if (!productId) continue; // sem id de produto, não dá pra baixar estoque
+
+      // busca documento atual
+      const prod = await Produto.findById(productId).lean();
+      if (!prod) {
+        return res.status(400).json({ erro: 'Produto não encontrado: ' + productId });
+      }
+
+      const currentStock = prod.estoque != null ? Number(prod.estoque) : null;
+      if (currentStock == null) {
+        // sem campo estoque (schema legado) => não bloqueia compra
+        continue;
+      }
+
+      if (currentStock < qty) {
+        return res.status(409).json({
+          erro: 'Sem estoque suficiente para ' + String(it.name || 'item'),
+          produtoId: productId,
+          estoqueDisponivel: currentStock,
+          quantidadeSolicitada: qty
+        });
+      }
+
+      await Produto.findByIdAndUpdate(productId, { $inc: { estoque: -qty } }, { new: true });
+    }
+
+    // cria pedido após validação/baixa de estoque
     const order = await Order.create({
+
       customerName,
       items: items.map((i) => ({
         name: String(i.name || '').trim(),
@@ -875,6 +911,7 @@ app.post('/api/orders', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao criar pedido', detalhe: err.message });
   }
 });
+
 
 app.get('/api/orders', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
@@ -931,7 +968,7 @@ app.get('/api/config', async (req, res) => {
   });
 });
 
-app.post('/api/config', verificarSenha, async (req, res) => {
+app.post('/api/config', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
     const {
