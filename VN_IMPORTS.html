@@ -1236,7 +1236,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="sec-top">
       <div>
         <div class="sec-eye">Produtos</div>
-        <h2 class="sec-title">Mais <em>Vendidos</em></h2>
+        <h2 class="sec-title">Nossos <em>Produtos</em></h2>
+
       </div>
       <a href="#" class="sec-more">Ver todos →</a>
     </div>
@@ -2443,20 +2444,33 @@ async function carregarConfigLoja() {
 
 // Converte produto do formato MongoDB → formato da loja
 function converterProduto(p, index) {
+  // Fonte de verdade: tamanhos cadastrados no banco.
+  // Compatibilidade: alguns projetos podem ter usado `tamanhos`; mas o schema atual usa `sizes`.
+  const rawSizes = Array.isArray(p?.sizes)
+    ? p.sizes
+    : Array.isArray(p?.tamanhos)
+      ? p.tamanhos
+      : [];
+
+  const normalizedSizes = rawSizes
+    .map((s) => String(s || '').trim())
+    .filter(Boolean);
+
   return {
-    id:    index,
-    _id:   p._id,
-    name:  p.nome,
+    id: index,
+    _id: p._id,
+    name: p.nome,
     brand: vitrineNomeLoja,
-    cat:   p.categoria || 'geral',
+    cat: p.categoria || 'geral',
     price: Number(p.preco),
-    old:   null,
-    img:   p.imagem || '',
-    desc:  p.descricao || p.nome,
-    sizes: ['PP','P','M','G','GG'],
+    old: null,
+    img: p.imagem || '',
+    desc: p.descricao || p.nome,
+    sizes: normalizedSizes,
     badge: null
   };
 }
+
 
 function renderFilterBar() {
   const fb = document.getElementById('filterBar');
@@ -2502,8 +2516,24 @@ function syncFilterUI(isClear=false){
   }
 
   if(sizesEl){
-    const sizeList = ['PP','P','M','G','GG'];
+    // Tamanhos disponíveis: união dinâmica dos tamanhos presentes nos produtos carregados
     const selSizes = window.activeFilters.sizes || [];
+
+    const pool = (Array.isArray(S.products) ? S.products : [])
+      .flatMap(p => Array.isArray(p?.sizes) ? p.sizes : [])
+      .map(s => String(s || '').trim())
+      .filter(Boolean);
+
+    // unique preservando ordem (primeira ocorrência)
+    const seen = new Set();
+    const sizeList = [];
+    for(const s of pool){
+      if(!seen.has(s)){
+        seen.add(s);
+        sizeList.push(s);
+      }
+    }
+
     sizesEl.innerHTML = sizeList.map(s=>{
       const on = selSizes.includes(s);
       return `
@@ -2511,6 +2541,7 @@ function syncFilterUI(isClear=false){
       `;
     }).join('');
   }
+
 
   updatePriceSliders();
 }
