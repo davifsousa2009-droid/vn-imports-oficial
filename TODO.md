@@ -1,12 +1,4 @@
-- [ ] Criar modelos/coleções Mongo: settings (mp_token, me_token, pix_key) e orders (cliente, itens, total, status)
-- [ ] Implementar rotas no server.js:
-  - [ ] POST/PUT /api/settings protegido por x-admin-password
-  - [ ] GET /api/settings pública filtrada (retornar apenas pix_key) 
-  - [ ] GET /api/orders protegido por JWT (admin)
-- [ ] Atualizar admin.html:
-  - [ ] Adicionar sidebar e panel “⚙️ Configurações do Sistema”
-  - [ ] Adicionar inputs (mp_token, me_token, pix_key) + botão “Salvar Configurações”
-  - [ ] Adicionar panel “📦 Gestão de Pedidos” com tabela/loader e renderização dos campos
-- [ ] Rodar server local e validar endpoints
-- [ ] Testar no admin: salvar settings e carregar orders (mesmo vazios)
+- [x] Encontrar e corrigir no `admin.html` a autenticação do upload: `uploadArquivo()` passou de `x-admin-password: obterSenha()` para `headersComJwt()` (evita 401 em `/api/upload`).
+- [x] Remover `prompt()` de `function obterSenha()` substituindo o corpo inteiro por apenas leitura do `localStorage`.
+
 
