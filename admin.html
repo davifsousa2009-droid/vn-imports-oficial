@@ -631,7 +631,7 @@ async function uploadArquivo(file) {
   fd.append('arquivo', file);
   const r = await fetch(API + '/upload', {
     method: 'POST',
-    headers: { 'x-admin-password': obterSenha() },
+    headers: headersComJwt(),
     body: fd
   });
   const d = await r.json();
