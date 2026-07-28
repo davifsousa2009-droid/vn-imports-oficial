@@ -115,6 +115,10 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
+        // O site usa dezenas de onclick="" inline no HTML (VN_IMPORTS.html e admin.html).
+        // CSP trata isso como uma diretiva separada de <script>; sem isso, todo botão
+        // com onclick inline fica bloqueado silenciosamente no console do navegador.
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
