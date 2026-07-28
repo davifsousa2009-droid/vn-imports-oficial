@@ -665,13 +665,7 @@ function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 }
 
-// ── SENHA + JWT ───────────────────────────────────────
-// Senha: upload, categorias e config (header x-admin-password).
-// JWT: POST/PUT/DELETE de produtos e banners (Bearer), obtido em /api/admin/login.
-function obterSenha() {
-  return (localStorage.getItem('vni_pass') || '').trim();
-}
-
+// ── JWT ───────────────────────────────────────────────
 function headersComJwt(extra) {
   const t = localStorage.getItem('vni_jwt');
   return Object.assign({}, extra || {}, t ? { Authorization: 'Bearer ' + t } : {});
@@ -712,7 +706,6 @@ async function fazerLoginAdmin() {
       return;
     }
     localStorage.setItem('vni_jwt', d.token);
-    localStorage.setItem('vni_pass', senha);
     document.getElementById('gatePass').value = '';
     err.style.display = 'none';
     document.getElementById('loginGate').classList.add('off');
@@ -725,13 +718,11 @@ async function fazerLoginAdmin() {
 
 function sairAdmin() {
   localStorage.removeItem('vni_jwt');
-  localStorage.removeItem('vni_pass');
   document.getElementById('gatePass').value = '';
   document.getElementById('loginGate').classList.remove('off');
 }
 
 function relogar() {
-  localStorage.removeItem('vni_pass');
   localStorage.removeItem('vni_jwt');
   document.getElementById('loginGate').classList.remove('off');
   alert('Sessão ou senha inválida. Entre novamente.');
@@ -873,12 +864,9 @@ async function adicionarCategoria() {
   const msg = document.getElementById('catmsg');
   if (!nome) { showMsg(msg, 'Informe o nome da categoria.', 'er'); return; }
   try {
-    const r = await fetch(API + '/categories', {
+      const r = await fetch(API + '/categories', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-password': obterSenha()
-      },
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ nome })
     });
     const d = await r.json();
@@ -903,7 +891,7 @@ async function removerCategoria(id, nome) {
   try {
     const r = await fetch(API + '/categories/' + encodeURIComponent(id), {
       method: 'DELETE',
-      headers: { 'x-admin-password': obterSenha() }
+      headers: headersComJwt({})
     });
     if (r.ok) {
       toast('Categoria removida');
@@ -1032,10 +1020,11 @@ async function loadStats() {
 async function salvar() {
   const nome      = document.getElementById('f-nome').value.trim();
   const preco     = parseFloat(document.getElementById('f-preco').value);
-  const descricao = document.getElementById('f-desc').value.trim();
+const descricao = document.getElementById('f-desc').value.trim();
   const categoria = document.getElementById('f-cat').value;
-  const estoque   = parseInt(document.getElementById('f-est').value) || 0;
-  const msg       = document.getElementById('fmsg');
+  const estoqueRaw = document.getElementById('f-est').value;
+  const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
+  const msg = document.getElementById('fmsg');
 
   if (!nome)            { showMsg(msg, 'Nome é obrigatório.', 'er'); return; }
   if (!preco || preco <= 0) { showMsg(msg, 'Informe um preço válido.', 'er'); return; }
@@ -1284,7 +1273,7 @@ async function editar(p) {
   document.getElementById('eimg-stored').value = p.imagem || '';
   document.getElementById('e-file').value = '';
   document.getElementById('edesc').value  = p.descricao || '';
-  document.getElementById('eest').value   = p.estoque || 0;
+document.getElementById('eest').value = p.estoque != null ? p.estoque : '';
 
   if (p.imagem) {
     document.getElementById('eprev-img').src = mediaUrl(p.imagem);
@@ -1308,8 +1297,9 @@ async function salvarEdicao() {
   const preco     = parseFloat(document.getElementById('epreco').value);
   const categoria = document.getElementById('ecat').value;
   let imagem      = document.getElementById('eimg-stored').value.trim();
-  const descricao = document.getElementById('edesc').value.trim();
-  const estoque   = parseInt(document.getElementById('eest').value) || 0;
+const descricao = document.getElementById('edesc').value.trim();
+  const estoqueRaw = document.getElementById('eest').value;
+  const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
 
   const tamanhos = getTamanhosFromUI('e');
 
@@ -1504,10 +1494,7 @@ async function salvarSettings() {
     if (anyTokens) {
       const r = await fetch(API + '/settings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': obterSenha()
-        },
+        headers: headersComJwt({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ mp_token, me_token, pix_key })
       });
 
@@ -1551,10 +1538,7 @@ async function salvarSettings() {
 
       const r2 = await fetch(API + '/config', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': obterSenha()
-        },
+        headers: headersComJwt({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
 
@@ -1713,10 +1697,7 @@ async function salvarConfig() {
   try {
     const r = await fetch(API + '/config', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-password': obterSenha()
-      },
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         nomeLoja,
         chavePix,

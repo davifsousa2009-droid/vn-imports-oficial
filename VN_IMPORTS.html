@@ -2055,8 +2055,12 @@ async function checkout(){
   // 1) Se o valor do Admin começar com 'http' => abre em nova aba.
   // 2) Se NÃO começar com 'http' (telefone/chave/número) => abre modal luxuoso exibindo a chave.
 
-  // Pix com valor travado: sempre use o total exato do carrinho no momento do clique.
+  // Pix com valor travado: usamos o total do carrinho só como estimativa inicial de UI.
+  // O valor que realmente importa (exibido no modal e cobrado no Pix) é o que o
+  // backend devolve depois de validar o pedido — nunca o calculado aqui no navegador.
   const cartTotal = cart.reduce((s,i)=>s + i.price*i.qty, 0);
+  let orderTotal = cartTotal;
+  let orderId = null;
 
   // Antes de gerar checkout/PIX, cria pedido no backend (status: Pendente)
   // e trava fluxo caso falhe (ex.: falta estoque).
@@ -2070,9 +2074,7 @@ async function checkout(){
         tamanhoSelecionado: (it.tamanhoSelecionado || '').trim(),
         productId: it._id || it.productId || undefined
       })),
-      total: cartTotal,
-      cep: '',
-      status: 'Pendente'
+      cep: ''
     };
 
     const r = await fetch(API_URL + '/orders', {
@@ -2088,6 +2090,10 @@ async function checkout(){
       showToast('⚠️', erro);
       return;
     }
+
+    // total e _id oficiais vêm do backend (recalculados a partir do preço salvo no banco).
+    if (d?.order?.total != null) orderTotal = Number(d.order.total);
+    if (d?.order?._id) orderId = String(d.order._id);
   } catch {
     showToast('⚠️', 'Falha ao criar pedido. Verifique estoque/servidor.');
     return;
@@ -2101,29 +2107,29 @@ async function checkout(){
   renderCart();
   syncDots();
 
-  // Transi     o autom  tica (MP token -> QR din  mico / sen    o -> chave Pix manual)
+  // Transição automática (MP token -> QR dinâmico / senão -> chave Pix manual)
   try {
     const autoR = await fetch(API_URL + '/pix/automatic');
     const auto = await autoR.json().catch(() => ({}));
 
     const pixFallback = (auto?.pixKeyFallback && String(auto.pixKeyFallback).trim()) || '';
 
-    if (auto?.hasMpToken) {
+    if (auto?.hasMpToken && orderId) {
       try {
         const qrR = await fetch(API_URL + '/pix/qr-mp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ total: cartTotal })
+          body: JSON.stringify({ orderId })
         });
 
         const qrD = await qrR.json().catch(() => ({}));
 
         if (qrR.ok && qrD?.ok && qrD?.qrCode) {
           // Nesta codebase, por enquanto o front exibe o QR como imagem URL/base64 (campo qrCode)
-          // caso a implementa     o retorne QR em formato string.
-          showToast('✓','Gerando pagamento PIX (QR din mico)...');
+          // caso a implementação retorne QR em formato string.
+          showToast('✓','Gerando pagamento PIX (QR dinâmico)...');
 
-          showPixModal(qrD.qrCode, false, cartTotal);
+          showPixModal(qrD.qrCode, false, orderTotal);
           closeCart();
           return;
         }
@@ -2135,7 +2141,7 @@ async function checkout(){
     // fallback Pix manual
     const raw = (pixFallback && String(pixFallback).trim()) || '';
     if (!raw) {
-      showPixModal('', true, cartTotal);
+      showPixModal('', true, orderTotal);
       closeCart();
       return;
     }
@@ -2150,14 +2156,14 @@ async function checkout(){
       return;
     }
 
-    showPixModal(raw, false, cartTotal);
+    showPixModal(raw, false, orderTotal);
     return;
   } catch {
     // fallback final: usa chave Pix do S (config antiga)
     const raw = (S.chavePix && String(S.chavePix).trim()) || '';
 
     if (!raw) {
-      showPixModal('', true, cartTotal);
+      showPixModal('', true, orderTotal);
       closeCart();
       return;
     }
@@ -2172,7 +2178,7 @@ async function checkout(){
       return;
     }
 
-    showPixModal(raw, false, cartTotal);
+    showPixModal(raw, false, orderTotal);
     return;
   }
 }
@@ -2990,3 +2996,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 </script>
 </body>
+</html>

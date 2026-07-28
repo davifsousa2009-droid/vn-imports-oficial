@@ -107,7 +107,20 @@ app.set('trust proxy', 1);
 
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    // CSP prática: o front (VN_IMPORTS.html / admin.html) usa <script> e style="" inline,
+    // por isso 'unsafe-inline' segue liberado para script/style — travar isso 100% exigiria
+    // mover todo o JS/CSS inline para arquivos externos (refactor maior, fora deste escopo).
+    // Ainda assim, blindamos img/font/connect só nos domínios que o projeto realmente usa.
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
+        connectSrc: ["'self'"]
+      }
+    }
   })
 );
 
@@ -170,7 +183,31 @@ function slugifyTenantTag(v) {
 }
 
 // ── MIDDLEWARES ────────────────────────────────────────
-app.use(cors());
+// CORS restrito: em produção só aceita o(s) domínio(s) definidos em ALLOWED_ORIGIN
+// (separados por vírgula, ex: "https://vnimports.com.br,https://vn-imports.vercel.app").
+// Em dev (sem ALLOWED_ORIGIN definido) libera localhost para não travar o desenvolvimento.
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // requisições sem Origin (ex: curl, apps mobile, mesmo servidor) são liberadas
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0) {
+        // ALLOWED_ORIGIN não configurado: modo dev, libera localhost apenas
+        const isLocal = /^https?:\/\/localhost(:\d+)?$/.test(origin);
+        return callback(isLocal ? null : new Error('Origem não permitida por CORS.'), isLocal);
+      }
+      return callback(
+        allowedOrigins.includes(origin) ? null : new Error('Origem não permitida por CORS.'),
+        allowedOrigins.includes(origin)
+      );
+    }
+  })
+);
 app.use(express.json());
 
 // ── CONEXÃO COM MONGODB (singleton) ────────────────────
@@ -268,6 +305,25 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { erro: 'Muitas tentativas de login. Aguarde alguns minutos.' }
+});
+
+// Rate limit para rotas públicas de escrita (evita spam de pedidos/avaliações falsas).
+const ordersLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { erro: 'Muitos pedidos em pouco tempo. Aguarde alguns minutos.' }
+});
+
+const reviewsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { erro: 'Muitas avaliações em pouco tempo. Aguarde alguns minutos.' }
 });
 
 app.post('/api/admin/login', loginLimiter, async (req, res) => {
@@ -391,7 +447,9 @@ const produtoSchema = new mongoose.Schema(
     imagem: { type: String, default: '' },
     descricao: { type: String, default: '' },
     categoria: { type: String, default: 'geral' },
-    estoque: { type: Number, default: 0 },
+    // null = sem controle de estoque habilitado para este produto (não bloqueia compra).
+    // Um número (mesmo 0) = controle ativo, com aquela quantidade disponível.
+    estoque: { type: Number, default: null },
     // Array de tamanhos disponíveis para o produto (ex: ['P','M','G'])
     sizes: { type: [String], default: [] }
   },
@@ -454,7 +512,10 @@ const OrderSchema = new mongoose.Schema(
     },
     total: { type: Number, required: true },
     cep: { type: String, default: '' },
-    status: { type: String, default: 'Pendente' }
+    status: { type: String, default: 'Pendente' },
+    // ID do pagamento no Mercado Pago, salvo quando o QR Pix é gerado.
+    // Usado pelo webhook (/api/pix/webhook) para confirmar o pagamento e atualizar o status.
+    mpPaymentId: { type: String, default: '' }
   },
   { timestamps: true }
 );
@@ -739,7 +800,7 @@ app.delete('/api/banners/:id', verificarJWT, async (req, res) => {
 });
 
 // Reviews
-app.post('/api/reviews', async (req, res) => {
+app.post('/api/reviews', reviewsLimiter, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
     const nome = req.body?.nome?.trim ? req.body.nome.trim() : '';
@@ -837,73 +898,104 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
   }
 });
 
+/**
+ * Reverte decrementos de estoque já aplicados quando um pedido falha no meio do processamento
+ * (ex: item 3 de 5 sem estoque — os itens 1 e 2 já decrementados precisam voltar).
+ */
+async function rollbackStock(decrementedList) {
+  for (const { productId, qty } of decrementedList) {
+    try {
+      await Produto.findByIdAndUpdate(productId, { $inc: { estoque: qty } });
+    } catch (e) {
+      console.error('[orders] Falha ao reverter estoque de', productId, '-', e.message);
+    }
+  }
+}
+
 // Orders
-app.post('/api/orders', async (req, res) => {
+app.post('/api/orders', ordersLimiter, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
     const customerName = req.body?.customerName != null ? String(req.body.customerName).trim() : '';
-    const items = Array.isArray(req.body?.items) ? req.body.items : [];
-    const total = req.body?.total;
+    const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
     const cep = req.body?.cep != null ? String(req.body.cep).trim() : '';
-    const status = req.body?.status != null ? String(req.body.status).trim() : 'Pendente';
 
-    const totalNum = typeof total === 'number' ? total : Number(total);
-    if (!Number.isFinite(totalNum)) return res.status(400).json({ erro: 'total inválido' });
+    if (!rawItems.length) return res.status(400).json({ erro: 'items vazios' });
 
-    if (!items.length) return res.status(400).json({ erro: 'items vazios' });
+    // IMPORTANTE: preço e total NUNCA vêm do cliente — sempre recalculados a partir
+    // do Produto salvo no banco. Isso impede que alguém edite o carrinho no navegador
+    // (localStorage/DevTools) para pagar um valor diferente do real.
+    const decrementedForRollback = []; // acumula decrementos aplicados, para rollback em caso de erro
+    const itemsForOrder = [];
+    let totalNum = 0;
 
-    // Baixa de estoque real (por Product._id quando enviado)
-    // Obs: como o schema atual de Produto (models/Product.js) não possui 'estoque',
-    // usamos estoque como legado apenas se existir no documento (compat).
-    // Se não houver campo estoque, a rota não reduz e não bloqueia.
-    // Recomendação: adicionar estoque ao schema e persistir decrementos.
-for (const it of items) {
-
-      const qty = Number(it.qty || 1);
+    for (const it of rawItems) {
+      const qty = Number(it?.qty || 1);
       if (!Number.isFinite(qty) || qty < 1) {
+        await rollbackStock(decrementedForRollback);
         return res.status(400).json({ erro: 'Quantidade inválida no carrinho.' });
       }
 
-      const productId = it.productId ? String(it.productId) : (it._id ? String(it._id) : null);
-      if (!productId) continue; // sem id de produto, não dá pra baixar estoque
+      const productId = it?.productId ? String(it.productId) : (it?._id ? String(it._id) : null);
+      if (!productId) {
+        await rollbackStock(decrementedForRollback);
+        return res.status(400).json({ erro: 'Item do carrinho sem productId — não é possível validar o preço.' });
+      }
 
-      // busca documento atual
-      const prod = await Produto.findById(productId).lean();
+      // Decremento atômico: só aplica se o produto tiver controle de estoque ativo
+      // (estoque numérico) E quantidade suficiente. Evita condição de corrida entre
+      // dois clientes comprando o mesmo item ao mesmo tempo.
+      const withStockControl = await Produto.findOneAndUpdate(
+        { _id: productId, estoque: { $gte: qty } },
+        { $inc: { estoque: -qty } },
+        { new: true }
+      );
+
+      let prod = withStockControl;
       if (!prod) {
-        return res.status(400).json({ erro: 'Produto não encontrado: ' + productId });
+        // Não bateu: produto inexistente, sem controle de estoque (estoque=null) ou estoque insuficiente.
+        const existing = await Produto.findById(productId).lean();
+        if (!existing) {
+          await rollbackStock(decrementedForRollback);
+          return res.status(400).json({ erro: 'Produto não encontrado: ' + productId });
+        }
+        if (existing.estoque == null) {
+          // estoque=null => controle de estoque desativado para este produto; não bloqueia a compra.
+          prod = existing;
+        } else {
+          await rollbackStock(decrementedForRollback);
+          return res.status(409).json({
+            erro: 'Sem estoque suficiente para ' + (existing.nome || it?.name || 'item'),
+            produtoId: productId,
+            estoqueDisponivel: existing.estoque,
+            quantidadeSolicitada: qty
+          });
+        }
+      } else {
+        decrementedForRollback.push({ productId, qty });
       }
 
-      const currentStock = prod.estoque != null ? Number(prod.estoque) : null;
-      if (currentStock == null) {
-        // sem campo estoque (schema legado) => não bloqueia compra
-        continue;
-      }
+      const precoReal = Number(prod.preco || 0);
+      totalNum += precoReal * qty;
 
-      if (currentStock < qty) {
-        return res.status(409).json({
-          erro: 'Sem estoque suficiente para ' + String(it.name || 'item'),
-          produtoId: productId,
-          estoqueDisponivel: currentStock,
-          quantidadeSolicitada: qty
-        });
-      }
-
-      await Produto.findByIdAndUpdate(productId, { $inc: { estoque: -qty } }, { new: true });
+      itemsForOrder.push({
+        name: String(prod.nome || it?.name || '').trim(),
+        qty,
+        price: precoReal,
+        tamanhoSelecionado: it?.tamanhoSelecionado ? String(it.tamanhoSelecionado) : ''
+      });
     }
 
-    // cria pedido após validação/baixa de estoque
-    const order = await Order.create({
+    totalNum = Math.round(totalNum * 100) / 100;
 
+    // Status sempre começa "Pendente" — o cliente não pode definir o status do próprio pedido.
+    // A confirmação de pagamento (Pix) deve ser tratada separadamente, ver /api/pix/webhook.
+    const order = await Order.create({
       customerName,
-      items: items.map((i) => ({
-        name: String(i.name || '').trim(),
-        qty: Number(i.qty || 1),
-        price: Number(i.price || 0),
-        tamanhoSelecionado: i.tamanhoSelecionado ? String(i.tamanhoSelecionado) : ''
-      })),
+      items: itemsForOrder,
       total: totalNum,
       cep,
-      status
+      status: 'Pendente'
     });
 
     res.status(201).json({ mensagem: 'Pedido criado!', order });
@@ -1091,8 +1183,23 @@ app.post('/api/pix/qr-mp', async (req, res) => {
       return res.json({ ok: false, reason: 'NO_MP_TOKEN', pixKeyFallback });
     }
 
-    const totalNum = req.body?.total;
-    const amount = typeof totalNum === 'number' ? totalNum : Number(totalNum);
+    // IMPORTANTE: o valor cobrado no Pix vem do pedido já salvo no banco (orderId),
+    // nunca do "total" que o cliente manda — senão dá pra manipular o valor cobrado
+    // pelo mesmo jeito que dava pra manipular o total do pedido.
+    const orderId = req.body?.orderId ? String(req.body.orderId) : null;
+    if (!orderId) {
+      return res.status(400).json({ ok: false, reason: 'MISSING_ORDER_ID', pixKeyFallback });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND', pixKeyFallback });
+    }
+    if (order.status !== 'Pendente') {
+      return res.status(409).json({ ok: false, reason: 'ORDER_ALREADY_PROCESSED', pixKeyFallback });
+    }
+
+    const amount = Number(order.total);
     if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({
         ok: false,
@@ -1154,6 +1261,16 @@ app.post('/api/pix/qr-mp', async (req, res) => {
       });
     }
 
+    // Guarda o ID do pagamento no pedido para o webhook conseguir confirmar depois.
+    if (mpJson?.id) {
+      try {
+        order.mpPaymentId = String(mpJson.id);
+        await order.save();
+      } catch (e) {
+        console.warn('[pix/qr-mp] Falha ao salvar mpPaymentId no pedido:', e.message);
+      }
+    }
+
     // O front hoje usa apenas qrCode, mas retornamos também qrCodeBase64.
     return res.json({
       ok: true,
@@ -1163,6 +1280,66 @@ app.post('/api/pix/qr-mp', async (req, res) => {
     });
   } catch (e) {
     return res.status(500).json({ ok: false, reason: 'ERROR', pixKeyFallback: '' });
+  }
+});
+
+/**
+ * Webhook do Mercado Pago. Configure esta URL (https://SEU_DOMINIO/api/pix/webhook)
+ * no painel do Mercado Pago em: Sua integração → Webhooks → Configurar notificações.
+ * O MP chama essa rota quando o status de um pagamento muda (ex: Pix aprovado).
+ * Aceita tanto o formato novo (body JSON com data.id) quanto o legado (query ?id=&topic=payment).
+ */
+app.post('/api/pix/webhook', async (req, res) => {
+  // Responde 200 rápido mesmo se algo falhar depois — o MP reenvia notificações
+  // que não recebem 200, e não queremos ficar recebendo o mesmo evento repetido
+  // enquanto investigamos com calma via logs.
+  res.status(200).json({ recebido: true });
+
+  try {
+    if (!(await tryConnectDb())) {
+      console.warn('[pix/webhook] DB indisponível, notificação ignorada.');
+      return;
+    }
+
+    const paymentId =
+      req.body?.data?.id ||
+      req.body?.id ||
+      req.query?.id ||
+      req.query?.['data.id'];
+
+    const topic = req.body?.type || req.body?.topic || req.query?.topic;
+    if (!paymentId || (topic && topic !== 'payment')) return;
+
+    const settings = await Settings.findOne().lean();
+    if (!temMpTokenSalvo(settings)) {
+      console.warn('[pix/webhook] Sem mp_token configurado, não é possível confirmar pagamento.');
+      return;
+    }
+    const mpToken = String(settings.mp_token).trim();
+
+    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${mpToken}` }
+    });
+    const mpJson = await mpRes.json().catch(() => ({}));
+    if (!mpRes.ok) {
+      console.warn('[pix/webhook] Falha ao consultar pagamento no MP:', mpJson);
+      return;
+    }
+
+    if (mpJson?.status === 'approved') {
+      const order = await Order.findOneAndUpdate(
+        { mpPaymentId: String(paymentId), status: 'Pendente' },
+        { status: 'Pago' },
+        { new: true }
+      );
+      if (order) {
+        console.log('[pix/webhook] Pedido', order._id.toString(), 'confirmado como Pago.');
+      }
+    }
+    // outros status (rejected, cancelled, etc.) podem ser tratados aqui se necessário —
+    // por ora deixamos o pedido como "Pendente" para revisão manual do admin.
+  } catch (e) {
+    console.error('[pix/webhook] Erro ao processar notificação:', e.message);
   }
 });
 
@@ -1190,4 +1367,3 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = app;
-
