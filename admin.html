@@ -89,6 +89,8 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 .btn-e{background:#9A7A3A;color:#fff}
 .btn-e:hover{background:#7d6330}
 .btn-sm{padding:6px 14px;font-size:11px}
+.btn-danger{background:#A0391E;color:#fff}
+.btn-danger:hover{background:#7d2c17}
 .btn-logout{padding:6px 14px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:transparent;color:#888;border:1px solid #E0DBD4;cursor:pointer;font-family:'Barlow',sans-serif;border-radius:2px}
 .btn-logout:hover{border-color:#A0391E;color:#A0391E}
 
@@ -1599,10 +1601,12 @@ async function loadOrders() {
             <th>Itens</th>
             <th>Valor Total</th>
             <th>Status</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           ${safe.map(o => {
+            const id = escHtml(o._id || '');
             const customer = o.customerName ? String(o.customerName) : '—';
             const items = Array.isArray(o.items) ? o.items : [];
             const itemsTxt = items.length
@@ -1611,18 +1615,55 @@ async function loadOrders() {
             const total = Number(o.total);
             const totalTxt = Number.isFinite(total) ? fmt(total) : '—';
             const status = o.status ? escHtml(o.status) : '—';
+            const podeMarcarPago = o.status === 'Pendente';
             return `
               <tr>
                 <td class="td-name">${customer}</td>
                 <td>${itemsTxt}</td>
                 <td class="td-price">${totalTxt}</td>
                 <td>${status}</td>
+                <td style="white-space:nowrap">
+                  ${podeMarcarPago ? `<button class="btn btn-sm" onclick="marcarPedidoPago('${id}')" style="margin-right:6px">✓ Pago</button>` : ''}
+                  <button class="btn btn-sm btn-danger" onclick="excluirPedido('${id}')">🗑 Excluir</button>
+                </td>
               </tr>`;
           }).join('')}
         </tbody>
       </table>`;
   } catch {
     body.innerHTML = '<div class="empty">Servidor offline. Rode: node server.js</div>';
+  }
+}
+
+async function marcarPedidoPago(id) {
+  if (!id) return;
+  try {
+    const r = await fetch(API + '/orders/' + encodeURIComponent(id), {
+      method: 'PUT',
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ status: 'Pago' })
+    });
+    if (r.status === 401) { relogar(); return; }
+    if (!r.ok) throw new Error('http ' + r.status);
+    loadOrders();
+  } catch {
+    alert('Não foi possível atualizar o pedido. Tente novamente.');
+  }
+}
+
+async function excluirPedido(id) {
+  if (!id) return;
+  if (!confirm('Tem certeza que deseja excluir este pedido? Essa ação não pode ser desfeita.')) return;
+  try {
+    const r = await fetch(API + '/orders/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: headersComJwt({})
+    });
+    if (r.status === 401) { relogar(); return; }
+    if (!r.ok) throw new Error('http ' + r.status);
+    loadOrders();
+  } catch {
+    alert('Não foi possível excluir o pedido. Tente novamente.');
   }
 }
 

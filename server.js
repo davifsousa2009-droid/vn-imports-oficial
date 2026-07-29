@@ -539,6 +539,8 @@ const ConfigSchema = new mongoose.Schema({
   instagramLink: { type: String, default: shopConfig.instagramLink },
   emailContato: { type: String, default: shopConfig.emailContato },
   clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) },
+  // Cidade do lojista — exigida pelo padrão do Pix (BR Code) no Copia e Cola.
+  cidadeLoja: { type: String, default: 'SAO PAULO' },
 
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
@@ -609,6 +611,7 @@ function mergePublicConfig(doc) {
     instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
     emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
     clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
+    cidadeLoja: String(doc?.cidadeLoja || '').trim().toUpperCase() || 'SAO PAULO',
     colors: colorsMerged,
     pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium',
 
@@ -643,6 +646,66 @@ function temMpTokenSalvo(doc) {
   if (!doc) return false;
   const mp = doc?.mp_token != null ? String(doc.mp_token).trim() : '';
   return mp.length > 0;
+}
+
+/**
+ * Geração do "Pix Copia e Cola" (BR Code), padrão EMV definido pelo Banco Central.
+ * Com o campo 54 (valor) preenchido, o app do banco do cliente já abre a tela de
+ * pagamento com o valor travado (o cliente só confirma, não digita/edita o valor).
+ * Não depende de nenhuma API externa — é só montagem de string + checksum CRC16.
+ */
+function removerAcentosEEspeciais(v) {
+  return String(v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .trim();
+}
+
+function tlv(id, value) {
+  const v = String(value);
+  const len = String(v.length).padStart(2, '0');
+  return `${id}${len}${v}`;
+}
+
+/** CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF) — exigido pelo padrão do Pix. */
+function crc16ccitt(payload) {
+  let crc = 0xffff;
+  for (let i = 0; i < payload.length; i++) {
+    crc ^= payload.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      crc = (crc & 0x8000) !== 0 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    }
+  }
+  return crc & 0xffff;
+}
+
+function gerarPixCopiaCola({ chave, valor, nome, cidade, txid }) {
+  const chaveSanit = removerAcentosEEspeciais(chave).slice(0, 77);
+  const nomeSanit = (removerAcentosEEspeciais(nome).toUpperCase().slice(0, 25) || 'LOJA').trim();
+  const cidadeSanit = (removerAcentosEEspeciais(cidade).toUpperCase().slice(0, 15) || 'SAO PAULO').trim();
+  const txidSanit =
+    (removerAcentosEEspeciais(txid).replace(/[^A-Za-z0-9]/g, '').slice(0, 25) || '***').trim();
+  const valorFormatado = Number(valor).toFixed(2);
+
+  const merchantAccountInfo = tlv('00', 'br.gov.bcb.pix') + tlv('01', chaveSanit);
+  const additionalData = tlv('05', txidSanit);
+
+  let payload =
+    tlv('00', '01') + // Payload Format Indicator
+    tlv('01', '12') + // Point of Initiation Method: 12 = pagamento único com valor fixo
+    tlv('26', merchantAccountInfo) + // Merchant Account Info (chave Pix)
+    tlv('52', '0000') + // Merchant Category Code
+    tlv('53', '986') + // Moeda: BRL
+    tlv('54', valorFormatado) + // Valor — é isso que trava o valor no app do banco
+    tlv('58', 'BR') + // País
+    tlv('59', nomeSanit) + // Nome do recebedor
+    tlv('60', cidadeSanit) + // Cidade do recebedor
+    tlv('62', additionalData); // Identificador da transação (txid)
+
+  payload += '6304'; // id+tamanho do campo CRC (o valor do CRC vem a seguir)
+  const crc = crc16ccitt(payload).toString(16).toUpperCase().padStart(4, '0');
+  return payload + crc;
 }
 
 // ── ROTAS DA API ─────────────────────────────────────────
@@ -1022,6 +1085,35 @@ app.get('/api/orders', verificarJWT, async (req, res) => {
   }
 });
 
+// Admin pode marcar manualmente um pedido como pago/cancelado (ex: confirmou o Pix na mão).
+app.put('/api/orders/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const statusPermitido = ['Pendente', 'Pago', 'Cancelado'];
+    const status = String(req.body?.status || '').trim();
+    if (!statusPermitido.includes(status)) {
+      return res.status(400).json({ erro: 'Status inválido. Use: ' + statusPermitido.join(', ') });
+    }
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    if (!order) return res.status(404).json({ erro: 'Pedido não encontrado' });
+    res.json({ mensagem: 'Status atualizado!', order });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao atualizar pedido', detalhe: err.message });
+  }
+});
+
+// Admin pode excluir um pedido (ex: pedido de teste, duplicado, ou cancelado de vez).
+app.delete('/api/orders/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ erro: 'Pedido não encontrado' });
+    res.json({ mensagem: 'Pedido excluído!' });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao excluir pedido', detalhe: err.message });
+  }
+});
+
 // Loja config
 // Inclui: nome, whatsapp, imagem do hero (banco) e demais tokens usados pelo template.
 app.get('/api/config', async (req, res) => {
@@ -1079,6 +1171,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       instagramLink,
       emailContato,
       clienteTag,
+      cidadeLoja,
 
       // ✅ NOVO: hero do split
       heroImagem,
@@ -1117,6 +1210,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (instagramLink !== undefined) dados.instagramLink = String(instagramLink).trim();
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
+    if (cidadeLoja !== undefined) dados.cidadeLoja = String(cidadeLoja).trim().toUpperCase().slice(0, 15);
     if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
 
     // ✅ NOVO: hero do split
@@ -1160,6 +1254,49 @@ app.post('/api/config', verificarJWT, async (req, res) => {
 });
 
 // ── PIX AUTOMÁTICO ─────────────────────────────────────
+
+// Gera o "Pix Copia e Cola" com valor travado para um pedido específico.
+// Usado quando não há token do Mercado Pago configurado (fallback manual) —
+// mesmo sem integração automática, o valor não fica mais livre pro cliente editar.
+app.post('/api/pix/copia-cola', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE' });
+    }
+
+    const orderId = req.body?.orderId ? String(req.body.orderId) : null;
+    if (!orderId) return res.status(400).json({ ok: false, reason: 'MISSING_ORDER_ID' });
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND' });
+    if (order.status !== 'Pendente') {
+      return res.status(409).json({ ok: false, reason: 'ORDER_ALREADY_PROCESSED' });
+    }
+
+    const amount = Number(order.total);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ ok: false, reason: 'INVALID_AMOUNT' });
+    }
+
+    const [settingsDoc, configDoc] = await Promise.all([
+      Settings.findOne().lean(),
+      Config.findOne().lean()
+    ]);
+
+    const chave = settingsDoc?.pix_key ? String(settingsDoc.pix_key).trim() : '';
+    if (!chave) return res.status(400).json({ ok: false, reason: 'NO_PIX_KEY' });
+
+    const nome = configDoc?.nomeLoja || shopConfig.nomeLoja || 'LOJA';
+    const cidade = configDoc?.cidadeLoja || 'SAO PAULO';
+    const txid = String(order._id);
+
+    const copiaECola = gerarPixCopiaCola({ chave, valor: amount, nome, cidade, txid });
+
+    return res.json({ ok: true, copiaECola, valor: amount, chave });
+  } catch (e) {
+    return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
+  }
+});
 
 app.get('/api/pix/automatic', async (req, res) => {
   try {

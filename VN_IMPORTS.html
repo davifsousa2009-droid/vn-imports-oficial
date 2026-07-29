@@ -2138,7 +2138,26 @@ async function checkout(){
       }
     }
 
-    // fallback Pix manual
+    // fallback Pix manual — tenta gerar o Copia e Cola com valor travado primeiro
+    // (o cliente não escolhe mais o valor, o app do banco já abre com o valor certo)
+    if (orderId) {
+      try {
+        const ccR = await fetch(API_URL + '/pix/copia-cola', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        });
+        const ccD = await ccR.json().catch(() => ({}));
+        if (ccR.ok && ccD?.ok && ccD?.copiaECola) {
+          showPixModal(ccD.copiaECola, false, orderTotal, true);
+          closeCart();
+          return;
+        }
+      } catch (e) {
+        // se falhar, cai no fallback de chave crua abaixo
+      }
+    }
+
     const raw = (pixFallback && String(pixFallback).trim()) || '';
     if (!raw) {
       showPixModal('', true, orderTotal);
@@ -2159,7 +2178,25 @@ async function checkout(){
     showPixModal(raw, false, orderTotal);
     return;
   } catch {
-    // fallback final: usa chave Pix do S (config antiga)
+    // fallback final — tenta o Copia e Cola mesmo aqui, antes da chave crua do S (config antiga)
+    if (orderId) {
+      try {
+        const ccR = await fetch(API_URL + '/pix/copia-cola', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        });
+        const ccD = await ccR.json().catch(() => ({}));
+        if (ccR.ok && ccD?.ok && ccD?.copiaECola) {
+          showPixModal(ccD.copiaECola, false, orderTotal, true);
+          closeCart();
+          return;
+        }
+      } catch (e) {
+        // segue pro fallback de chave crua
+      }
+    }
+
     const raw = (S.chavePix && String(S.chavePix).trim()) || '';
 
     if (!raw) {
@@ -2185,7 +2222,7 @@ async function checkout(){
 
 
 
-function showPixModal(pixValue, isEmpty, cartTotal){
+function showPixModal(pixValue, isEmpty, cartTotal, isCopiaECola){
   const EXIST_ID = 'pixModalVn';
 
   const existing = document.getElementById(EXIST_ID);
@@ -2238,12 +2275,13 @@ function showPixModal(pixValue, isEmpty, cartTotal){
       <button class="vn-pix-close" aria-label="Fechar" onclick="(function(){var o=document.getElementById('pixModalVn'); if(o) o.parentElement && o.parentElement.remove();})()">✕</button>
     </div>
     <div class="vn-pix-body">
-      <div class="vn-pix-label">Chave Pix para pagamento</div>
+      <div class="vn-pix-label">${isCopiaECola ? 'Pix Copia e Cola — valor já travado' : 'Chave Pix para pagamento'}</div>
       <div class="vn-pix-value">${isEmpty ? '— (não configurada)' : String(pixValue)}</div>
       <div class="vn-pix-label" style="margin-top:6px">Valor total (pagamento)</div>
       <div class="vn-pix-value">${cartTotal != null ? 'R$ ' + Number(cartTotal).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</div>
+      ${isCopiaECola ? '<div style="font-family:var(--sans);font-size:12px;color:rgba(247,244,240,.55);margin:-8px 0 16px">Cole este código na opção "Pix Copia e Cola" do seu banco — o valor já vem preenchido, você só confirma.</div>' : ''}
       <div class="vn-pix-actions">
-        <button class="vn-pix-btn primary" id="vnPixCopyBtn" ${isEmpty ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>Copiar Chave Pix</button>
+        <button class="vn-pix-btn primary" id="vnPixCopyBtn" ${isEmpty ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${isCopiaECola ? 'Copiar Código Pix' : 'Copiar Chave Pix'}</button>
         <button class="vn-pix-btn ghost" onclick="(function(){var o=document.getElementById('pixModalVn'); if(o) o.parentElement && o.parentElement.remove();})()">Fechar</button>
       </div>
     </div>
@@ -2254,10 +2292,11 @@ function showPixModal(pixValue, isEmpty, cartTotal){
 
   if (!isEmpty) {
     const btn = document.getElementById('vnPixCopyBtn');
+    const msgCopiado = isCopiaECola ? 'Código Pix copiado!' : 'Chave Pix copiada!';
     btn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(String(pixValue));
-        showToast('✓','Chave Pix copiada!');
+        showToast('✓',msgCopiado);
       } catch {
         // fallback de cópia
         const ta = document.createElement('textarea');
@@ -2268,7 +2307,7 @@ function showPixModal(pixValue, isEmpty, cartTotal){
         ta.select();
         document.execCommand('copy');
         ta.remove();
-        showToast('✓','Chave Pix copiada!');
+        showToast('✓',msgCopiado);
       }
     });
   }
