@@ -187,34 +187,31 @@ function slugifyTenantTag(v) {
 }
 
 // ── MIDDLEWARES ────────────────────────────────────────
-// CORS: sempre libera a própria origem do domínio que está servindo a API
-// (detectada automaticamente pelo header Host da requisição — funciona sem
-// precisar configurar nada). Se ALLOWED_ORIGIN estiver definido (domínios
-// separados por vírgula), esses domínios extras também são liberados —
-// útil para um domínio próprio além do *.vercel.app, por exemplo.
-// localhost sempre é liberado, para não travar o desenvolvimento local.
-const extraAllowedOrigins = (process.env.ALLOWED_ORIGIN || '')
+// CORS restrito: em produção só aceita o(s) domínio(s) definidos em ALLOWED_ORIGIN
+// (separados por vírgula, ex: "https://vnimports.com.br,https://vn-imports.vercel.app").
+// Em dev (sem ALLOWED_ORIGIN definido) libera localhost para não travar o desenvolvimento.
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
-app.use((req, res, next) => {
+app.use(
   cors({
     origin(origin, callback) {
-      // requisições sem Origin (curl, apps mobile, chamadas do próprio servidor) são liberadas
+      // requisições sem Origin (ex: curl, apps mobile, mesmo servidor) são liberadas
       if (!origin) return callback(null, true);
-
-      const selfOrigin = req.headers.host ? `https://${req.headers.host}` : null;
-      const isLocalDev = /^https?:\/\/localhost(:\d+)?$/.test(origin);
-      const isSelf = selfOrigin && origin === selfOrigin;
-      const isExtraAllowed = extraAllowedOrigins.includes(origin);
-
-      if (isLocalDev || isSelf || isExtraAllowed) return callback(null, true);
-
-      return callback(new Error('Origem não permitida por CORS: ' + origin), false);
+      if (allowedOrigins.length === 0) {
+        // ALLOWED_ORIGIN não configurado: modo dev, libera localhost apenas
+        const isLocal = /^https?:\/\/localhost(:\d+)?$/.test(origin);
+        return callback(isLocal ? null : new Error('Origem não permitida por CORS.'), isLocal);
+      }
+      return callback(
+        allowedOrigins.includes(origin) ? null : new Error('Origem não permitida por CORS.'),
+        allowedOrigins.includes(origin)
+      );
     }
-  })(req, res, next);
-});
+  })
+);
 app.use(express.json());
 
 // ── CONEXÃO COM MONGODB (singleton) ────────────────────
@@ -1372,24 +1369,5 @@ app.get('/VN_IMPORTS', (req, res) => res.sendFile(lojaHtml));
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
-
-// ── ROTA 404 (API) ──────────────────────────────────────
-// Se nenhuma rota /api/* bateu até aqui, devolve JSON em vez de cair no 404 padrão.
-app.use('/api', (req, res) => {
-  res.status(404).json({ erro: 'Rota não encontrada: ' + req.method + ' ' + req.originalUrl });
-});
-
-// ── TRATAMENTO DE ERRO GLOBAL ───────────────────────────
-// Qualquer erro que escape de uma rota (ex: erro de CORS, JSON malformado no
-// body, exceção não pega em algum middleware) cai aqui. Sem isso, o Vercel/Express
-// devolve uma página de erro HTML genérica — o que faz o front mostrar sempre a
-// mesma mensagem vaga, escondendo a causa real. Agora sempre volta como JSON.
-app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
-  const isCors = /CORS/i.test(err?.message || '');
-  const status = isCors ? 403 : err?.status || 500;
-  if (!isCors) console.error('[erro não tratado]', err?.stack || err?.message || err);
-  res.status(status).json({ erro: err?.message || 'Erro interno do servidor.' });
-});
 
 module.exports = app;
