@@ -939,7 +939,7 @@ function renderListaBanners() {
             <td style="font-size:11px;color:#888;word-break:break-all;max-width:260px">${escHtml(b.imagem)}</td>
             <td>${b.ordem ?? 0}</td>
             <td>
-              <button class="btn btn-d btn-sm" onclick="removerBanner(${JSON.stringify(String(b._id))})">Remover</button>
+              <button class="btn btn-d btn-sm" onclick="removerBanner('${escHtml(String(b._id))}')">Remover</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -1159,8 +1159,8 @@ function renderReviewsAdmin(list) {
             <td>${r.data ? new Date(r.data).toLocaleDateString('pt-BR') : ''}</td>
             <td>${r.aprovado ? 'Sim' : 'Não'}</td>
             <td>
-              ${r.aprovado ? '' : `<button class="btn btn-e btn-sm" onclick="aprovarReview(${JSON.stringify(String(r._id))})">Aprovar</button>`}
-              <button class="btn btn-d btn-sm" onclick="excluirReview(${JSON.stringify(String(r._id))})">Excluir</button>
+              ${r.aprovado ? '' : `<button class="btn btn-e btn-sm" onclick="aprovarReview('${escHtml(String(r._id))}')">Aprovar</button>`}
+              <button class="btn btn-d btn-sm" onclick="excluirReview('${escHtml(String(r._id))}')">Excluir</button>
             </td>
           </tr>
         `).join('')}
