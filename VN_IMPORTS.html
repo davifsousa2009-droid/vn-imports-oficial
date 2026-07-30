@@ -1203,7 +1203,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
     </ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="toggleSearch()" title="Buscar">🔍</button>
+      <button class="nav-btn" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos">♡<span class="nav-dot" id="wDot"></span></button>
       <button class="nav-btn" onclick="openCart()" title="Carrinho">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -1250,16 +1250,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="hero-media" aria-label="Imagem principal" role="img">
       <img id="heroImage" alt="Imagem do Hero" src="https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=80" />
     </div>
-  </div>
-</div>
-
-<!-- Barra fina de benefícios (abaixo do hero) -->
-<div class="hero-benefits-bar" aria-label="Benefícios">
-  <div class="hero-benefits" id="heroBenefits">
-    <div class="hero-benefit"><span id="hb1">Autenticidade</span> garantida</div>
-    <div class="hero-benefit"><span id="hb2">Frete grátis</span> acima de R$299</div>
-    <div class="hero-benefit"><span id="hb3">Parcelamento</span> em até 12x</div>
-
   </div>
 </div>
 
@@ -1347,21 +1337,79 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
     <div style="padding:30px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-content:start">
       <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico">🚚</div>
+        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
         <div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div>
       </div>
       <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico">🔄</div>
+        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
         <div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div>
       </div>
       <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico">🔒</div>
+        <div class="feat-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
         <div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div>
       </div>
       <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico">💎</div>
+        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
         <div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- REVIEWS -->
+<div class="reviews-wrap" id="sec-reviews">
+  <div class="reviews-inner">
+    <div class="sec-eye">Depoimentos</div>
+    <h2 class="sec-title" style="margin-bottom:40px">O que dizem <em>nossos clientes</em></h2>
+
+    <div class="rev-summary">
+      <div style="text-align:center">
+        <div class="rev-avg-num" id="revAvgNum">—</div>
+        <div class="rev-avg-stars">★★★★★</div>
+        <div class="rev-avg-label" id="revAvgLabel">0 avaliações</div>
+      </div>
+      <div class="rev-bars">
+        ${[5,4,3,2,1].map(n => `
+        <div class="rbar-row">
+          <span style="width:32px">${n}★</span>
+          <div class="rbar-track"><div class="rbar-fill" id="revBar${n}" style="width:0%"></div></div>
+          <span id="revBar${n}Txt" style="width:34px;text-align:right">0%</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="rev-grid" id="revGrid"></div>
+
+    <div class="reviews-form" style="margin-top:48px;max-width:640px">
+      <div class="reviews-form-title">Deixe sua avaliação</div>
+      <div class="reviews-form-sub">Seu depoimento passa por uma revisão rápida antes de aparecer publicamente.</div>
+      <form id="revPublicForm" onsubmit="submitReviewPublic(event)">
+        <div class="rev-2">
+          <div class="rev-fg">
+            <label class="rev-fl" for="revNome">Seu nome</label>
+            <input class="rev-inp" id="revNome" type="text" maxlength="60" placeholder="Ex: Maria Silva" required>
+          </div>
+          <div class="rev-fg">
+            <label class="rev-fl" for="revEstrelas">Sua nota</label>
+            <select class="rev-inp" id="revEstrelas" required>
+              <option value="5" selected>★★★★★ Excelente</option>
+              <option value="4">★★★★ Muito bom</option>
+              <option value="3">★★★ Bom</option>
+              <option value="2">★★ Regular</option>
+              <option value="1">★ Ruim</option>
+            </select>
+          </div>
+        </div>
+        <div class="rev-fg">
+          <label class="rev-fl" for="revComentario">Comentário</label>
+          <textarea class="rev-inp rev-area" id="revComentario" maxlength="500" placeholder="Conte como foi sua experiência com a loja..." required></textarea>
+        </div>
+        <div class="rev-actions">
+          <button type="submit" class="btn-fill">Enviar avaliação</button>
+        </div>
+        <div class="rev-form-msg" id="revFormMsg" style="display:none"></div>
+      </form>
     </div>
   </div>
 </div>
@@ -1374,9 +1422,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials">
-        <a href="#" class="fsoc" id="igLink" target="_blank" rel="noopener noreferrer">📷</a>
-        <a href="#" class="fsoc">📘</a>
-        <a href="#" class="fsoc">🎵</a>
+        <a href="#" class="fsoc" id="igLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+        <a href="#" class="fsoc" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg></a>
+        <a href="#" class="fsoc" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></a>
         <a href="#" class="fsoc">▶️</a>
       </div>
     </div>
@@ -1457,9 +1505,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <button class="pv-wish-btn" id="pvWishBtn">♡ &nbsp;Adicionar aos Favoritos</button>
         </div>
         <div class="pv-feats">
-          <div class="pv-feat">🚚 <strong>Frete grátis</strong> acima de R$299</div>
-          <div class="pv-feat">🔄 <strong>Troca grátis</strong> em até 30 dias</div>
-          <div class="pv-feat">🔒 <strong>Pagamento seguro</strong> · PIX, Cartão, Boleto</div>
+          <div class="pv-feat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$299</div>
+          <div class="pv-feat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Troca grátis</strong> em até 30 dias</div>
+          <div class="pv-feat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> <strong>Pagamento seguro</strong> · PIX, Cartão, Boleto</div>
         </div>
       </div>
     </div>
@@ -1511,9 +1559,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <h1>Estamos aqui<br>para <em style="font-family:var(--serif)">ajudar.</em></h1>
         <p>Dúvidas sobre pedidos, trocas ou produtos? Respondemos em até 24h nos dias úteis.</p>
         <div class="cdetails">
-          <div class="cdet"><div class="cdet-ico">📍</div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
-          <div class="cdet"><div class="cdet-ico">📞</div><div><div class="cdet-label">Telefone</div><div class="cdet-val" id="contatoTelefoneDetalhe">(11) 9999-0000</div></div></div>
-          <div class="cdet"><div class="cdet-ico">✉️</div><div><div class="cdet-label">E-mail</div><div class="cdet-val" id="contatoEmailDetalhe">oi@vnimports.com.br</div></div></div>
+          <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
+          <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.5 2.1L8 10.2a16 16 0 0 0 6 6l1.4-1.4a2 2 0 0 1 2-.5c1 .3 2 .5 3 .7a2 2 0 0 1 1.6 2z"/></svg></div><div><div class="cdet-label">Telefone</div><div class="cdet-val" id="contatoTelefoneDetalhe">(11) 9999-0000</div></div></div>
+          <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div><div><div class="cdet-label">E-mail</div><div class="cdet-val" id="contatoEmailDetalhe">oi@vnimports.com.br</div></div></div>
           <div class="cdet"><div class="cdet-ico">⏰</div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
         </div>
       </div>
@@ -1554,7 +1602,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="cd-row"><span>Frete</span><span style="color:var(--green)">GRÁTIS</span></div>
       <div class="cd-total"><span>Total</span><span id="cdTotal">—</span></div>
       <button class="btn-fill btn-full" onclick="checkout()">Finalizar Compra →</button>
-      <div class="cd-secure">🔒 Pagamento 100% seguro</div>
+      <div class="cd-secure"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Pagamento 100% seguro</div>
     </div>
   </div>
 </div>
@@ -1578,12 +1626,7 @@ const DEF = {
   footdesc:'Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.',
   parctxt:'Parcele em até 12x sem juros',
   paylink:'',
-  products:[],
-  reviews:[
-    {name:'Mariana C.',av:'🧑‍🦱',stars:5,text:'Produto incrível! Chegou antes do prazo, embalagem impecável e a qualidade é exatamente como descrito. Já pedi de novo!',date:'há 3 dias'},
-    {name:'Ricardo A.',av:'🧔',stars:5,text:'Uso todos os dias há 3 meses e continua como novo. Vale cada centavo, recomendo sem hesitar para qualquer pessoa.',date:'há 1 semana'},
-    {name:'Fernanda L.',av:'👩',stars:5,text:'Atendimento excelente e qualidade superior. Entrega super rápida. A VN IMPORTS virou minha loja favorita!',date:'há 2 semanas'},
-  ]
+  products:[]
 };
 
 /* ─── ESTADO ─── */
@@ -2029,7 +2072,7 @@ function renderCart(){
   foot.style.display=cart.length?'block':'none';
   if(cart.length){ document.getElementById('cdSub').textContent=R$(total); document.getElementById('cdTotal').textContent=R$(total); }
   const el=document.getElementById('cdItems');
-  if(!cart.length){ el.innerHTML=`<div class="cd-empty"><div class="cd-empty-ico">🛍️</div><p>Carrinho vazio</p></div>`; return; }
+  if(!cart.length){ el.innerHTML=`<div class="cd-empty"><div class="cd-empty-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><p>Carrinho vazio</p></div>`; return; }
   el.innerHTML=cart.map((it,i)=>`
     <div class="ci">
       <div class="ci-img">${it.img?`<img src="${it.img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
@@ -2698,12 +2741,12 @@ function syncFilterUI(isClear=false){
     const cats = categoriasVitrine || [];
     catsEl.innerHTML = [
       `<label class="fcat" onclick="setCat('all')">
-        <input type="checkbox" class="fcat-ck" ${!selectedCat?'checked':''} onclick="event.stopPropagation();"/>
+        <input type="checkbox" class="fcat-ck" ${!selectedCat?'checked':''}/>
         Todos
       </label>`
     ].concat((cats || []).map(c=>`
       <label class="fcat" onclick="setCat('${c.slug}')">
-        <input type="checkbox" class="fcat-ck" ${selectedCat===c.slug?'checked':''} onclick="event.stopPropagation();"/>
+        <input type="checkbox" class="fcat-ck" ${selectedCat===c.slug?'checked':''}/>
         ${c.nome}
       </label>`)).join('');
   }
@@ -2815,6 +2858,7 @@ function onPriceMin(v){
   const num = Number(v);
   if(Number.isFinite(num)) filterRuntime.priceMin = num;
   if(filterRuntime.priceMax!=null && filterRuntime.priceMin>filterRuntime.priceMax) filterRuntime.priceMax = filterRuntime.priceMin;
+  updatePriceSliders();
   applyFilters();
 }
 
@@ -2822,6 +2866,7 @@ function onPriceMax(v){
   const num = Number(v);
   if(Number.isFinite(num)) filterRuntime.priceMax = num;
   if(filterRuntime.priceMin!=null && filterRuntime.priceMin>filterRuntime.priceMax) filterRuntime.priceMin = filterRuntime.priceMax;
+  updatePriceSliders();
   applyFilters();
 }
 
@@ -2931,8 +2976,6 @@ function showMobileFiltersOverlay(){
   setTimeout(()=>{
     renderFilterSidebar();
     applyFilters();
-    const cap = getPriceCap();
-    F.priceCap=cap;
   },0);
 
   // quando filtrar, fechamos o overlay para UX (igual Nike)
@@ -2985,9 +3028,20 @@ async function carregarStatsDestaque(){
     }
   } catch{}
 
-  // Clientes (não existe endpoint; mantemos heurística baseada em produtos)
-  const seed = (Number(elP.textContent)||0);
-  if(seed>0) elC.textContent = String(Math.max(1000, seed*6));
+  // Clientes: número real, vindo de pedidos com pagamento confirmado no banco.
+  // Sem dado real ainda -> mostra "—" (honesto), em vez de inventar um número.
+  try{
+    const r = await fetch(`${API_URL}/stats/clientes`);
+    if(r.ok){
+      const d = await r.json();
+      const n = Number(d?.clientes) || 0;
+      elC.textContent = n > 0 ? String(n) : '—';
+    } else {
+      elC.textContent = '—';
+    }
+  } catch{
+    elC.textContent = '—';
+  }
 }
 
 
