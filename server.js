@@ -1609,26 +1609,36 @@ async function renderAdminHtmlComConfig() {
 }
 
 // SERVIR HTMLS
-app.get('/', async (req, res) => {
+// Cache-Control: no-store em todas — o HTML agora é montado por request com dados
+// do banco (cor, nome, imagem). Sem isso, navegador/CDN podem guardar uma cópia antiga
+// e o site continua "preso" numa versão anterior mesmo depois de deployar a correção.
+function semCacheHtml(res) {
   res.set('Content-Type', 'text/html; charset=utf-8');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+}
+
+app.get('/', async (req, res) => {
+  semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
 app.get('/index.html', async (req, res) => {
-  res.set('Content-Type', 'text/html; charset=utf-8');
+  semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
 app.get('/admin.html', async (req, res) => {
-  res.set('Content-Type', 'text/html; charset=utf-8');
+  semCacheHtml(res);
   res.send(await renderAdminHtmlComConfig());
 });
 app.get('/VN_IMPORTS.html', async (req, res) => {
-  res.set('Content-Type', 'text/html; charset=utf-8');
+  semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
 
 // serve também a raiz do app estático (garante consistência)
 app.get('/VN_IMPORTS', async (req, res) => {
-  res.set('Content-Type', 'text/html; charset=utf-8');
+  semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
 
