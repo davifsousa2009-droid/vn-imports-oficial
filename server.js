@@ -1541,6 +1541,7 @@ async function renderLojaHtmlComConfig() {
   let html = getLojaHtmlTemplate();
   try {
     const cfg = await buscarConfigCompleta();
+    const nome = escapeParaAtributo(cfg?.nomeLoja);
 
     // Cores: só gold/gold2 podem realmente divergir do padrão já escrito no arquivo
     // (os outros tokens de cor sempre vêm do mesmo config.js embutido no HTML).
@@ -1564,8 +1565,14 @@ async function renderLojaHtmlComConfig() {
       );
     }
 
+    // Nome da loja: aparece em 6 lugares (logo do nav, rodapé, copyright), todos
+    // marcados com data-loja="nome". Substitui todos de uma vez, evitando o flash
+    // de "VN IMPORTS" (texto padrão do arquivo) para o nome real configurado.
+    if (nome) {
+      html = html.replace(/(<span data-loja="nome">)[^<]*(<\/span>)/g, `$1${nome}$2`);
+    }
+
     // Título da página com o nome real da loja.
-    const nome = escapeParaAtributo(cfg?.nomeLoja);
     const suf = escapeParaAtributo(cfg?.pageTitleSuffix);
     if (nome) {
       html = html.replace(/<title>[^<]*<\/title>/, `<title>${nome}${suf ? ' — ' + suf : ''}</title>`);
