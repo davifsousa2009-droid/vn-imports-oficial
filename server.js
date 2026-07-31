@@ -8,6 +8,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const helmet = require('helmet');
@@ -903,6 +904,19 @@ app.get('/api/reviews/public', async (req, res) => {
   }
 });
 
+// Estatística pública e real de clientes (conta pedidos com pagamento confirmado —
+// não é fórmula inventada, é dado de verdade do banco).
+app.get('/api/stats/clientes', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return res.json({ clientes: 0 });
+  try {
+    const distintos = await Order.distinct('customerName', { status: 'Pago' });
+    const clientes = distintos.filter((n) => n && String(n).trim()).length;
+    res.json({ clientes });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao calcular estatística', detalhe: err.message });
+  }
+});
+
 app.get('/api/admin/reviews', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
@@ -1116,7 +1130,7 @@ app.delete('/api/orders/:id', verificarJWT, async (req, res) => {
 
 // Loja config
 // Inclui: nome, whatsapp, imagem do hero (banco) e demais tokens usados pelo template.
-app.get('/api/config', async (req, res) => {
+async function buscarConfigCompleta() {
   let doc = null;
   try {
     if (await tryConnectDb()) {
@@ -1136,12 +1150,11 @@ app.get('/api/config', async (req, res) => {
       }
     }
   } catch (e) {
-    console.warn('GET /api/config:', e.message);
+    console.warn('buscarConfigCompleta:', e.message);
   }
 
   // Para preservar compatibilidade, garantimos campos extras se existirem no banco.
-  // Se o banco estiver vazio, /api/config precisa retornar um objeto padrão.
-  // Mantemos também o nome do campo heroImagem (consistência Admin -> Server -> Banco -> Vitrine).
+  // Se o banco estiver vazio, retornamos um objeto padrão.
   const publicCfg = mergePublicConfig(doc);
 
   // default (exemplo) caso não exista no banco
@@ -1153,10 +1166,12 @@ app.get('/api/config', async (req, res) => {
 
   const heroImagemFinal = heroImagemFile || heroImagemUrl || defaultHeroImagem;
 
-  return res.json({
-    ...publicCfg,
-    heroImagem: heroImagemFinal
-  });
+  return { ...publicCfg, heroImagem: heroImagemFinal };
+}
+
+app.get('/api/config', async (req, res) => {
+  const cfg = await buscarConfigCompleta();
+  return res.json(cfg);
 });
 
 app.post('/api/config', verificarJWT, async (req, res) => {
@@ -1497,14 +1512,90 @@ if (process.env.NODE_ENV !== 'production') {
 
 const lojaHtml = path.join(__dirname, 'VN_IMPORTS.html');
 
+// Cacheia o template bruto do HTML em memória (o arquivo em si só muda com um novo deploy;
+// os dados variáveis — cor, imagem, nome — são injetados a cada request por cima do cache).
+let lojaHtmlTemplateCache = null;
+function getLojaHtmlTemplate() {
+  if (!lojaHtmlTemplateCache) {
+    lojaHtmlTemplateCache = fs.readFileSync(lojaHtml, 'utf8');
+  }
+  return lojaHtmlTemplateCache;
+}
+
+function escapeParaAtributo(v) {
+  return String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escapeParaCss(v) {
+  // Valores de cor devem ser simples (#hex, rgb(...), nome). Removemos qualquer coisa
+  // que pudesse fechar a tag <style> mais cedo (defesa extra, mesmo sendo admin-controlado).
+  return String(v || '').replace(/[<>"'`]/g, '').replace(/\/style/gi, '');
+}
+
+/**
+ * Monta o HTML da vitrine já com a cor e a imagem do hero atuais do banco embutidas
+ * — em vez de mandar o HTML com os valores padrão e trocar depois via JS (o que causava
+ * aquele "flash" da cor/imagem antiga por uma fração de segundo a cada F5).
+ * Se o banco estiver indisponível, devolve o template original sem quebrar a página.
+ */
+async function renderLojaHtmlComConfig() {
+  let html = getLojaHtmlTemplate();
+  try {
+    const cfg = await buscarConfigCompleta();
+
+    // Cores: só gold/gold2 podem realmente divergir do padrão já escrito no arquivo
+    // (os outros tokens de cor sempre vêm do mesmo config.js embutido no HTML).
+    const gold = escapeParaCss(cfg?.colors?.gold);
+    const gold2 = escapeParaCss(cfg?.colors?.gold2);
+    if (gold || gold2) {
+      const overrideStyle =
+        '<style>:root{' +
+        (gold ? `--gold:${gold};` : '') +
+        (gold2 ? `--gold2:${gold2};` : '') +
+        '}</style>\n</head>';
+      html = html.replace('</head>', overrideStyle);
+    }
+
+    // Imagem do hero: troca o src padrão pelo valor real salvo no banco.
+    const heroUrl = escapeParaAtributo(cfg?.heroImagem);
+    if (heroUrl) {
+      html = html.replace(
+        /(<img id="heroImage" alt="Imagem do Hero" src=")[^"]*(")/,
+        `$1${heroUrl}$2`
+      );
+    }
+
+    // Título da página com o nome real da loja.
+    const nome = escapeParaAtributo(cfg?.nomeLoja);
+    const suf = escapeParaAtributo(cfg?.pageTitleSuffix);
+    if (nome) {
+      html = html.replace(/<title>[^<]*<\/title>/, `<title>${nome}${suf ? ' — ' + suf : ''}</title>`);
+    }
+  } catch (e) {
+    console.warn('renderLojaHtmlComConfig:', e.message);
+  }
+  return html;
+}
+
 // SERVIR HTMLS
-app.get('/', (req, res) => res.sendFile(lojaHtml));
-app.get('/index.html', (req, res) => res.sendFile(lojaHtml));
+app.get('/', async (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(await renderLojaHtmlComConfig());
+});
+app.get('/index.html', async (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(await renderLojaHtmlComConfig());
+});
 app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-app.get('/VN_IMPORTS.html', (req, res) => res.sendFile(lojaHtml));
+app.get('/VN_IMPORTS.html', async (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(await renderLojaHtmlComConfig());
+});
 
 // serve também a raiz do app estático (garante consistência)
-app.get('/VN_IMPORTS', (req, res) => res.sendFile(lojaHtml));
+app.get('/VN_IMPORTS', async (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(await renderLojaHtmlComConfig());
+});
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
