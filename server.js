@@ -1576,6 +1576,38 @@ async function renderLojaHtmlComConfig() {
   return html;
 }
 
+const adminHtml = path.join(__dirname, 'admin.html');
+let adminHtmlTemplateCache = null;
+function getAdminHtmlTemplate() {
+  if (!adminHtmlTemplateCache) {
+    adminHtmlTemplateCache = fs.readFileSync(adminHtml, 'utf8');
+  }
+  return adminHtmlTemplateCache;
+}
+
+/**
+ * Mesma lógica do renderLojaHtmlComConfig, mas para o admin.html: injeta o nome real
+ * da loja no título e no logo da barra lateral antes de enviar, evitando o flash de
+ * "VN IMPORTS" (nome padrão do arquivo) para o nome real configurado no banco.
+ */
+async function renderAdminHtmlComConfig() {
+  let html = getAdminHtmlTemplate();
+  try {
+    const cfg = await buscarConfigCompleta();
+    const nome = escapeParaAtributo(cfg?.nomeLoja);
+    if (nome) {
+      html = html.replace(/<title>[^<]*<\/title>/, `<title>Admin — ${nome}</title>`);
+      html = html.replace(
+        /<div class="sb-logo">[^<]*<span>/,
+        `<div class="sb-logo">${nome}<span>`
+      );
+    }
+  } catch (e) {
+    console.warn('renderAdminHtmlComConfig:', e.message);
+  }
+  return html;
+}
+
 // SERVIR HTMLS
 app.get('/', async (req, res) => {
   res.set('Content-Type', 'text/html; charset=utf-8');
@@ -1585,7 +1617,10 @@ app.get('/index.html', async (req, res) => {
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(await renderLojaHtmlComConfig());
 });
-app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/admin.html', async (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(await renderAdminHtmlComConfig());
+});
 app.get('/VN_IMPORTS.html', async (req, res) => {
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(await renderLojaHtmlComConfig());
