@@ -197,14 +197,14 @@ nav{
   color:var(--muted);
   margin-bottom:2px;
 }
-.hero-season::before{content:'';display:block;width:36px;height:1px;background:var(--silver)}
+.hero-season::before{content:'';display:block;width:36px;height:1px;background:var(--gold)}
 
 .hero-title{
   font-family:var(--sans);
-  font-size:clamp(28px,3.2vw,48px);
+  font-size:clamp(30px,3.6vw,56px);
   font-weight:900;
-  line-height:1.08;
-  letter-spacing:-.02em;
+  line-height:0.98;
+  letter-spacing:-.03em;
   margin-bottom:0;
   color:var(--ink);
 }
@@ -362,9 +362,9 @@ nav{
 .btn-line:hover{border-color:var(--ink)}
 .hero-stats{
   display:flex;gap:44px;
-  margin-top:60px;padding-top:48px;border-top:1px solid var(--border);
+  margin-top:44px;padding-top:36px;border-top:1px solid var(--border);
 }
-.stat-val{font-family:var(--serif);font-size:34px;font-weight:400;display:block;margin-bottom:4px}
+.stat-val{font-family:var(--sans);font-size:30px;font-weight:900;line-height:1;display:block;margin-bottom:6px;letter-spacing:-.02em}
 .stat-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
 .hero-right{
@@ -1228,10 +1228,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <!-- LEFT: texto -->
   <div class="hero-left">
 
+    <div class="hero-season">Coleção atual</div>
     <h1 class="hero-title" id="heroTitle">
-      Vista-se<br>com <em id="heroTitleEm">Exclusividade</em> e intenção.
+      Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
     </h1>
-    <p class="hero-lead" id="heroDesc">Peças importadas selecionadas para quem exige qualidade, estilo e personalidade em cada look.</p>
+    <p class="hero-lead" id="heroDesc">Peças selecionadas para quem exige qualidade e presença em cada detalhe.</p>
 
     <div class="hero-btns">
       <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção →</button>
