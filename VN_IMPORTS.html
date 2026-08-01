@@ -399,19 +399,40 @@ nav{
 /* ─── CATS ─── */
 .cats-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .cats-inner{max-width:1240px;margin:0 auto;padding:0 36px}
-.cats-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.cats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
 .cat-card{
-  padding:40px 24px;border-right:1px solid var(--border);
-  cursor:pointer;transition:background .2s,color .2s;
-  display:flex;flex-direction:column;gap:10px;
+  position:relative;
+  min-height:280px;
+  padding:0;
+  cursor:pointer;
+  overflow:hidden;
+  background-color:var(--bg2);
+  background-size:cover;
+  background-position:center;
+  transition:background-size .5s ease;
+  display:block;
 }
-.cat-card:last-child{border-right:none}
-.cat-card:hover{background:var(--ink);color:var(--bg)}
-.cat-card:hover .cat-sub,.cat-card:hover .cat-arr{color:rgba(247,244,240,.5)}
+.cat-card.has-img:hover{background-size:112%}
+.cat-card-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(17,17,17,0) 35%,rgba(17,17,17,.78) 100%);
+  opacity:0;transition:opacity .25s;
+}
+.cat-card.has-img .cat-card-overlay{opacity:1}
+.cat-card:not(.has-img):hover{background-color:var(--ink)}
+.cat-card:not(.has-img):hover .cat-sub,.cat-card:not(.has-img):hover .cat-arr{color:rgba(247,244,240,.5)}
+.cat-card-body{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:28px 24px;
+  display:flex;flex-direction:column;gap:10px;
+  z-index:1;
+}
+.cat-card.has-img .cat-name,.cat-card.has-img .cat-sub,.cat-card.has-img .cat-arr{color:#F7F4F0}
 .cat-icon{font-size:34px;margin-bottom:4px}
-.cat-name{font-family:var(--serif);font-size:21px;font-weight:400}
-.cat-sub{font-size:12px;color:var(--muted);transition:color .2s}
-.cat-arr{font-size:16px;color:var(--silver);margin-top:6px;transition:color .2s}
+.cat-name{font-family:var(--sans);font-size:22px;font-weight:800;letter-spacing:-.01em;transition:color .2s}
+.cat-sub{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s}
+.cat-arr{font-size:16px;color:var(--silver);margin-top:2px;transition:color .2s}
+@media(max-width:900px){.cats-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ─── SECTION ─── */
 .sec{padding:88px 36px;max-width:1240px;margin:0 auto}
@@ -1257,7 +1278,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- CATS -->
 <div class="cats-wrap" id="sec-cats">
-  <div class="cats-inner">
+  <div class="cats-inner" style="padding-top:72px;padding-bottom:0">
+    <div class="sec-eye">Categorias</div>
+    <h2 class="sec-title" style="margin-bottom:36px">Explore por <em>categoria</em></h2>
     <div class="cats-grid" id="catsGrid"></div>
   </div>
 </div>
@@ -2743,12 +2766,21 @@ function renderCategoriasHome() {
     cg.innerHTML = `<div class="cat-card"><div class="cat-name">Sem categorias cadastradas</div><div class="cat-sub">Cadastre categorias no painel admin</div><div class="cat-arr">→</div></div>`;
     return;
   }
-  cg.innerHTML = categoriasVitrine.map(c => `
-    <div class="cat-card" onclick="filterAndGo('${c.slug}')">
-      <div class="cat-name">${c.nome}</div>
-      <div class="cat-sub">Categoria cadastrada</div>
-      <div class="cat-arr">→</div>
-    </div>`).join('');
+  cg.innerHTML = categoriasVitrine.map(c => {
+    // Usa a foto do primeiro produto cadastrado nessa categoria como imagem de fundo —
+    // sem precisar de upload extra, e sempre com foto real (nunca placeholder genérico).
+    const prod = (S.products || []).find(p => p.cat === c.slug && p.img);
+    const bg = prod ? `style="background-image:url('${prod.img.replace(/'/g,"%27")}')"` : '';
+    return `
+    <div class="cat-card${prod ? ' has-img' : ''}" onclick="filterAndGo('${c.slug}')" ${bg}>
+      <div class="cat-card-overlay"></div>
+      <div class="cat-card-body">
+        <div class="cat-name">${c.nome}</div>
+        <div class="cat-sub">Ver produtos</div>
+        <div class="cat-arr">→</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function syncFilterUI(isClear=false){
@@ -3085,6 +3117,10 @@ async function carregarProdutosDoServidor(categoria) {
 
     console.log('renderGrid: lista carregada', { total: lista.length, categoria, first: lista[0] });
     renderGrid(lista);
+
+    // Recarrega as imagens dos cards de categoria agora que os produtos chegaram
+    // (só na carga inicial sem filtro — filtrado, S.products teria só 1 categoria).
+    if (!categoria || categoria === 'all') renderCategoriasHome();
   } catch (err) {
     console.warn('⚠️ Servidor offline.', err.message);
     S.products = [];
