@@ -543,6 +543,22 @@ const ConfigSchema = new mongoose.Schema({
   // Cidade do lojista — exigida pelo padrão do Pix (BR Code) no Copia e Cola.
   cidadeLoja: { type: String, default: 'SAO PAULO' },
 
+  // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
+  // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
+  // podia nem oferecer de verdade (ex: parcelamento sem ter cartão configurado).
+  freteGratisAtivo: { type: Boolean, default: false },
+  freteGratisValor: { type: Number, default: 0 },
+  parcelamentoAtivo: { type: Boolean, default: false },
+  parcelamentoMax: { type: Number, default: 1 },
+
+  // Banner de promoção — desligado por padrão. Antes era um "Até 40% OFF" fixo,
+  // mostrado pra sempre mesmo sem nenhuma promoção real acontecendo.
+  promoAtiva: { type: Boolean, default: false },
+  promoEyebrow: { type: String, default: '' },
+  promoTitulo: { type: String, default: '' },
+  promoSubtitulo: { type: String, default: '' },
+  promoCtaTexto: { type: String, default: '' },
+
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
   heroImagemUrl: { type: String, default: '' },
@@ -639,7 +655,20 @@ function mergePublicConfig(doc) {
     benef4Titulo: String(doc?.benef4Titulo ?? '').trim() || 'Importado Selecionado',
     benef4Texto: String(doc?.benef4Texto ?? '').trim() || 'Curadoria rigorosa de produtos internacionais.',
     benef4IcoEnabled: bool(doc?.benef4IcoEnabled, true),
-    benef4Ico: String(doc?.benef4Ico ?? '').trim() || '💎'
+    benef4Ico: String(doc?.benef4Ico ?? '').trim() || '💎',
+
+    // Barra de anúncio: só mostra o que o admin realmente ativou.
+    freteGratisAtivo: bool(doc?.freteGratisAtivo, false),
+    freteGratisValor: Number(doc?.freteGratisValor) || 0,
+    parcelamentoAtivo: bool(doc?.parcelamentoAtivo, false),
+    parcelamentoMax: Math.max(1, Number(doc?.parcelamentoMax) || 1),
+
+    // Banner de promoção: só aparece quando o admin ativar de verdade.
+    promoAtiva: bool(doc?.promoAtiva, false),
+    promoEyebrow: String(doc?.promoEyebrow ?? '').trim(),
+    promoTitulo: String(doc?.promoTitulo ?? '').trim(),
+    promoSubtitulo: String(doc?.promoSubtitulo ?? '').trim(),
+    promoCtaTexto: String(doc?.promoCtaTexto ?? '').trim() || 'Ver promoções'
   };
 }
 
@@ -1214,7 +1243,18 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       benef4Titulo,
       benef4Texto,
       benef4IcoEnabled,
-      benef4Ico
+      benef4Ico,
+
+      freteGratisAtivo,
+      freteGratisValor,
+      parcelamentoAtivo,
+      parcelamentoMax,
+
+      promoAtiva,
+      promoEyebrow,
+      promoTitulo,
+      promoSubtitulo,
+      promoCtaTexto
     } = req.body;
 
     const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
@@ -1256,7 +1296,22 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (benef4IcoEnabled !== undefined) dados.benef4IcoEnabled = !!benef4IcoEnabled;
     if (benef4Ico !== undefined) dados.benef4Ico = String(benef4Ico).trim();
 
-    const atualizado = await Config.findOneAndUpdate({}, dados, {
+    if (freteGratisAtivo !== undefined) dados.freteGratisAtivo = !!freteGratisAtivo;
+    if (freteGratisValor !== undefined) dados.freteGratisValor = Number(freteGratisValor) || 0;
+    if (parcelamentoAtivo !== undefined) dados.parcelamentoAtivo = !!parcelamentoAtivo;
+    if (parcelamentoMax !== undefined) dados.parcelamentoMax = Math.max(1, Number(parcelamentoMax) || 1);
+
+    if (promoAtiva !== undefined) dados.promoAtiva = !!promoAtiva;
+    if (promoEyebrow !== undefined) dados.promoEyebrow = String(promoEyebrow).trim();
+    if (promoTitulo !== undefined) dados.promoTitulo = String(promoTitulo).trim();
+    if (promoSubtitulo !== undefined) dados.promoSubtitulo = String(promoSubtitulo).trim();
+    if (promoCtaTexto !== undefined) dados.promoCtaTexto = String(promoCtaTexto).trim();
+
+    // $set é essencial aqui: sem ele, o MongoDB trata isso como substituição
+    // TOTAL do documento — qualquer campo fora de `dados` (ex: os salvos pelo
+    // outro formulário do admin) seria apagado. Com $set, só o que está em
+    // `dados` é tocado; o resto do documento permanece intacto.
+    const atualizado = await Config.findOneAndUpdate({}, { $set: dados }, {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true

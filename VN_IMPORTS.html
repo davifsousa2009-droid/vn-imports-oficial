@@ -491,17 +491,25 @@ nav{
   cursor:pointer;
 }
 .filters-reset:hover{color:var(--ink)}
-.fblk{padding:18px 0;border-top:1px solid var(--border)}
+.fblk{padding:0;border-top:1px solid var(--border)}
 .fblk:last-child{border-bottom:1px solid var(--border)}
 .fblk-title{
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--muted);
-  margin-bottom:12px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--ink);
+  padding:16px 0;
+  margin-bottom:0;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+  user-select:none;
 }
-.fblk-list{display:flex;flex-direction:column;gap:10px}
+.fblk-chev{transition:transform .2s;flex:none;color:var(--muted)}
+.fblk.open .fblk-chev{transform:rotate(180deg)}
+.fblk-list,.size-grid,.price-wrap{display:none;padding-bottom:18px}
+.fblk.open .fblk-list{display:flex}
+.fblk.open .size-grid{display:flex}
+.fblk.open .price-wrap{display:block}
+.fblk-list{flex-direction:column;gap:10px}
 .fcat{
   display:flex;align-items:center;gap:10px;
   cursor:pointer;
@@ -511,7 +519,7 @@ nav{
 }
 .fcat input{accent-color:var(--ink)}
 
-.size-grid{display:flex;flex-wrap:wrap;gap:8px}
+.size-grid{flex-wrap:wrap;gap:8px}
 .schip{
   border:1.5px solid var(--border);
   background:transparent;
@@ -585,7 +593,7 @@ nav{
 
 
 /* ─── PRODUCTS GRID ─── */
-.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px 24px;background:transparent}
 .prod-card{
   background:var(--bg);cursor:pointer;position:relative;
   transition:background .15s;
@@ -1208,7 +1216,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- VIEW: HOME -->
 <div class="view active" id="view-home">
 
-<div class="announce">Frete <em>GRÁTIS</em> acima de R$299 &nbsp;·&nbsp; Parcele em até <em id="anParc">12</em>x sem juros</div>
+<div class="announce" id="announceHome" style="display:none">Frete <em>GRÁTIS</em> acima de R$<span id="anFrete">299</span> &nbsp;·&nbsp; Parcele em até <em id="anParc">12</em>x sem juros</div>
 
 <nav id="main-nav">
   <div class="nav-inner">
@@ -1305,17 +1313,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         </div>
 
         <div class="fblk">
-          <div class="fblk-title">Categorias</div>
+          <div class="fblk-title" onclick="toggleFblk(this)">Categorias<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="fblk-list" id="fltCats"></div>
         </div>
 
         <div class="fblk">
-          <div class="fblk-title">Tamanho</div>
+          <div class="fblk-title" onclick="toggleFblk(this)">Tamanho<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="size-grid" id="fltSizes"></div>
         </div>
 
         <div class="fblk">
-          <div class="fblk-title">Preço</div>
+          <div class="fblk-title" onclick="toggleFblk(this)">Preço<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="price-wrap">
             <div class="price-hint" id="priceHint">—</div>
             <input class="price-range" type="range" min="0" max="0" value="0" step="1" id="priceMaxRange" oninput="onPriceMax(this.value)"/>
@@ -1334,12 +1342,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
   </div>
 </div>
-<div class="banner">
+<div class="banner" id="promoBanner" style="display:none">
   <div class="banner-inner">
-    <div class="banner-eye">Oferta Especial</div>
-    <h2 class="banner-title">Até 40% OFF<br>em <em>peças selecionadas</em></h2>
-    <p class="banner-sub">Aproveite nossa liquidação de fim de temporada. Qualidade importada pelo melhor preço do ano.</p>
-    <button class="btn-light" onclick="filterAndGo('all')">Ver Promoções →</button>
+    <div class="banner-eye" id="promoEyebrowEl">Oferta Especial</div>
+    <h2 class="banner-title" id="promoTituloEl">Até 40% OFF<br>em <em>peças selecionadas</em></h2>
+    <p class="banner-sub" id="promoSubtituloEl">Aproveite nossa liquidação de fim de temporada.</p>
+    <button class="btn-light" onclick="filterAndGo('all')" id="promoCtaEl">Ver Promoções →</button>
   </div>
 </div>
 
@@ -1511,7 +1519,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- VIEW: PRODUTO -->
 <div class="view" id="view-product">
-  <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299 &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal">12</em>x sem juros</div>
+  <div class="announce announce-alt" id="announceProduct" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteProd">299</span> &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal" id="anParcProd">12</em>x sem juros</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
@@ -1548,9 +1556,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <button class="pv-wish-btn" id="pvWishBtn">♡ &nbsp;Adicionar aos Favoritos</button>
         </div>
         <div class="pv-feats">
-          <div class="pv-feat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$299</div>
+          <div class="pv-feat" id="pvFeatFrete" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$<span id="pvFeatFreteVal">299</span></div>
           <div class="pv-feat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Troca grátis</strong> em até 30 dias</div>
-          <div class="pv-feat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> <strong>Pagamento seguro</strong> · PIX, Cartão, Boleto</div>
+          <div class="pv-feat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> <strong>Pagamento seguro</strong> · PIX</div>
         </div>
       </div>
     </div>
@@ -1559,7 +1567,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- VIEW: WISHLIST -->
 <div class="view" id="view-wishlist">
-  <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
+  <div class="announce announce-alt" id="announceWishlist" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteWl">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
@@ -1580,7 +1588,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <!-- VIEW: CONTACT -->
 <div class="view" id="view-contact">
-  <div class="announce">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$299</div>
+  <div class="announce announce-alt" id="announceContact" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteCt">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
@@ -1740,8 +1748,6 @@ function renderHome(){
   try { renderFilterSidebar(); } catch(e) {}
 
   document.getElementById('footYear').textContent = new Date().getFullYear();
-
-  document.getElementById('anParc').textContent = S.parc;
 
   // hero cards (primeiros 2 produtos)
   const hc = document.getElementById('heroCards');
@@ -1977,9 +1983,13 @@ function openProd(id){
   document.getElementById('pvBrand').textContent = p.brand;
   document.getElementById('pvName').textContent  = p.name;
   document.getElementById('pvDesc').textContent  = p.desc;
-  const parc = (p.price/S.parc).toFixed(2);
   document.getElementById('pvPrice').innerHTML = `${R$(p.price)}${p.old?`<span>${R$(p.old)}</span>`:''}`;
-  document.getElementById('pvInst').innerHTML  = `ou <b>${S.parc}x de ${R$(parc)}</b> sem juros`;
+  if (window.S_parcelamentoAtivo) {
+    const parc = (p.price/S.parc).toFixed(2);
+    document.getElementById('pvInst').innerHTML = `ou <b>${S.parc}x de ${R$(parc)}</b> sem juros`;
+  } else {
+    document.getElementById('pvInst').innerHTML = '';
+  }
 
 
   // thumbs
@@ -2711,6 +2721,74 @@ async function carregarConfigLoja() {
       if (heroImgEl) heroImgEl.src = heroImgFinal;
     }
 
+    // Barra de anúncio (frete grátis / parcelamento): só aparece se o admin
+    // realmente ativou. Antes era texto fixo prometendo algo que a loja podia
+    // nem oferecer (ex: parcelamento sem ter pagamento por cartão configurado).
+    const freteOn = !!d.freteGratisAtivo;
+    const parcOn = !!d.parcelamentoAtivo;
+    const freteVal = Number(d.freteGratisValor) || 0;
+    const parcVal = Math.max(1, Number(d.parcelamentoMax) || 1);
+    // Globais usados por outras telas (ex: página de produto) que renderizam depois.
+    window.S_freteGratisAtivo = freteOn;
+    window.S_freteGratisValor = freteVal;
+    window.S_parcelamentoAtivo = parcOn;
+    window.S_parcelamentoMax = parcVal;
+    S.parc = parcVal;
+    S.frete = freteVal;
+
+    const pvFeatFrete = document.getElementById('pvFeatFrete');
+    if (pvFeatFrete && freteOn) {
+      document.getElementById('pvFeatFreteVal').textContent = freteVal.toFixed(0);
+      pvFeatFrete.style.display = '';
+    }
+
+    // HOME (frete + parcelamento)
+    const elAnHome = document.getElementById('announceHome');
+    if (elAnHome) {
+      if (freteOn || parcOn) {
+        document.getElementById('anFrete').textContent = freteVal.toFixed(0);
+        document.getElementById('anParc').textContent = String(parcVal);
+        if (!freteOn) elAnHome.innerHTML = `Parcele em até <em id="anParc">${parcVal}</em>x sem juros`;
+        else if (!parcOn) elAnHome.innerHTML = `Frete <em>GRÁTIS</em> acima de R$<span id="anFrete">${freteVal.toFixed(0)}</span>`;
+        elAnHome.style.display = '';
+      }
+    }
+    // PRODUTO (frete + parcelamento)
+    const elAnProd = document.getElementById('announceProduct');
+    if (elAnProd && (freteOn || parcOn)) {
+      if (!freteOn) elAnProd.innerHTML = `Parcele em até <em style="color:var(--gold2);font-style:normal">${parcVal}</em>x sem juros`;
+      else if (!parcOn) elAnProd.innerHTML = `Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$${freteVal.toFixed(0)}`;
+      else {
+        document.getElementById('anFreteProd').textContent = freteVal.toFixed(0);
+        document.getElementById('anParcProd').textContent = String(parcVal);
+      }
+      elAnProd.style.display = '';
+    }
+    // WISHLIST / CONTACT (só frete)
+    ['Wishlist', 'Contact'].forEach((suf) => {
+      const el = document.getElementById('announce' + suf);
+      if (el && freteOn) {
+        const span = document.getElementById('anFrete' + (suf === 'Wishlist' ? 'Wl' : 'Ct'));
+        if (span) span.textContent = freteVal.toFixed(0);
+        el.style.display = '';
+      }
+    });
+
+    // Banner de promoção: só aparece com o admin ativando e preenchendo o texto.
+    const promoOn = !!d.promoAtiva && (d.promoTitulo || '').trim();
+    const promoBanner = document.getElementById('promoBanner');
+    if (promoBanner && promoOn) {
+      const eyeEl = document.getElementById('promoEyebrowEl');
+      const titEl = document.getElementById('promoTituloEl');
+      const subEl = document.getElementById('promoSubtituloEl');
+      const ctaEl = document.getElementById('promoCtaEl');
+      if (eyeEl) eyeEl.textContent = d.promoEyebrow || 'Oferta Especial';
+      if (titEl) titEl.textContent = d.promoTitulo;
+      if (subEl) subEl.textContent = d.promoSubtitulo || '';
+      if (ctaEl) ctaEl.textContent = (d.promoCtaTexto || 'Ver promoções') + ' →';
+      promoBanner.style.display = '';
+    }
+
 
     // Se o link de pagamento dependesse da chave (ex.: provider externo), ele deveria ser montado aqui.
     // Como o seu checkout usa S.paylink e ele está vindo vazio no DEF, manteremos um comportamento compatível:
@@ -2857,6 +2935,12 @@ function toggleSize(s){
   else arr.push(size);
   syncFilterUI();
   applyFilters();
+}
+
+// Acordeão dos filtros (Categorias/Tamanho/Preço) — recolhidos por padrão, estilo Nike.
+function toggleFblk(titleEl){
+  const blk = titleEl.closest('.fblk');
+  if (blk) blk.classList.toggle('open');
 }
 
 function resetFilters(){
