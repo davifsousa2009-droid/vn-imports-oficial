@@ -827,22 +827,14 @@ footer{background:var(--ink);color:var(--bg)}
 }
 .pv-back:hover{color:var(--ink)}
 .pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start}
-.pv-gallery{display:flex;flex-direction:column;gap:6px}
-.pv-main{
-  aspect-ratio:3/4;background:var(--bg2);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:140px;
+.pv-gallery{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv-gallery-img{
+  aspect-ratio:1/1;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;font-size:80px;
   overflow:hidden;
 }
-.pv-main img{width:100%;height:100%;object-fit:cover}
-.pv-thumbs{display:flex;gap:6px}
-.pv-thumb{
-  width:70px;height:88px;background:var(--bg2);border:1.5px solid var(--border);
-  cursor:pointer;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;font-size:28px;
-  transition:border-color .2s;
-}
-.pv-thumb img{width:100%;height:100%;object-fit:cover}
-.pv-thumb:hover,.pv-thumb.on{border-color:var(--ink)}
+.pv-gallery-img img{width:100%;height:100%;object-fit:cover}
+.pv-gallery-img.only{grid-column:1/-1;aspect-ratio:3/4}
 .pv-info{position:sticky;top:80px}
 .pv-brand{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .pv-name{font-family:var(--serif);font-size:34px;font-weight:400;line-height:1.1;margin-bottom:14px}
@@ -1537,10 +1529,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="pv-inner">
     <button class="pv-back" onclick="goHome()">← Voltar aos produtos</button>
     <div class="pv-grid">
-      <div class="pv-gallery">
-        <div class="pv-main" id="pvMain"></div>
-        <div class="pv-thumbs" id="pvThumbs"></div>
-      </div>
+      <div class="pv-gallery" id="pvGallery"></div>
       <div class="pv-info">
         <div class="pv-brand" id="pvBrand"></div>
         <h1 class="pv-name" id="pvName"></h1>
@@ -1981,8 +1970,11 @@ function openProd(id){
   // Galeria real: capa + fotos adicionais cadastradas, sem repetir a mesma imagem.
   const galeria = [...new Set([p.img, ...(p.imgs || [])].filter(Boolean))];
 
-  const main = document.getElementById('pvMain');
-  main.innerHTML = galeria[0] ? `<img src="${galeria[0]}" alt="${p.name}">` : `<span class="prod-img-empty">Sem imagem</span>`;
+  const gal = document.getElementById('pvGallery');
+  gal.innerHTML = galeria.length
+    ? galeria.map(src => `<div class="pv-gallery-img${galeria.length===1?' only':''}"><img src="${src}" alt="${p.name}"></div>`).join('')
+    : `<div class="pv-gallery-img only"><span class="prod-img-empty">Sem imagem</span></div>`;
+
   document.getElementById('pvBrand').textContent = p.brand;
   document.getElementById('pvName').textContent  = p.name;
   document.getElementById('pvDesc').textContent  = p.desc;
@@ -1994,15 +1986,6 @@ function openProd(id){
     document.getElementById('pvInst').innerHTML = '';
   }
 
-
-  // thumbs — só mostra a tira se houver mais de 1 foto de verdade.
-  document.getElementById('pvThumbs').innerHTML = galeria.length > 1
-    ? galeria.map((src,i)=>
-        `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${src.replace(/'/g,"%27")}')">
-           <img src="${src}" alt="">
-         </div>`
-      ).join('')
-    : '';
 
   // sizes
   const sg = document.getElementById('pvSizes');
@@ -2041,12 +2024,6 @@ function openProd(id){
   goView('view-product');
 }
 
-function switchThumb(el,img){
-  const main=document.getElementById('pvMain');
-  main.innerHTML=img?`<img src="${img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`;
-  document.querySelectorAll('.pv-thumb').forEach(t=>t.classList.remove('on'));
-  el.classList.add('on');
-}
 function selSize(el){
   document.querySelectorAll('.pv-size').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
