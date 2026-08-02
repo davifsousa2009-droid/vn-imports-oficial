@@ -453,6 +453,9 @@ const produtoSchema = new mongoose.Schema(
     nome: { type: String, required: true },
     preco: { type: Number, required: true },
     imagem: { type: String, default: '' },
+    // Galeria de fotos adicionais (a imagem "de capa" continua sendo `imagem`,
+    // essa lista é o restante das fotos mostradas na página do produto).
+    imagens: { type: [String], default: [] },
     descricao: { type: String, default: '' },
     categoria: { type: String, default: 'geral' },
     // null = sem controle de estoque habilitado para este produto (não bloqueia compra).
@@ -799,7 +802,9 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
 app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const atualizado = await Produto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // $set evita substituição total do documento — sem isso, editar só o preço
+    // apagaria a galeria de fotos (ou qualquer campo fora do corpo da requisição).
+    const atualizado = await Produto.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     if (!atualizado) return res.status(404).json({ erro: 'Produto não encontrado' });
     res.json({ mensagem: 'Produto atualizado!', produto: atualizado });
   } catch (err) {
@@ -813,6 +818,11 @@ app.delete('/api/produtos/:id', verificarJWT, async (req, res) => {
     const removido = await Produto.findById(req.params.id);
     if (!removido) return res.status(404).json({ erro: 'Produto não encontrado' });
     await deleteCloudinaryAssetIfApplicable(removido.imagem);
+    if (Array.isArray(removido.imagens)) {
+      for (const url of removido.imagens) {
+        await deleteCloudinaryAssetIfApplicable(url);
+      }
+    }
     await Produto.findByIdAndDelete(req.params.id);
     res.json({ mensagem: 'Produto removido!' });
   } catch (err) {

@@ -69,6 +69,12 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 
 
 .img-preview{display:none;align-items:center;gap:12px;margin-top:8px;padding:10px;background:#F7F4F0;border:1px solid #E0DBD4}
+.galeria-preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.galeria-preview:empty{margin-top:0}
+.galeria-thumb{position:relative;width:72px;height:72px;border:1px solid #E0DBD4;background:#F7F4F0;border-radius:4px;overflow:hidden}
+.galeria-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.galeria-thumb-rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(17,17,17,.75);color:#fff;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.galeria-thumb-rm:hover{background:#A0391E}
 .img-preview.on{display:flex}
 .img-preview img{width:52px;height:66px;object-fit:cover;border:1px solid #E0DBD4}
 .img-preview.on img.preview-tall{max-height:140px;width:auto;max-width:100%;height:auto}
@@ -232,9 +238,14 @@ tr:hover td{background:#FAFAF8}
               <select class="fsel" id="f-cat"></select>
             </div>
             <div class="fg fw">
-              <label class="fl">Imagem do produto</label>
+              <label class="fl">Imagem do produto (capa)</label>
               <input class="fi fi-file" id="f-file" type="file" accept="image/*" onchange="previewLocalFile(this,'fprev')">
               <div class="img-preview" id="fprev"><img src="" id="fprev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="fprev-url"></span></div>
+            </div>
+            <div class="fg fw">
+              <label class="fl">Mais fotos do produto (opcional)</label>
+              <input class="fi fi-file" id="f-galeria" type="file" accept="image/*" multiple onchange="previewGaleria(this,'f-galeria-prev')">
+              <div class="galeria-preview" id="f-galeria-prev"></div>
             </div>
             <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="f-desc" placeholder="Descreva o produto…"></textarea></div>
             <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
@@ -643,6 +654,12 @@ tr:hover td{background:#FAFAF8}
           <input class="fi fi-file" id="e-file" type="file" accept="image/*" onchange="previewLocalFile(this,'eprev')">
           <div class="img-preview" id="eprev"><img src="" id="eprev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="eprev-url"></span></div>
         </div>
+        <div class="fg fw">
+          <label class="fl">Mais fotos do produto</label>
+          <div class="galeria-preview" id="e-galeria-atual"></div>
+          <input class="fi fi-file" id="e-galeria" type="file" accept="image/*" multiple onchange="previewGaleria(this,'e-galeria-prev')">
+          <div class="galeria-preview" id="e-galeria-prev"></div>
+        </div>
         <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="edesc"></textarea></div>
         <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
       </div>
@@ -704,6 +721,44 @@ function previewLocalFile(input, boxId) {
     box.classList.add('on');
   };
   reader.readAsDataURL(f);
+}
+
+// Preview local das novas fotos selecionadas pra galeria (antes de enviar).
+function previewGaleria(input, boxId) {
+  const box = document.getElementById(boxId);
+  if (!box) return;
+  box.innerHTML = '';
+  if (!input.files || !input.files.length) return;
+  [...input.files].forEach((f) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const div = document.createElement('div');
+      div.className = 'galeria-thumb';
+      div.innerHTML = `<img src="${reader.result}" alt="">`;
+      box.appendChild(div);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+// Galeria já salva no produto (só usado na edição) — o admin pode remover
+// fotos existentes antes de salvar; o array final vai junto no PUT.
+let editGaleriaAtual = [];
+
+function renderGaleriaAtual(urls) {
+  editGaleriaAtual = Array.isArray(urls) ? [...urls] : [];
+  const box = document.getElementById('e-galeria-atual');
+  if (!box) return;
+  box.innerHTML = editGaleriaAtual.map((url, i) => `
+    <div class="galeria-thumb">
+      <img src="${mediaUrl(url)}" alt="">
+      <button type="button" class="galeria-thumb-rm" onclick="removerGaleriaAtual(${i})" title="Remover">×</button>
+    </div>`).join('');
+}
+
+function removerGaleriaAtual(i) {
+  editGaleriaAtual.splice(i, 1);
+  renderGaleriaAtual(editGaleriaAtual);
 }
 
 const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -1089,13 +1144,26 @@ const descricao = document.getElementById('f-desc').value.trim();
     }
   }
 
+  let imagens = [];
+  const fg = document.getElementById('f-galeria');
+  if (fg.files && fg.files.length) {
+    try {
+      for (const file of fg.files) {
+        imagens.push(await uploadArquivo(file));
+      }
+    } catch (e) {
+      showMsg(msg, e.message || 'Erro no upload da galeria.', 'er');
+      return;
+    }
+  }
+
   const tamanhos = getTamanhosFromUI('f');
 
   try {
     const r = await fetch(API + '/produtos', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, imagem, descricao, categoria, estoque, sizes: tamanhos })
+      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos })
     });
 
 
@@ -1125,6 +1193,8 @@ async function limpar() {
   document.getElementById('f-file').value = '';
   document.getElementById('fprev-img').removeAttribute('src');
   document.getElementById('fprev-url').textContent = '';
+  document.getElementById('f-galeria').value = '';
+  document.getElementById('f-galeria-prev').innerHTML = '';
   await refreshCategorias();
   const fc = document.getElementById('f-cat');
   if (fc.options.length) fc.selectedIndex = 0;
@@ -1321,6 +1391,9 @@ async function editar(p) {
   ecat.value = slug;
   document.getElementById('eimg-stored').value = p.imagem || '';
   document.getElementById('e-file').value = '';
+  renderGaleriaAtual(p.imagens);
+  document.getElementById('e-galeria').value = '';
+  document.getElementById('e-galeria-prev').innerHTML = '';
   document.getElementById('edesc').value  = p.descricao || '';
 document.getElementById('eest').value = p.estoque != null ? p.estoque : '';
 
@@ -1365,11 +1438,25 @@ const descricao = document.getElementById('edesc').value.trim();
     }
   }
 
+  // Galeria final = fotos existentes que sobraram (não removidas) + novas enviadas agora.
+  let imagens = [...editGaleriaAtual];
+  const egf = document.getElementById('e-galeria');
+  if (egf.files && egf.files.length) {
+    try {
+      for (const file of egf.files) {
+        imagens.push(await uploadArquivo(file));
+      }
+    } catch (e) {
+      toast(e.message || 'Erro no upload da galeria');
+      return;
+    }
+  }
+
   try {
     const r = await fetch(`${API}/produtos/${id}`, {
       method: 'PUT',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, categoria, imagem, descricao, estoque, sizes: tamanhos })
+      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos })
     });
 
 

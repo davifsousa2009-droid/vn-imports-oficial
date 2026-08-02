@@ -1978,8 +1978,11 @@ function openProd(id){
   const p = S.products[id]; curProd=p;
   let selectedSize = '';
   window.__vn_selectedSize = selectedSize;
+  // Galeria real: capa + fotos adicionais cadastradas, sem repetir a mesma imagem.
+  const galeria = [...new Set([p.img, ...(p.imgs || [])].filter(Boolean))];
+
   const main = document.getElementById('pvMain');
-  main.innerHTML = p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`;
+  main.innerHTML = galeria[0] ? `<img src="${galeria[0]}" alt="${p.name}">` : `<span class="prod-img-empty">Sem imagem</span>`;
   document.getElementById('pvBrand').textContent = p.brand;
   document.getElementById('pvName').textContent  = p.name;
   document.getElementById('pvDesc').textContent  = p.desc;
@@ -1992,13 +1995,14 @@ function openProd(id){
   }
 
 
-  // thumbs
-  document.getElementById('pvThumbs').innerHTML =
-    [p.img,p.img,p.img].map((src,i)=>
-      `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${p.img||''}')">
-         ${p.img?`<img src="${p.img}" alt="">`:`<span class="prod-img-empty">Sem imagem</span>`}
-       </div>`
-    ).join('');
+  // thumbs — só mostra a tira se houver mais de 1 foto de verdade.
+  document.getElementById('pvThumbs').innerHTML = galeria.length > 1
+    ? galeria.map((src,i)=>
+        `<div class="pv-thumb ${i===0?'on':''}" onclick="switchThumb(this,'${src.replace(/'/g,"%27")}')">
+           <img src="${src}" alt="">
+         </div>`
+      ).join('')
+    : '';
 
   // sizes
   const sg = document.getElementById('pvSizes');
@@ -2822,6 +2826,7 @@ function converterProduto(p, index) {
     price: Number(p.preco),
     old: null,
     img: p.imagem || '',
+    imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
     desc: p.descricao || p.nome,
     sizes: normalizedSizes,
     badge: null
