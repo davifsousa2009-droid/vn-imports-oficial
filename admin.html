@@ -664,7 +664,7 @@ tr:hover td{background:#FAFAF8}
         <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
       </div>
       <div class="form-btns">
-        <button class="btn btn-p" onclick="salvarEdicao()">Salvar alterações</button>
+        <button class="btn btn-p" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar alterações</button>
         <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
       </div>
     </div>
@@ -956,7 +956,7 @@ function renderListaCategorias() {
             <td class="td-name">${escHtml(c.nome)}</td>
             <td><span class="td-cat">${escHtml(c.slug)}</span></td>
             <td>
-              <button class="btn btn-d btn-sm" onclick='removerCategoria(${JSON.stringify(String(c._id))}, ${JSON.stringify(c.nome)})'>Remover</button>
+              <button class="btn btn-d btn-sm" onclick="removerCategoria(this.dataset.id,this.dataset.nome)" data-id="${escHtml(String(c._id))}" data-nome="${escHtml(c.nome)}">Remover</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -1122,6 +1122,28 @@ async function loadStats() {
 
 // ── CADASTRAR ─────────────────────────────────────────
 async function salvar() {
+  const btnSalvar = document.getElementById('btnSalvarProduto');
+  // Trava contra clique duplo/repetido: sem isso, clicar mais de uma vez enquanto
+  // o upload da foto ainda está rodando cria um produto novo a cada clique.
+  if (btnSalvar && btnSalvar.dataset.salvando === '1') return;
+  if (btnSalvar) {
+    btnSalvar.dataset.salvando = '1';
+    btnSalvar.disabled = true;
+    btnSalvar.textContent = 'Salvando…';
+  }
+
+  try {
+    await salvarProdutoInterno();
+  } finally {
+    if (btnSalvar) {
+      btnSalvar.dataset.salvando = '0';
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = 'Salvar produto';
+    }
+  }
+}
+
+async function salvarProdutoInterno() {
   const nome      = document.getElementById('f-nome').value.trim();
   const preco     = parseFloat(document.getElementById('f-preco').value);
 const descricao = document.getElementById('f-desc').value.trim();
@@ -1358,8 +1380,8 @@ function renderTable(list) {
             <td>${p.estoque ?? '—'}</td>
             <td>
               <div class="td-actions">
-                <button class="btn btn-e btn-sm" onclick='editar(${JSON.stringify(p)})'>Editar</button>
-                <button class="btn btn-d btn-sm" onclick='deletar(${JSON.stringify(String(p._id))}, ${JSON.stringify(p.nome)})'>Remover</button>
+                <button class="btn btn-e btn-sm" onclick="editar(this.dataset.id)" data-id="${escHtml(p._id)}">Editar</button>
+                <button class="btn btn-d btn-sm" onclick="deletar(this.dataset.id,this.dataset.nome)" data-id="${escHtml(p._id)}" data-nome="${escHtml(p.nome)}">Remover</button>
               </div>
             </td>
           </tr>`).join('')}
@@ -1375,7 +1397,9 @@ function filtrar(q) {
 }
 
 // ── EDITAR ────────────────────────────────────────────
-async function editar(p) {
+async function editar(id) {
+  const p = (todosProdutos || []).find(x => String(x._id) === String(id));
+  if (!p) { toast('Produto não encontrado. Atualize a lista e tente de novo.'); return; }
   await refreshCategorias();
   document.getElementById('eid').value    = p._id;
   document.getElementById('enome').value  = p.nome;
@@ -1414,6 +1438,25 @@ function closeModal() {
 
 // ── SALVAR EDIÇÃO ─────────────────────────────────────
 async function salvarEdicao() {
+  const btnSalvar = document.getElementById('btnSalvarEdicao');
+  if (btnSalvar && btnSalvar.dataset.salvando === '1') return;
+  if (btnSalvar) {
+    btnSalvar.dataset.salvando = '1';
+    btnSalvar.disabled = true;
+    btnSalvar.textContent = 'Salvando…';
+  }
+  try {
+    await salvarEdicaoInterno();
+  } finally {
+    if (btnSalvar) {
+      btnSalvar.dataset.salvando = '0';
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = 'Salvar alterações';
+    }
+  }
+}
+
+async function salvarEdicaoInterno() {
   const id        = document.getElementById('eid').value;
   const nome      = document.getElementById('enome').value.trim();
   const preco     = parseFloat(document.getElementById('epreco').value);
