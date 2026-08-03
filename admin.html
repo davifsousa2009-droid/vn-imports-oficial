@@ -1359,7 +1359,7 @@ function renderTable(list) {
             <td>
               <div class="td-actions">
                 <button class="btn btn-e btn-sm" onclick='editar(${JSON.stringify(p)})'>Editar</button>
-                <button class="btn btn-d btn-sm" onclick="deletar('${p._id}','${p.nome}')">Remover</button>
+                <button class="btn btn-d btn-sm" onclick='deletar(${JSON.stringify(String(p._id))}, ${JSON.stringify(p.nome)})'>Remover</button>
               </div>
             </td>
           </tr>`).join('')}
