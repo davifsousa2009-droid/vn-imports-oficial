@@ -629,23 +629,11 @@ nav{
 .prod-old-price{text-decoration:line-through;color:#b0b0b0;font-weight:500;font-size:.95rem}
 .prod-price{color:#111;font-weight:700;font-size:1.05rem}
 .prod-off{color:#00875a;font-weight:700;font-size:.9rem}
-.prod-rating-row{margin-top:8px;display:flex;align-items:center;gap:8px}
-.prod-stars{color:#1f1f1f;letter-spacing:.08em;font-size:.95rem;line-height:1}
-.prod-rating-num{color:#1f1f1f;font-weight:600;font-size:.9rem}
 
-.prod-sizes{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
-.prod-size-chip{
-  border-radius:999px;padding:8px 10px;border:1px solid rgba(0,0,0,.12);
-  background:transparent;color:#111;font-weight:700;font-size:12px;letter-spacing:.04em;
-  cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .15s ease;
-}
-.prod-size-chip:hover{border-color:rgba(0,0,0,.45);transform:translateY(-1px)}
-.prod-size-chip.on{border-color:#111;background:#111;color:#fff}
-
-.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:10px;transition:transform .15s ease,opacity .15s ease}
+.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:transform .15s ease,opacity .15s ease}
 .prod-add-btn:active{transform:scale(.98)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-size-chip{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg{animation:none !important;transition:none !important}
 }
 .prod-card{
   background:var(--bg);cursor:pointer;position:relative;
@@ -689,7 +677,6 @@ nav{
 .prod-foot{display:flex;justify-content:space-between;align-items:center}
 .prod-price{font-size:17px;font-weight:600}
 .prod-old{font-size:12px;color:var(--silver);text-decoration:line-through;margin-left:8px}
-.prod-stars{font-size:12px;color:var(--gold)}
 
 /* ─── BANNER ─── */
 .banner{
@@ -1964,14 +1951,6 @@ function renderGrid(list){
 
     const badgePct = (p.badge==='sale' && p.old) ? Math.round(100 - (p.price / p.old * 100)) : 0;
 
-    const rating = (typeof p.rating === 'number' && isFinite(p.rating))
-      ? p.rating
-      : (typeof p.stars === 'number' && isFinite(p.stars))
-        ? p.stars
-        : 4.6;
-
-    const stars = '★'.repeat(Math.max(1, Math.min(5, Math.round(rating))));
-
     // Categoria/subtítulo minimalista (se existir, usa; se não, usa marca)
     const subTxt = (p.cat && String(p.cat).trim() && p.cat !== 'geral') ? String(p.cat) : (p.brand || 'Produto');
 
@@ -2007,18 +1986,6 @@ function renderGrid(list){
               ${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}
             </div>
 
-            <div class="prod-rating-row">
-              <div class="prod-stars">${stars}</div>
-              <div class="prod-rating-num">${(Math.round(rating*10)/10).toFixed(1)}</div>
-            </div>
-
-            <div class="prod-sizes">
-              ${(Array.isArray(p.sizes)?p.sizes:[]).map(s => {
-                const isSel = (window.__vn_selectedQuickSize__ && window.__vn_selectedQuickSize__[p.id] === String(s));
-                return `<button type="button" class="prod-size-chip${isSel?' on':''}" onclick="event.stopPropagation();setQuickSize(${p.id},'${s}')">${s}</button>`;
-              }).join('')}
-            </div>
-
             <button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>
           </div>
         </div>
@@ -2029,32 +1996,9 @@ function renderGrid(list){
 }
 
 
-// ─── Quick add (tamanho rápido no card) ───
-if(!window.__vn_selectedQuickSize__) window.__vn_selectedQuickSize__ = {};
-
-
-function setQuickSize(pid, size){
-  if(!window.__vn_selectedQuickSize__) window.__vn_selectedQuickSize__ = {};
-  window.__vn_selectedQuickSize__[pid] = String(size||'').trim();
-  applyQuickSizeUI(pid);
-}
-
-function applyQuickSizeUI(pid){
-  document.querySelectorAll('.prod-card[data-pid="'+pid+'"] .prod-size-chip').forEach(b=>{
-    const s = String(b.textContent||'').trim();
-    b.classList.toggle('on', window.__vn_selectedQuickSize__[pid]===s);
-  });
-}
-
+// ─── Quick add (abre a página do produto para selecionar tamanho) ───
 function quickAddCart(pid){
-  const p = S.products[pid];
-  const sel = (window.__vn_selectedQuickSize__ && window.__vn_selectedQuickSize__[pid]) ? String(window.__vn_selectedQuickSize__[pid]).trim() : '';
-  if(!sel){
-    showToast('⚠️','Selecione um tamanho no card.');
-    return;
-  }
-  window.__vn_selectedSize = sel;
-  addCart(p);
+  openProd(pid);
 }
 
 
@@ -2297,7 +2241,7 @@ function renderWL(){
       <div class="prod-info">
         <div class="prod-brand">${p.brand}</div>
         <div class="prod-name">${p.name}</div>
-        <div class="prod-foot"><span class="prod-price">${R$(p.price)}</span><span class="prod-stars">★★★★★</span></div>
+        <div class="prod-foot"><span class="prod-price">${R$(p.price)}</span></div>
       </div>
     </div>`).join('');
 }
