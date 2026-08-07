@@ -594,19 +594,19 @@ nav{
   from{opacity:0;transform:translateY(18px)}
   to{opacity:1;transform:translateY(0)}
 }
-.prod-card{cursor:pointer;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards}
+.prod-card{cursor:pointer;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards;will-change:transform,opacity}
 .prod-card-frame{
-  border-radius:10px;overflow:hidden;background:#fff;
+  border-radius:12px;overflow:hidden;background:#fff;
   box-shadow:0 1px 2px rgba(17,17,17,.05),0 1px 6px rgba(17,17,17,.04);
-  transition:box-shadow .35s ease,transform .35s ease;
+  transition:all .3s ease;
 }
 .prod-card:hover .prod-card-frame{
-  box-shadow:0 20px 40px rgba(17,17,17,.10),0 4px 10px rgba(17,17,17,.06);
-  transform:translateY(-5px);
+  box-shadow:0 12px 24px rgba(0,0,0,.08);
+  transform:translateY(-6px);
 }
-.prod-card-media{position:relative;aspect-ratio:1/1;width:100%;background:#f6f6f6;overflow:hidden}
-.prod-card-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s cubic-bezier(.22,.61,.36,1)}
-.prod-card:hover .prod-card-media img{transform:scale(1.06)}
+.prod-card-media{position:relative;aspect-ratio:1/1;width:100%;background:#f6f6f6;overflow:hidden;border-radius:12px}
+.prod-card-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;will-change:transform}
+.prod-card:hover .prod-card-media img{transform:scale(1.05)}
 .prod-card-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:12px}
 
 .prod-wish-btn{
@@ -630,10 +630,11 @@ nav{
 .prod-price{color:#111;font-weight:700;font-size:1.05rem}
 .prod-off{color:#00875a;font-weight:700;font-size:.9rem}
 
-.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:transform .15s ease,opacity .15s ease}
-.prod-add-btn:active{transform:scale(.98)}
+.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden}
+.prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
+.prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn{animation:none !important;transition:none !important}
 }
 .prod-card{
   background:var(--bg);cursor:pointer;position:relative;
