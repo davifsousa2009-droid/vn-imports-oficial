@@ -2430,7 +2430,7 @@ async function checkout(){
         });
         const ccD = await ccR.json().catch(() => ({}));
         if (ccR.ok && ccD?.ok && ccD?.copiaECola) {
-          showPixModal(ccD.copiaECola, false, orderTotal, true);
+          showPixModal(ccD.copiaECola, false, Number(ccD.valor) || orderTotal, true);
           closeCart();
           return;
         }
@@ -2469,7 +2469,7 @@ async function checkout(){
         });
         const ccD = await ccR.json().catch(() => ({}));
         if (ccR.ok && ccD?.ok && ccD?.copiaECola) {
-          showPixModal(ccD.copiaECola, false, orderTotal, true);
+          showPixModal(ccD.copiaECola, false, Number(ccD.valor) || orderTotal, true);
           closeCart();
           return;
         }

@@ -695,6 +695,22 @@ function removerAcentosEEspeciais(v) {
     .trim();
 }
 
+/**
+ * Sanitiza a chave Pix para leitura segura em QR Code / Copia e Cola.
+ * Remove parênteses, espaços, traços, pontos e qualquer caractere que
+ * não seja dígito, letra, '@', '.' ou '+' (caracteres permitidos pelo
+ * padrão BR Code do Banco Central para chaves Pix).
+ * Ex: "(35) 99774-0622" → "35997740622" (telefone limpo).
+ */
+function sanitizarChavePix(v) {
+  return String(v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x21-\x7E]/g, '')
+    .replace(/[^\w@.+-]/g, '')
+    .trim();
+}
+
 function tlv(id, value) {
   const v = String(value);
   const len = String(v.length).padStart(2, '0');
@@ -714,7 +730,7 @@ function crc16ccitt(payload) {
 }
 
 function gerarPixCopiaCola({ chave, valor, nome, cidade, txid }) {
-  const chaveSanit = removerAcentosEEspeciais(chave).slice(0, 77);
+  const chaveSanit = sanitizarChavePix(chave).slice(0, 77);
   const nomeSanit = (removerAcentosEEspeciais(nome).toUpperCase().slice(0, 25) || 'LOJA').trim();
   const cidadeSanit = (removerAcentosEEspeciais(cidade).toUpperCase().slice(0, 15) || 'SAO PAULO').trim();
   const txidSanit =
@@ -1366,13 +1382,17 @@ app.post('/api/pix/copia-cola', async (req, res) => {
     const chave = settingsDoc?.pix_key ? String(settingsDoc.pix_key).trim() : '';
     if (!chave) return res.status(400).json({ ok: false, reason: 'NO_PIX_KEY' });
 
+    const chaveLimpa = sanitizarChavePix(chave);
+
     const nome = configDoc?.nomeLoja || shopConfig.nomeLoja || 'LOJA';
     const cidade = configDoc?.cidadeLoja || 'SAO PAULO';
     const txid = String(order._id);
 
     const copiaECola = gerarPixCopiaCola({ chave, valor: amount, nome, cidade, txid });
 
-    return res.json({ ok: true, copiaECola, valor: amount, chave });
+    // Retorna o valor travado (do pedido no banco) e a chave limpa —
+    // o front pode exibir a confirmação de valor antes de o cliente copiar.
+    return res.json({ ok: true, copiaECola, valor: amount, chave: chaveLimpa });
   } catch (e) {
     return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
   }
@@ -1386,7 +1406,7 @@ app.get('/api/pix/automatic', async (req, res) => {
 
     const doc = await Settings.findOne().lean();
     const hasMpToken = temMpTokenSalvo(doc);
-    const pixKeyFallback = mergePublicSettings(doc).pix_key;
+    const pixKeyFallback = sanitizarChavePix(mergePublicSettings(doc).pix_key);
 
     return res.json({ hasMpToken, pixKeyFallback });
   } catch {
@@ -1401,7 +1421,7 @@ app.post('/api/pix/qr-mp', async (req, res) => {
     }
 
     const doc = await Settings.findOne().lean();
-    const pixKeyFallback = mergePublicSettings(doc).pix_key;
+    const pixKeyFallback = sanitizarChavePix(mergePublicSettings(doc).pix_key);
 
     if (!temMpTokenSalvo(doc)) {
       return res.json({ ok: false, reason: 'NO_MP_TOKEN', pixKeyFallback });
