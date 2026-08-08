@@ -482,8 +482,12 @@ tr:hover td{background:#FAFAF8}
           <div style="height:18px"></div>
           <div class="fg2">
             <div class="fg fw">
-              <label class="fl">mp_token (Mercado Pago)</label>
-              <input class="fi" id="set-mpToken" placeholder="Cole seu mp_token" type="text" autocomplete="off">
+              <label class="fl">mp_token (Mercado Pago — Access Token)</label>
+              <input class="fi" id="set-mpToken" placeholder="Cole seu Access Token (APP_USR-…)" type="text" autocomplete="off">
+            </div>
+            <div class="fg fw">
+              <label class="fl">mp_public_key (Mercado Pago — chave pública)</label>
+              <input class="fi" id="set-mpPublicKey" placeholder="APP_USR-… (necessária para pagar com cartão)" type="text" autocomplete="off">
             </div>
             <div class="fg fw">
               <label class="fl">me_token (Melhor Envio)</label>
@@ -1613,6 +1617,8 @@ async function loadSettings() {
 
     // pix_key vem pública; tokens ficam escondidos (por segurança)
     document.getElementById('set-pixKey').value = d?.pix_key != null ? String(d.pix_key) : '';
+    const pkEl = document.getElementById('set-mpPublicKey');
+    if (pkEl) pkEl.value = d?.mp_public_key != null ? String(d.mp_public_key) : '';
 
     // mp_token/me_token não são expostos publicamente
     document.getElementById('set-mpToken').value = '';
@@ -1627,6 +1633,7 @@ async function salvarSettings() {
 
   // Tokens / Pix (collection Settings)
   const mp_token = document.getElementById('set-mpToken').value.trim();
+  const mp_public_key = document.getElementById('set-mpPublicKey')?.value.trim() || '';
   const me_token = document.getElementById('set-meToken').value.trim();
   const pix_key = document.getElementById('set-pixKey').value.trim();
 
@@ -1656,7 +1663,7 @@ async function salvarSettings() {
 
   // Permite salvar conteúdo mesmo sem tokens preenchidos.
   // Se tudo vazio em tokens e conteúdo também vazio, dá erro.
-  const anyTokens = !!(mp_token || me_token || pix_key);
+  const anyTokens = !!(mp_token || mp_public_key || me_token || pix_key);
   const anyConteudo = !!(String(sobreTitulo).trim() || String(sobreTexto).trim() ||
     String(benef1Titulo).trim() || String(benef1Texto).trim() || String(benef1Ico).trim() ||
     String(benef2Titulo).trim() || String(benef2Texto).trim() || String(benef2Ico).trim() ||
@@ -1674,7 +1681,7 @@ async function salvarSettings() {
       const r = await fetch(API + '/settings', {
         method: 'POST',
         headers: headersComJwt({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ mp_token, me_token, pix_key })
+        body: JSON.stringify({ mp_token, mp_public_key, me_token, pix_key })
       });
 
       const d = await r.json().catch(() => ({}));
