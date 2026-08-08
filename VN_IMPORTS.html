@@ -825,7 +825,7 @@ nav{
 .rc-date{font-size:11px;color:var(--muted);margin-top:1px}
 .rc-badge{font-size:10px;color:var(--green);font-weight:700;margin-top:1px}
 
-/* ─── FEATS ─── */
+/* ─── FEATS / SOBRE NÓS ─── */
 .feats-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .feats-inner{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
 .feat{
@@ -836,6 +836,136 @@ nav{
 .feat-ico{font-size:20px;margin-top:1px}
 .feat-title{font-size:13px;font-weight:600;margin-bottom:4px}
 .feat-desc{font-size:12px;color:var(--muted);line-height:1.55;font-weight:300}
+
+/* Sobre + Benefícios (layout dinâmico — evita FOUC/CLS) */
+.about-feats-inner{
+  grid-template-columns:1fr 1fr;
+  align-items:stretch;
+  min-height:280px;
+}
+.about-col{
+  padding:30px 24px;
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:14px;
+  min-height:240px;
+}
+.about-text{
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.9;
+  font-weight:300;
+  max-width:520px;
+  white-space:pre-line;
+  min-height:6.5em;
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity .35s ease, transform .35s ease;
+}
+.about-title{
+  margin-top:0;
+  min-height:1.2em;
+  opacity:0;
+  transform:translateY(4px);
+  transition:opacity .35s ease, transform .35s ease;
+}
+#sec-about .feat-title,
+#sec-about .feat-desc{
+  opacity:0;
+  transition:opacity .35s ease;
+}
+.about-title.is-loading,
+.about-text.is-loading,
+#sec-about .feat-title.is-loading,
+#sec-about .feat-desc.is-loading{
+  opacity:1;
+  transform:none;
+}
+.about-title.is-ready,
+.about-text.is-ready,
+#sec-about .feat-title.is-ready,
+#sec-about .feat-desc.is-ready{
+  opacity:1;
+  transform:none;
+}
+.about-benefits{
+  padding:30px 24px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  align-content:start;
+  min-height:240px;
+}
+.about-benefits .feat{border:none;padding:0}
+
+/* Skeleton */
+.sk{
+  display:block;
+  border-radius:6px;
+  background:linear-gradient(90deg, var(--bg2) 0%, #e8e4de 50%, var(--bg2) 100%);
+  background-size:200% 100%;
+  animation:aboutSk 1.1s ease-in-out infinite;
+}
+.sk-title{height:28px;width:min(220px,70%);margin:6px 0}
+.sk-line{height:12px;width:100%;margin:8px 0}
+.sk-line.sk-short{width:68%}
+.sk-feat-title{height:14px;width:70%;margin-bottom:8px}
+.sk-feat-desc{height:10px;width:95%;margin:6px 0}
+.sk-label{
+  display:inline-block;
+  font-family:var(--sans);
+  font-size:11px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-top:6px;
+}
+.about-title:not(.is-loading) .sk,
+.about-title:not(.is-loading) .sk-label,
+.about-text:not(.is-loading) .sk,
+.feat-title:not(.is-loading) .sk,
+.feat-desc:not(.is-loading) .sk{display:none}
+@keyframes aboutSk{
+  0%{background-position:200% 0}
+  100%{background-position:-200% 0}
+}
+
+@media(max-width:768px){
+  .about-feats-inner{min-height:0;grid-template-columns:1fr !important}
+  .about-col{
+    padding:22px 18px 16px;
+    border-right:none;
+    border-bottom:1px solid var(--border);
+    gap:10px;
+    min-height:0;
+  }
+  .about-title{font-size:clamp(22px,6vw,28px);line-height:1.15}
+  .about-text{
+    font-size:13px;
+    line-height:1.65;
+    max-width:none;
+    min-height:0;
+    max-height:9.75em;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    white-space:pre-line;
+  }
+  .about-benefits{
+    padding:18px;
+    gap:14px;
+    min-height:0;
+  }
+  .about-benefits .feat{gap:12px}
+  #sec-about .feat-title{font-size:12px}
+  #sec-about .feat-desc{font-size:11px;line-height:1.45}
+}
+@media(max-width:480px){
+  .about-col{padding:18px 16px 14px}
+  .about-text{font-size:12.5px;line-height:1.6;max-height:8.5em}
+  .about-benefits{grid-template-columns:1fr;padding:16px;gap:16px}
+}
 
 /* ─── FOOTER ─── */
 footer{background:var(--ink);color:var(--bg)}
@@ -1474,30 +1604,49 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 
 
-<!-- SOBRE + BENEFÍCIOS (conteúdo dinâmico via /api/config) -->
+<!-- SOBRE + BENEFÍCIOS (conteúdo dinâmico via /api/config — skeleton evita FOUC) -->
 <div class="feats-bar" id="sec-about">
-  <div class="feats-inner" style="grid-template-columns:1fr 1fr;align-items:stretch">
-    <div style="padding:30px 24px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:14px">
+  <div class="feats-inner about-feats-inner">
+    <div class="about-col" id="about-col">
       <div class="sec-eye" style="margin-bottom:0" id="about-eyebrow">Sobre nós</div>
-      <h2 class="sec-title" style="margin-top:0" id="about-title">Cibelle <em>Imports</em></h2>
-      <p id="about-text" style="font-size:14px;color:var(--muted);line-height:1.9;font-weight:300;max-width:520px;white-space:pre-line">Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.</p>
+      <h2 class="sec-title about-title is-loading" id="about-title" aria-busy="true">
+        <span class="sk sk-title" aria-hidden="true"></span>
+        <span class="sk-label">Carregando…</span>
+      </h2>
+      <div id="about-text" class="about-text is-loading" aria-busy="true" aria-live="polite">
+        <span class="sk sk-line" aria-hidden="true"></span>
+        <span class="sk sk-line" aria-hidden="true"></span>
+        <span class="sk sk-line sk-short" aria-hidden="true"></span>
+      </div>
     </div>
-    <div style="padding:30px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-content:start">
-      <div class="feat" style="border:none;padding:0" id="benefit-1">
+    <div class="about-benefits" id="about-benefits">
+      <div class="feat" id="benefit-1">
         <div class="feat-ico" id="benefit-1-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
-        <div><div class="feat-title" id="benefit-1-title">Entrega Rápida</div><div class="feat-desc" id="benefit-1-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div>
+        <div>
+          <div class="feat-title is-loading" id="benefit-1-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+          <div class="feat-desc is-loading" id="benefit-1-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+        </div>
       </div>
-      <div class="feat" style="border:none;padding:0" id="benefit-2">
+      <div class="feat" id="benefit-2">
         <div class="feat-ico" id="benefit-2-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-        <div><div class="feat-title" id="benefit-2-title">Troca em 30 Dias</div><div class="feat-desc" id="benefit-2-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div>
+        <div>
+          <div class="feat-title is-loading" id="benefit-2-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+          <div class="feat-desc is-loading" id="benefit-2-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+        </div>
       </div>
-      <div class="feat" style="border:none;padding:0" id="benefit-3">
+      <div class="feat" id="benefit-3">
         <div class="feat-ico" id="benefit-3-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-        <div><div class="feat-title" id="benefit-3-title">Pagamento Seguro</div><div class="feat-desc" id="benefit-3-desc">PIX, cartão e boleto com total segurança.</div></div>
+        <div>
+          <div class="feat-title is-loading" id="benefit-3-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+          <div class="feat-desc is-loading" id="benefit-3-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+        </div>
       </div>
-      <div class="feat" style="border:none;padding:0" id="benefit-4">
+      <div class="feat" id="benefit-4">
         <div class="feat-ico" id="benefit-4-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
-        <div><div class="feat-title" id="benefit-4-title">Importado Selecionado</div><div class="feat-desc" id="benefit-4-desc">Curadoria rigorosa de produtos internacionais.</div></div>
+        <div>
+          <div class="feat-title is-loading" id="benefit-4-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+          <div class="feat-desc is-loading" id="benefit-4-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -3237,6 +3386,17 @@ function formatSobreTituloHtml(titulo) {
   return escapeHtmlTexto(t);
 }
 
+function revelarConteudoEl(el) {
+  if (!el) return;
+  el.classList.remove('is-loading');
+  el.removeAttribute('aria-busy');
+  // Força reflow antes do fade-in
+  void el.offsetWidth;
+  requestAnimationFrame(() => {
+    el.classList.add('is-ready');
+  });
+}
+
 function aplicarBeneficioDinamico(n, d) {
   const titulo = d['benef' + n + 'Titulo'];
   const texto = d['benef' + n + 'Texto'];
@@ -3247,11 +3407,15 @@ function aplicarBeneficioDinamico(n, d) {
   const descEl = document.getElementById('benefit-' + n + '-desc');
   const icoEl = document.getElementById('benefit-' + n + '-ico');
 
-  if (titEl && titulo != null && String(titulo).trim()) {
-    titEl.textContent = String(titulo).trim();
+  if (titEl) {
+    const t = titulo != null && String(titulo).trim() ? String(titulo).trim() : '';
+    titEl.textContent = t || ('Benefício ' + n);
+    revelarConteudoEl(titEl);
   }
-  if (descEl && texto != null && String(texto).trim()) {
-    descEl.textContent = String(texto).trim();
+  if (descEl) {
+    const tx = texto != null && String(texto).trim() ? String(texto).trim() : '';
+    descEl.textContent = tx || '—';
+    revelarConteudoEl(descEl);
   }
   if (icoEl) {
     if (!icoOn) {
@@ -3260,22 +3424,29 @@ function aplicarBeneficioDinamico(n, d) {
       icoEl.textContent = String(ico).trim();
       icoEl.style.display = '';
     }
-    // Sem emoji no banco: mantém o SVG estático do HTML como fallback visual.
   }
 }
 
-/** Aplica Sobre + Benefícios no DOM. Não quebra se faltar algum campo. */
+/** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
   if (!d || typeof d !== 'object') return;
 
   const aboutTitle = document.getElementById('about-title');
   const aboutText = document.getElementById('about-text');
 
-  if (aboutTitle && d.sobreTitulo != null && String(d.sobreTitulo).trim()) {
-    aboutTitle.innerHTML = formatSobreTituloHtml(d.sobreTitulo);
+  if (aboutTitle) {
+    const titulo = d.sobreTitulo != null && String(d.sobreTitulo).trim()
+      ? String(d.sobreTitulo).trim()
+      : (vitrineNomeLoja || 'VN IMPORTS');
+    aboutTitle.innerHTML = formatSobreTituloHtml(titulo);
+    revelarConteudoEl(aboutTitle);
   }
-  if (aboutText && d.sobreTexto != null && String(d.sobreTexto).trim()) {
-    aboutText.textContent = String(d.sobreTexto).trim();
+  if (aboutText) {
+    const texto = d.sobreTexto != null && String(d.sobreTexto).trim()
+      ? String(d.sobreTexto).trim()
+      : 'Moda importada com curadoria, qualidade e atendimento humano.';
+    aboutText.textContent = texto;
+    revelarConteudoEl(aboutText);
   }
 
   for (let i = 1; i <= 4; i++) aplicarBeneficioDinamico(i, d);
@@ -3283,20 +3454,30 @@ function aplicarConteudoDinamico(d) {
 
 /**
  * Busca o conteúdo dinâmico (Sobre + Benefícios) salvo pelo Admin.
- * Fonte: /api/config (collection Config) — /api/settings só expõe pix_key/tokens.
- * Em falha/timeout, o HTML estático permanece como fallback.
+ * Fonte: /api/config. Em falha, revela fallback suave (sem texto chumbado antigo).
  */
 async function carregarConteudoDinamico(preloaded) {
   try {
     let d = preloaded;
     if (!d) {
       const r = await fetch(API_URL + '/config');
-      if (!r.ok) return;
+      if (!r.ok) throw new Error('config http ' + r.status);
       d = await r.json();
     }
     aplicarConteudoDinamico(d);
   } catch {
-    /* mantém o conteúdo estático do HTML */
+    aplicarConteudoDinamico({
+      sobreTitulo: vitrineNomeLoja || 'VN IMPORTS',
+      sobreTexto: 'Moda importada com curadoria, qualidade e atendimento humano.',
+      benef1Titulo: 'Entrega Rápida',
+      benef1Texto: 'Receba com agilidade e segurança.',
+      benef2Titulo: 'Troca em 30 Dias',
+      benef2Texto: 'Sem burocracia. Sua satisfação é nossa prioridade.',
+      benef3Titulo: 'Pagamento Seguro',
+      benef3Texto: 'Pix e cartão com total segurança.',
+      benef4Titulo: 'Importado Selecionado',
+      benef4Texto: 'Curadoria rigorosa de produtos internacionais.'
+    });
   }
 }
 
