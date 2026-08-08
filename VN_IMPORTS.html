@@ -1474,36 +1474,30 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 
 
-<!-- SOBRE (história da Cibelle Imports) -->
+<!-- SOBRE + BENEFÍCIOS (conteúdo dinâmico via /api/config) -->
 <div class="feats-bar" id="sec-about">
   <div class="feats-inner" style="grid-template-columns:1fr 1fr;align-items:stretch">
     <div style="padding:30px 24px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:14px">
-      <div class="sec-eye" style="margin-bottom:0">Sobre nós</div>
-      <h2 class="sec-title" style="margin-top:0">Cibelle <em>Imports</em></h2>
-      <p style="font-size:14px;color:var(--muted);line-height:1.9;font-weight:300;max-width:520px">
-        Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar.
-        Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que imaginou.
-      </p>
-      <p style="font-size:13px;color:var(--muted);line-height:1.9;font-weight:300">
-        Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.
-      </p>
+      <div class="sec-eye" style="margin-bottom:0" id="about-eyebrow">Sobre nós</div>
+      <h2 class="sec-title" style="margin-top:0" id="about-title">Cibelle <em>Imports</em></h2>
+      <p id="about-text" style="font-size:14px;color:var(--muted);line-height:1.9;font-weight:300;max-width:520px;white-space:pre-line">Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.</p>
     </div>
     <div style="padding:30px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-content:start">
-      <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
-        <div><div class="feat-title">Entrega Rápida</div><div class="feat-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div>
+      <div class="feat" style="border:none;padding:0" id="benefit-1">
+        <div class="feat-ico" id="benefit-1-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
+        <div><div class="feat-title" id="benefit-1-title">Entrega Rápida</div><div class="feat-desc" id="benefit-1-desc">Receba em até 3 dias úteis. Frete grátis acima de R$299.</div></div>
       </div>
-      <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-        <div><div class="feat-title">Troca em 30 Dias</div><div class="feat-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div>
+      <div class="feat" style="border:none;padding:0" id="benefit-2">
+        <div class="feat-ico" id="benefit-2-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <div><div class="feat-title" id="benefit-2-title">Troca em 30 Dias</div><div class="feat-desc" id="benefit-2-desc">Sem burocracia. Sua satisfação é nossa prioridade.</div></div>
       </div>
-      <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-        <div><div class="feat-title">Pagamento Seguro</div><div class="feat-desc">PIX, cartão e boleto com total segurança.</div></div>
+      <div class="feat" style="border:none;padding:0" id="benefit-3">
+        <div class="feat-ico" id="benefit-3-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div><div class="feat-title" id="benefit-3-title">Pagamento Seguro</div><div class="feat-desc" id="benefit-3-desc">PIX, cartão e boleto com total segurança.</div></div>
       </div>
-      <div class="feat" style="border:none;padding:0">
-        <div class="feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
-        <div><div class="feat-title">Importado Selecionado</div><div class="feat-desc">Curadoria rigorosa de produtos internacionais.</div></div>
+      <div class="feat" style="border:none;padding:0" id="benefit-4">
+        <div class="feat-ico" id="benefit-4-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
+        <div><div class="feat-title" id="benefit-4-title">Importado Selecionado</div><div class="feat-desc" id="benefit-4-desc">Curadoria rigorosa de produtos internacionais.</div></div>
       </div>
     </div>
   </div>
@@ -2827,6 +2821,88 @@ function aplicarCoresDaLoja(colors) {
   });
 }
 
+function escapeHtmlTexto(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Mantém o estilo visual: primeira palavra + restante em <em>. */
+function formatSobreTituloHtml(titulo) {
+  const t = String(titulo || '').trim();
+  if (!t) return '';
+  const parts = t.split(/\s+/);
+  if (parts.length >= 2) {
+    return escapeHtmlTexto(parts[0]) + ' <em>' + escapeHtmlTexto(parts.slice(1).join(' ')) + '</em>';
+  }
+  return escapeHtmlTexto(t);
+}
+
+function aplicarBeneficioDinamico(n, d) {
+  const titulo = d['benef' + n + 'Titulo'];
+  const texto = d['benef' + n + 'Texto'];
+  const ico = d['benef' + n + 'Ico'];
+  const icoOn = d['benef' + n + 'IcoEnabled'] !== false;
+
+  const titEl = document.getElementById('benefit-' + n + '-title');
+  const descEl = document.getElementById('benefit-' + n + '-desc');
+  const icoEl = document.getElementById('benefit-' + n + '-ico');
+
+  if (titEl && titulo != null && String(titulo).trim()) {
+    titEl.textContent = String(titulo).trim();
+  }
+  if (descEl && texto != null && String(texto).trim()) {
+    descEl.textContent = String(texto).trim();
+  }
+  if (icoEl) {
+    if (!icoOn) {
+      icoEl.style.display = 'none';
+    } else if (ico != null && String(ico).trim()) {
+      icoEl.textContent = String(ico).trim();
+      icoEl.style.display = '';
+    }
+    // Sem emoji no banco: mantém o SVG estático do HTML como fallback visual.
+  }
+}
+
+/** Aplica Sobre + Benefícios no DOM. Não quebra se faltar algum campo. */
+function aplicarConteudoDinamico(d) {
+  if (!d || typeof d !== 'object') return;
+
+  const aboutTitle = document.getElementById('about-title');
+  const aboutText = document.getElementById('about-text');
+
+  if (aboutTitle && d.sobreTitulo != null && String(d.sobreTitulo).trim()) {
+    aboutTitle.innerHTML = formatSobreTituloHtml(d.sobreTitulo);
+  }
+  if (aboutText && d.sobreTexto != null && String(d.sobreTexto).trim()) {
+    aboutText.textContent = String(d.sobreTexto).trim();
+  }
+
+  for (let i = 1; i <= 4; i++) aplicarBeneficioDinamico(i, d);
+}
+
+/**
+ * Busca o conteúdo dinâmico (Sobre + Benefícios) salvo pelo Admin.
+ * Fonte: /api/config (collection Config) — /api/settings só expõe pix_key/tokens.
+ * Em falha/timeout, o HTML estático permanece como fallback.
+ */
+async function carregarConteudoDinamico(preloaded) {
+  try {
+    let d = preloaded;
+    if (!d) {
+      const r = await fetch(API_URL + '/config');
+      if (!r.ok) return;
+      d = await r.json();
+    }
+    aplicarConteudoDinamico(d);
+  } catch {
+    /* mantém o conteúdo estático do HTML */
+  }
+}
+
 // Injeta nome da loja, sufixo do título e variáveis CSS da vitrine
 async function carregarConfigLoja() {
   try {
@@ -2974,6 +3050,8 @@ async function carregarConfigLoja() {
       promoBanner.style.display = '';
     }
 
+    // Sobre Nós + Benefícios (Admin → Mongo → vitrine)
+    await carregarConteudoDinamico(d);
 
     // Se o link de pagamento dependesse da chave (ex.: provider externo), ele deveria ser montado aqui.
     // Como o seu checkout usa S.paylink e ele está vindo vazio no DEF, manteremos um comportamento compatível:
@@ -3400,6 +3478,8 @@ async function carregarProdutosDoServidor(categoria) {
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
+  // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
+  // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
   await carregarConfigLoja();
   await carregarCategoriasDoServidor();
   await carregarStatsDestaque();
