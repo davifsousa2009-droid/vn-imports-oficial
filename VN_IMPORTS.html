@@ -22,10 +22,32 @@
 <link rel="canonical" href="https://vnimports.com.br/">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ1QiAj6Ha86rQxf1vqRwyl4uSR3nU07EAt1v78jpb6iQXmB17pOyw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+  /* Ícones Font Awesome — alinhamento com texto */
+  .ui-ico{display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:-0.05em}
+  .ui-ico-gap{margin-right:.45em}
+  .ui-ico-gap-l{margin-left:.45em}
+  .feat-ico{display:inline-flex;align-items:center;justify-content:center;color:var(--ink)}
+  .feat-ico i{font-size:1.15rem;width:1.35em;text-align:center}
+  #toastIco{display:inline-flex;align-items:center;justify-content:center;margin-right:10px;min-width:1.1em}
+  #toastIco i{font-size:1em}
+  .cdet-ico{display:flex;align-items:center;justify-content:center;width:28px;flex:none;color:var(--gold);font-size:16px}
+  .pv-stars,.rev-avg-stars,.rc-stars{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap}
+  .pv-stars i,.rev-avg-stars i,.rc-stars i,.rbar-row .ui-ico{color:var(--gold2);font-size:.85em}
+  .rc-badge{display:inline-flex;align-items:center;gap:6px}
+  .cat-arr{display:inline-flex;align-items:center}
+  .btn-fill .ui-ico,.btn-line .ui-ico,.sec-more .ui-ico{margin-left:.4em}
+  .pv-wish-btn,.phb-wish{display:inline-flex;align-items:center;gap:8px}
+  .ci-del,.vn-pix-close,.cd-close,.pv-lightbox-close{display:inline-flex;align-items:center;justify-content:center}
+  .btop{display:flex;align-items:center;justify-content:center}
+  .pay-method-ico{margin-right:8px;opacity:.9}
+  .fsuccess{display:flex;align-items:center;gap:8px}
+  .hero-season{display:inline-flex;align-items:center;gap:8px}
+  .hero-season::before{content:none !important;display:none}
+
   /* --- ESTILO DOS PRODUTOS REAIS --- */
 #lista-produtos-real {
     display: grid;
@@ -197,7 +219,7 @@ nav{
   width:fit-content;
   margin-bottom:6px;
 }
-.hero-season::before{content:'✦';display:inline-block;color:var(--gold)}
+.hero-season::before{content:none;display:none}
 
 .hero-title{
   font-family:var(--sans);
@@ -1284,7 +1306,7 @@ footer{background:var(--ink);color:var(--bg)}
 .fi.vis{opacity:1;transform:none}
 
 /* ══════════════════════════════════════
-   PAINEL DE EDIÇÃO — botão ⚙️
+   PAINEL DE EDIÇÃO — botão de configurações
 ══════════════════════════════════════ */
 .edit-fab{
   position:fixed;bottom:28px;right:28px;z-index:700;
@@ -1508,14 +1530,14 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <!-- LEFT: texto -->
   <div class="hero-left">
 
-    <div class="hero-season">Coleção Exclusiva</div>
+    <div class="hero-season"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i>Coleção Exclusiva</div>
     <h1 class="hero-title" id="heroTitle">
       Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
     </h1>
     <p class="hero-lead" id="heroDesc">Peças selecionadas para quem exige qualidade e presença em cada detalhe.</p>
 
     <div class="hero-btns">
-      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção →</button>
+      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção <i class="fa-solid fa-arrow-right ui-ico ui-ico-gap-l" aria-hidden="true"></i></button>
       <button class="btn-line" onclick="scrollTo_('sec-cats')" id="heroCtaSecondary">Categorias</button>
     </div>
 
@@ -1554,7 +1576,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <h2 class="sec-title">Nossos <em>Produtos</em></h2>
 
       </div>
-      <a href="#" class="sec-more">Ver todos →</a>
+      <a href="#" class="sec-more">Ver todos <i class="fa-solid fa-arrow-right ui-ico" aria-hidden="true"></i></a>
     </div>
     <div class="sec-prod-wrap" id="secProdWrap">
       <aside class="filters" id="filtersAside" aria-label="Filtros">
@@ -1598,7 +1620,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="banner-eye" id="promoEyebrowEl">Oferta Especial</div>
     <h2 class="banner-title" id="promoTituloEl">Até 40% OFF<br>em <em>peças selecionadas</em></h2>
     <p class="banner-sub" id="promoSubtituloEl">Aproveite nossa liquidação de fim de temporada.</p>
-    <button class="btn-light" onclick="filterAndGo('all')" id="promoCtaEl">Ver Promoções →</button>
+    <button class="btn-light" onclick="filterAndGo('all')" id="promoCtaEl">Ver Promoções <i class="fa-solid fa-arrow-right ui-ico" aria-hidden="true"></i></button>
   </div>
 </div>
 
@@ -1662,32 +1684,32 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <div class="rev-summary">
       <div style="text-align:center">
         <div class="rev-avg-num" id="revAvgNum">—</div>
-        <div class="rev-avg-stars">★★★★★</div>
+        <div class="rev-avg-stars" aria-hidden="true"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
         <div class="rev-avg-label" id="revAvgLabel">0 avaliações</div>
       </div>
       <div class="rev-bars">
         <div class="rbar-row">
-          <span style="width:32px">5★</span>
+          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">5 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
           <div class="rbar-track"><div class="rbar-fill" id="revBar5" style="width:0%"></div></div>
           <span id="revBar5Txt" style="width:34px;text-align:right">0%</span>
         </div>
         <div class="rbar-row">
-          <span style="width:32px">4★</span>
+          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">4 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
           <div class="rbar-track"><div class="rbar-fill" id="revBar4" style="width:0%"></div></div>
           <span id="revBar4Txt" style="width:34px;text-align:right">0%</span>
         </div>
         <div class="rbar-row">
-          <span style="width:32px">3★</span>
+          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">3 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
           <div class="rbar-track"><div class="rbar-fill" id="revBar3" style="width:0%"></div></div>
           <span id="revBar3Txt" style="width:34px;text-align:right">0%</span>
         </div>
         <div class="rbar-row">
-          <span style="width:32px">2★</span>
+          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">2 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
           <div class="rbar-track"><div class="rbar-fill" id="revBar2" style="width:0%"></div></div>
           <span id="revBar2Txt" style="width:34px;text-align:right">0%</span>
         </div>
         <div class="rbar-row">
-          <span style="width:32px">1★</span>
+          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">1 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
           <div class="rbar-track"><div class="rbar-fill" id="revBar1" style="width:0%"></div></div>
           <span id="revBar1Txt" style="width:34px;text-align:right">0%</span>
         </div>
@@ -1708,11 +1730,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <div class="rev-fg">
             <label class="rev-fl" for="revEstrelas">Sua nota</label>
             <select class="rev-inp" id="revEstrelas" required>
-              <option value="5" selected>★★★★★ Excelente</option>
-              <option value="4">★★★★ Muito bom</option>
-              <option value="3">★★★ Bom</option>
-              <option value="2">★★ Regular</option>
-              <option value="1">★ Ruim</option>
+              <option value="5" selected>5 estrelas — Excelente</option>
+              <option value="4">4 estrelas — Muito bom</option>
+              <option value="3">3 estrelas — Bom</option>
+              <option value="2">2 estrelas — Regular</option>
+              <option value="1">1 estrela — Ruim</option>
             </select>
           </div>
         </div>
@@ -1791,7 +1813,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceProduct" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteProd">299</span> &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal" id="anParcProd">12</em>x sem juros</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
+    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot2"></span></button>
 <button class="nav-btn" onclick="openCart()">
@@ -1804,25 +1826,25 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
   </div></nav>
   <div class="pv-inner">
-    <button class="pv-back" onclick="goHome()">← Voltar aos produtos</button>
+    <button class="pv-back" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar aos produtos</button>
     <div class="pv-grid">
       <div class="pv-gallery" id="pvGallery"></div>
       <div class="pv-gallery-dots" id="pvGalleryDots"></div>
 
       <div class="pv-lightbox" id="pvLightbox" onclick="onLightboxBackdropClick(event)">
-        <button class="pv-lightbox-close" onclick="closeLightbox()" aria-label="Fechar">✕</button>
-        <button class="pv-lightbox-nav pv-lightbox-prev" onclick="event.stopPropagation();lightboxNav(-1)" aria-label="Foto anterior">←</button>
+        <button class="pv-lightbox-close" onclick="closeLightbox()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        <button class="pv-lightbox-nav pv-lightbox-prev" onclick="event.stopPropagation();lightboxNav(-1)" aria-label="Foto anterior"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
         <div class="pv-lightbox-stage" id="pvLightboxStage" onclick="event.stopPropagation()">
           <img id="pvLightboxImg" src="" alt="">
           <div class="pv-lightbox-lens" id="pvLightboxLens"></div>
         </div>
-        <button class="pv-lightbox-nav pv-lightbox-next" onclick="event.stopPropagation();lightboxNav(1)" aria-label="Próxima foto">→</button>
+        <button class="pv-lightbox-nav pv-lightbox-next" onclick="event.stopPropagation();lightboxNav(1)" aria-label="Próxima foto"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
         <div class="pv-lightbox-count" id="pvLightboxCount"></div>
       </div>
       <div class="pv-info">
         <div class="pv-brand" id="pvBrand"></div>
         <h1 class="pv-name" id="pvName"></h1>
-        <div class="pv-stars">★★★★★ <span>4.9 · 127 avaliações</span></div>
+        <div class="pv-stars" aria-hidden="true"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i> <span>4.9 · 127 avaliações</span></div>
         <div class="pv-price" id="pvPrice"></div>
         <div class="pv-inst" id="pvInst"></div>
         <hr class="pv-div">
@@ -1831,7 +1853,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
           <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
-          <button class="pv-wish-btn" id="pvWishBtn">♡ &nbsp;Adicionar aos Favoritos</button>
+          <button class="pv-wish-btn" id="pvWishBtn"><i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos</button>
         </div>
         <div class="pv-feats">
           <div class="pv-feat" id="pvFeatFrete" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$<span id="pvFeatFreteVal">299</span></div>
@@ -1848,7 +1870,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceWishlist" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteWl">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
+    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
 <button class="nav-btn" onclick="openCart()">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M6 7h15l-1.5 14H7.5L6 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
@@ -1869,7 +1891,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceContact" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteCt">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()">← Voltar à loja</a></li></ul>
+    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot3"></span></button>
 <button class="nav-btn" onclick="openCart()">
@@ -1891,7 +1913,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div><div class="cdet-label">Endereço</div><div class="cdet-val">Brasil</div></div></div>
           <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.5 2.1L8 10.2a16 16 0 0 0 6 6l1.4-1.4a2 2 0 0 1 2-.5c1 .3 2 .5 3 .7a2 2 0 0 1 1.6 2z"/></svg></div><div><div class="cdet-label">Telefone</div><div class="cdet-val" id="contatoTelefoneDetalhe">(11) 9999-0000</div></div></div>
           <div class="cdet"><div class="cdet-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div><div><div class="cdet-label">E-mail</div><div class="cdet-val" id="contatoEmailDetalhe">oi@vnimports.com.br</div></div></div>
-          <div class="cdet"><div class="cdet-ico">⏰</div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
+          <div class="cdet"><div class="cdet-ico"><i class="fa-regular fa-clock" aria-hidden="true"></i></div><div><div class="cdet-label">Horário</div><div class="cdet-val">Seg–Sex, 9h às 18h</div></div></div>
         </div>
       </div>
       <div>
@@ -1912,8 +1934,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
             </select>
           </div>
           <div class="fgroup"><label class="flabel">Mensagem</label><textarea class="ftextarea" placeholder="Descreva sua dúvida…" required></textarea></div>
-          <button type="submit" class="btn-fill btn-full">Enviar Mensagem →</button>
-          <div class="fsuccess" id="formOk">✓ &nbsp;Mensagem enviada! Respondemos em até 24h.</div>
+          <button type="submit" class="btn-fill btn-full">Enviar Mensagem <i class="fa-solid fa-arrow-right ui-ico" aria-hidden="true"></i></button>
+          <div class="fsuccess" id="formOk"><i class="fa-solid fa-check ui-ico" aria-hidden="true"></i>Mensagem enviada! Respondemos em até 24h.</div>
         </form>
       </div>
     </div>
@@ -1923,24 +1945,24 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- CART DRAWER -->
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
-  <div class="cd-head"><h3>Carrinho</h3><button class="cd-close" onclick="closeCart()">✕</button></div>
+  <div class="cd-head"><h3>Carrinho</h3><button class="cd-close" onclick="closeCart()" aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cd-items" id="cdItems"></div>
   <div id="cdFoot" style="display:none">
     <div class="cd-foot">
       <div class="cd-row"><span>Subtotal</span><span id="cdSub">—</span></div>
       <div class="cd-row"><span>Frete</span><span style="color:var(--green)">GRÁTIS</span></div>
       <div class="cd-total"><span>Total</span><span id="cdTotal">—</span></div>
-      <button class="btn-fill btn-full" onclick="checkout()">Finalizar Compra →</button>
+      <button class="btn-fill btn-full" onclick="checkout()">Finalizar Compra <i class="fa-solid fa-arrow-right ui-ico" aria-hidden="true"></i></button>
       <div class="cd-secure"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Pagamento 100% seguro</div>
     </div>
   </div>
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastMsg"></span></div>
+<div class="toast" id="toast"><span id="toastIco"><i class="fa-solid fa-check" aria-hidden="true"></i></span><span id="toastMsg"></span></div>
 
 <!-- BACK TOP -->
-<button class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
 
 <!-- ════════════════════════════════════════════════
      JAVASCRIPT
@@ -2239,8 +2261,15 @@ function openProd(id){
   // wishlist btn
   const wb = document.getElementById('pvWishBtn');
   const inWL = wl.find(w=>w.id===p.id);
-  wb.innerHTML = inWL?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos';
-  wb.onclick = ()=>{ toggleWL(p.id); wb.innerHTML=wl.find(w=>w.id===p.id)?'♥ &nbsp;Nos Favoritos':'♡ &nbsp;Adicionar aos Favoritos'; };
+  wb.innerHTML = inWL
+    ? '<i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Nos Favoritos'
+    : '<i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos';
+  wb.onclick = ()=>{
+    toggleWL(p.id);
+    wb.innerHTML = wl.find(w=>w.id===p.id)
+      ? '<i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Nos Favoritos'
+      : '<i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos';
+  };
   document.getElementById('pvAddBtn').onclick = ()=>{
     const sel = (window.__vn_selectedSize || '').trim();
     if(!sel){
@@ -2373,8 +2402,8 @@ function selSize(el){
 /* ─── WISHLIST ─── */
 function toggleWL(id){
   const p=S.products[id], idx=wl.findIndex(w=>w.id===id);
-  if(idx>-1){ wl.splice(idx,1); showToast('♡','Removido dos favoritos'); }
-  else { wl.push(p); showToast('♥','Adicionado aos favoritos!'); }
+  if(idx>-1){ wl.splice(idx,1); showToast('heartOutline','Removido dos favoritos'); }
+  else { wl.push(p); showToast('heart','Adicionado aos favoritos!'); }
   syncDots();
   // Atualiza só o coração desse produto no grid, sem re-renderizar tudo
   // (evitava que a animação de entrada dos cards repetisse a cada favorito).
@@ -2389,14 +2418,14 @@ function toggleWL(id){
 function renderWL(){
   const g=document.getElementById('wGrid');
   document.getElementById('wSubtitle').textContent=wl.length+' item'+(wl.length!==1?'s':'')+' salvo'+(wl.length!==1?'s':'');
-  if(!wl.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><div style="font-size:44px;margin-bottom:12px">♡</div><p>Nenhum favorito ainda.<br><br><button class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
+  if(!wl.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><div style="font-size:44px;margin-bottom:12px;color:var(--muted)"><i class="fa-regular fa-heart" aria-hidden="true"></i></div><p>Nenhum favorito ainda.<br><br><button class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
   g.innerHTML=wl.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
         ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-hover-btns">
           <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
-          <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()">♥ Remover</button>
+          <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()"><i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Remover</button>
         </div>
       </div>
       <div class="prod-info">
@@ -2411,7 +2440,7 @@ function renderWL(){
 function addCart(p){
   const sel = (window.__vn_selectedSize || '').trim();
   if(!sel){
-    showToast('⚠️','Selecione um tamanho.');
+    showToast('warn','Selecione um tamanho.');
     return;
   }
 
@@ -2425,7 +2454,7 @@ function addCart(p){
   persistCart();
   syncDots();
   renderCart();
-  showToast('✓', p.name+' adicionado!');
+  showToast('ok', p.name+' adicionado!');
   setTimeout(openCart,350);
 }
 
@@ -2468,7 +2497,7 @@ function renderCart(){
           <button class="cqb" onclick="chQty(${i},1)">+</button>
         </div>
       </div>
-      <button class="ci-del" onclick="delItem(${i})">✕</button>
+<button class="ci-del" onclick="delItem(${i})"><i class="fa-solid fa-trash-can ui-ico" aria-hidden="true"></i></button>
     </div>`).join('');
 }
 
@@ -2498,7 +2527,7 @@ function showPaymentConfirmation(orderId, total) {
   darkOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);z-index:2000;display:flex;align-items:center;justify-content:center';
   darkOverlay.innerHTML = `
     <div style="width:min(480px,94vw);background:#0F0F0F;border:1px solid rgba(196,165,90,.35);border-radius:16px;box-shadow:0 18px 70px rgba(0,0,0,.55);padding:28px 24px;text-align:center;font-family:var(--sans)">
-      <div style="font-size:42px;margin-bottom:12px;color:#2E6B47">✓</div>
+      <div style="font-size:42px;margin-bottom:12px;color:#2E6B47"><i class="fa-solid fa-circle-check ui-ico" aria-hidden="true"></i></div>
       <div style="font-family:var(--serif);font-size:22px;color:#F7F4F0;margin-bottom:8px">Pagamento confirmado</div>
       <div style="font-size:13px;color:rgba(247,244,240,.6);line-height:1.7;margin-bottom:18px">
         Recebemos seu pagamento${total != null ? ' de <strong style="color:#C4A55A">' + formatBRL(total) + '</strong>' : ''}.
@@ -2508,7 +2537,7 @@ function showPaymentConfirmation(orderId, total) {
     </div>`;
   document.body.appendChild(darkOverlay);
   darkOverlay.addEventListener('click', (e) => { if (e.target === darkOverlay) closeVnPayOverlay(); });
-  showToast('✓', 'Pagamento aprovado!');
+  showToast('success', 'Pagamento aprovado!');
 }
 
 function startPaymentPolling(orderId, total) {
@@ -2602,7 +2631,7 @@ async function fallbackPixSemMp(orderId, orderTotal, pixKeyFallback) {
  */
 async function checkout() {
   if (!cart.length) {
-    showToast('⚠️', 'Seu carrinho está vazio.');
+    showToast('warning', 'Seu carrinho está vazio.');
     return;
   }
 
@@ -2648,7 +2677,7 @@ async function checkout() {
           <div style="font-family:var(--sans);font-size:12px;color:rgba(196,165,90,.9);letter-spacing:.12em;text-transform:uppercase">Checkout</div>
           <div style="font-family:var(--serif);font-size:18px;color:#F7F4F0">Finalizar compra</div>
         </div>
-        <button type="button" id="vnCkClose" style="width:34px;height:34px;border-radius:10px;border:1px solid rgba(247,244,240,.18);background:transparent;color:#F7F4F0;cursor:pointer">✕</button>
+        <button type="button" id="vnCkClose" style="width:34px;height:34px;border-radius:10px;border:1px solid rgba(247,244,240,.18);background:transparent;color:#F7F4F0;cursor:pointer"><i class="fa-solid fa-xmark ui-ico" aria-hidden="true"></i></button>
       </div>
       <form id="vnCheckoutForm" style="padding:18px 20px;font-family:var(--sans)">
         <div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,244,240,.7);margin-bottom:6px"><span>Produtos</span><span id="vnCkSub">${formatBRL(subtotal)}</span></div>
@@ -2944,7 +2973,7 @@ async function checkout() {
         if (payD.approved || payD.status === 'approved') {
           showPaymentConfirmation(orderId, orderTotal);
         } else {
-          showToast('⚠️', 'Pagamento em análise: ' + (payD.status || 'pendente'));
+          showToast('warning', 'Pagamento em análise: ' + (payD.status || 'pendente'));
           startPaymentPolling(orderId, orderTotal);
           closeVnPayOverlay();
         }
@@ -2982,7 +3011,7 @@ async function checkout() {
         errEl.textContent = e.message || 'Erro no checkout.';
         errEl.style.display = 'block';
       }
-      showToast('⚠️', e.message || 'Erro no checkout.');
+      showToast('warning', e.message || 'Erro no checkout.');
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Pagar ' + formatBRL(Math.round((subtotal + (Number(freteSelecionado.price) || 0)) * 100) / 100);
@@ -3028,7 +3057,7 @@ function showMpPixModal({ qrCode, qrCodeBase64, orderTotal, orderId }) {
           <div class="vn-pix-sub">Pagamento Pix</div>
           <div class="vn-pix-title">Escaneie ou copie o código</div>
         </div>
-        <button class="vn-pix-close" type="button" id="vnPixCloseBtn">✕</button>
+        <button class="vn-pix-close" type="button" id="vnPixCloseBtn"><i class="fa-solid fa-xmark ui-ico" aria-hidden="true"></i></button>
       </div>
       <div class="vn-pix-body">
         ${imgSrc ? `<div class="vn-pix-qr"><img src="${imgSrc}" alt="QR Code Pix"></div>` : ''}
@@ -3054,7 +3083,7 @@ function showMpPixModal({ qrCode, qrCodeBase64, orderTotal, orderId }) {
     document.getElementById('vnPixCopyBtn')?.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(copia);
-        showToast('✓', 'Código Pix copiado!');
+        showToast('success', 'Código Pix copiado!');
       } catch {
         const ta = document.createElement('textarea');
         ta.value = copia;
@@ -3099,7 +3128,7 @@ function showPixModal(pixValue, isEmpty, cartTotal, isCopiaECola){
           <div class="vn-pix-sub">Pagamento Seguro</div>
           <div class="vn-pix-title">Finalize seu Pagamento</div>
         </div>
-        <button class="vn-pix-close" type="button" id="vnPixCloseBtn">✕</button>
+        <button class="vn-pix-close" type="button" id="vnPixCloseBtn"><i class="fa-solid fa-xmark ui-ico" aria-hidden="true"></i></button>
       </div>
       <div class="vn-pix-body">
         <div class="vn-pix-label">${isCopiaECola ? 'Pix Copia e Cola — valor já travado' : 'Chave Pix para pagamento'}</div>
@@ -3125,7 +3154,7 @@ function showPixModal(pixValue, isEmpty, cartTotal, isCopiaECola){
     document.getElementById('vnPixCopyBtn')?.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(String(pixValue));
-        showToast('✓', msgCopiado);
+        showToast('success', msgCopiado);
       } catch {
         const ta = document.createElement('textarea');
         ta.value = String(pixValue);
@@ -3134,7 +3163,7 @@ function showPixModal(pixValue, isEmpty, cartTotal, isCopiaECola){
         ta.select();
         document.execCommand('copy');
         ta.remove();
-        showToast('✓', msgCopiado);
+        showToast('success', msgCopiado);
       }
     });
   }
@@ -3186,7 +3215,7 @@ function doSearch(q){
         </div>`).join('')}</div>`
     : `<div style="padding:16px;font-size:13px;color:var(--muted)">Nenhum resultado para "${query}"</div>`;
 
-  // ✅ Filtra a vitrine em tempo real
+  // Filtra a vitrine em tempo real
   renderGrid(found);
 }
 
@@ -3203,9 +3232,7 @@ function escHtml(s){
 
 function starsToText(n){
   const k = Math.max(1, Math.min(5, Number(n)||0));
-  return '★'.repeat(k);
-}
-
+  return '<i class="fa-solid fa-star ui-ico" aria-hidden="true"></i>'.repeat(k);
 function carregarReviewsPublic(){
   return (async () => {
     try{
@@ -3257,7 +3284,7 @@ function renderReviewsPublic(list){
   if(!grid) return;
 
   grid.innerHTML = safe.map(r=>{
-    const stars = '★'.repeat(Math.max(1, Math.min(5, Number(r.estrelas)||0)));
+    const stars = '<i class="fa-solid fa-star ui-ico" aria-hidden="true"></i>'.repeat(Math.max(1, Math.min(5, Number(r.estrelas)||0)));
     const texto = escHtml(r.comentario);
     const nome = escHtml(r.nome);
     const dt = r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '';
@@ -3270,7 +3297,7 @@ function renderReviewsPublic(list){
           <div>
             <div class="rc-name">${nome}</div>
             <div class="rc-date">${dt}</div>
-            <div class="rc-badge">✓ Depoimento</div>
+            <div class="rc-badge"><i class="fa-solid fa-check ui-ico ui-ico-gap" aria-hidden="true"></i>Depoimento</div>
           </div>
         </div>
       </div>`;
@@ -3331,8 +3358,19 @@ function submitForm(e){ e.preventDefault(); const ok=document.getElementById('fo
 /* ─── TOAST ─── */
 let toastT;
 function showToast(ico,msg){
-  document.getElementById('toastIco').textContent=ico;
-  document.getElementById('toastMsg').textContent=msg;
+  const iconMap = {
+    success: 'fa-check',
+    warning: 'fa-triangle-exclamation',
+    warn: 'fa-triangle-exclamation',
+    ok: 'fa-circle-check',
+    heart: 'fa-heart',
+    heartOutline: 'fa-heart',
+    info: 'fa-info-circle',
+    error: 'fa-circle-xmark'
+  };
+  const iconClass = iconMap[ico] || 'fa-check';
+  document.getElementById('toastIco').innerHTML = `<i class="fa-solid ${iconClass}" aria-hidden="true"></i>`;
+  document.getElementById('toastMsg').textContent = msg;
   const t=document.getElementById('toast'); t.classList.add('on');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),3000);
 }
@@ -3543,7 +3581,7 @@ async function carregarConfigLoja() {
     const igEl = document.getElementById('igLink');
     if (igEl && ig) igEl.href = ig;
 
-    // ✅ Integração Pix (chave) — o checkout precisa receber isso.
+    // Integração Pix (chave) — o checkout precisa receber isso.
     // Neste projeto, o checkout é via S.paylink. Como não existe montagem de paylink aqui,
     // ao menos garantimos que a chavePix não seja ignorada e fica disponível.
     const pix = (d.chavePix && String(d.chavePix).trim()) || '';
@@ -4048,7 +4086,7 @@ async function carregarProdutosDoServidor(categoria) {
     // (só na carga inicial sem filtro — filtrado, S.products teria só 1 categoria).
     if (!categoria || categoria === 'all') renderCategoriasHome();
   } catch (err) {
-    console.warn('⚠️ Servidor offline.', err.message);
+    console.warn('Servidor offline.', err.message);
     S.products = [];
     renderGrid([]);
   }
