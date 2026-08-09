@@ -229,11 +229,18 @@ nav{
   letter-spacing:-.03em;
   margin-bottom:0;
   color:var(--ink);
+  /* Inicialmente escondemos o título para evitar FOUC enquanto a fonte carrega */
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
 }
-.hero-title em{
-  font-style:italic;
-  color:var(--gold2);
-  font-weight:900;
+.hero-title.font-ready, .hero-title.is-ready { opacity: 1; }
+
+.hero-title em,
+.hero-title i,
+.hero-title strong {
+  font-style: italic;
+  color: var(--gold2);
+  font-weight: 900;
 }
 
 .hero-lead{
@@ -3659,9 +3666,10 @@ async function carregarConfigLoja() {
     try {
       const heroTitleEl = document.getElementById('heroTitle');
       if (heroTitleEl && d.heroTitle && String(d.heroTitle).trim()) {
+        // Atualiza o conteúdo do título (pode conter <em>)
         heroTitleEl.innerHTML = d.heroTitle;
-        revelarConteudoEl(heroTitleEl);
       }
+
       const fontName = d.heroFont ? String(d.heroFont).trim() : '';
       if (fontName) {
         const fontId = 'dynamicHeroFont';
@@ -3673,7 +3681,35 @@ async function carregarConfigLoja() {
           link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(familyParam) + ':wght@400;700&display=swap';
           document.head.appendChild(link);
         }
-        if (heroTitleEl) heroTitleEl.style.fontFamily = '"' + fontName + '", var(--serif)';
+
+        // Mantemos o título invisível até a fonte carregar para evitar FOUC.
+        if (heroTitleEl) {
+          heroTitleEl.classList.remove('font-ready');
+          // tenta usar Font Loading API quando disponível
+          const familyForLoad = '1em "' + fontName + '"';
+          const loadPromise = (document.fonts && document.fonts.load)
+            ? document.fonts.load(familyForLoad)
+            : Promise.resolve();
+
+          // Aplica a família e mostra o título quando a fonte estiver pronta (ou em timeout)
+          const timeout = new Promise((resolve) => setTimeout(resolve, 1200));
+          Promise.race([loadPromise, timeout]).then(() => {
+            if (heroTitleEl) {
+              heroTitleEl.style.fontFamily = '"' + fontName + '", var(--serif)';
+              heroTitleEl.classList.add('font-ready');
+              revelarConteudoEl(heroTitleEl);
+            }
+          }).catch(() => {
+            if (heroTitleEl) {
+              heroTitleEl.classList.add('font-ready');
+              revelarConteudoEl(heroTitleEl);
+            }
+          });
+        }
+      } else if (heroTitleEl) {
+        // sem fonte custom, apenas revela o título
+        heroTitleEl.classList.add('font-ready');
+        revelarConteudoEl(heroTitleEl);
       }
     } catch (e) {
       // não crítico — fallback preservado
