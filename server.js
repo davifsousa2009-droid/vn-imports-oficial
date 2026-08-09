@@ -1318,7 +1318,11 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       promoCtaTexto
     } = req.body;
 
-    const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
+    // Build a partial `dados` object: only include fields explicitly provided
+    // by the client. This avoids overwriting existing DB values with defaults
+    // when the request omits certain keys (fixes the "store name resets" bug).
+    const dados = {};
+    if (nomeLoja !== undefined) dados.nomeLoja = String(nomeLoja).trim() || shopConfig.nomeLoja;
     if (chavePix !== undefined) dados.chavePix = String(chavePix).trim();
     if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
@@ -1327,7 +1331,6 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
     if (cidadeLoja !== undefined) dados.cidadeLoja = String(cidadeLoja).trim().toUpperCase().slice(0, 15);
-    if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
 
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
