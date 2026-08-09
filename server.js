@@ -804,6 +804,34 @@ app.get('/api/produtos/:id', async (req, res) => {
   }
 });
 
+// Busca por termo: nome, categoria ou descrição (case-insensitive). Limita resultados.
+app.get('/api/produtos/search', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.json([]);
+
+    // Escapa caracteres especiais para uso em regex
+    const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(esc, 'i');
+
+    const produtos = await Produto.find({
+      $or: [
+        { nome: regex },
+        { categoria: regex },
+        { descricao: regex }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .lean();
+
+    res.json(produtos);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro na busca de produtos', detalhe: err.message });
+  }
+});
+
 app.post('/api/produtos', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
