@@ -384,6 +384,22 @@ tr:hover td{background:#FAFAF8}
             </div>
           </div>
 
+            <div style="height:12px"></div>
+            <div class="fg fw">
+              <div class="card-title" style="font-size:14px;margin-top:6px">Aparência da Vitrine</div>
+              <p style="font-size:13px;color:#888;line-height:1.3;margin:6px 0 10px">Controle o título principal da vitrine e a fonte usada nele.</p>
+              <label class="fl">Título do Hero (HTML simples permitido: &lt;em&gt;)</label>
+              <input class="fi" id="sys-heroTitle" placeholder="Ex: Qualidade que <em>fala</em> antes de você" type="text" autocomplete="off">
+              <label class="fl" style="margin-top:8px">Fonte do Hero</label>
+              <select class="fsel" id="sys-heroFont">
+                <option>Playfair Display</option>
+                <option>Montserrat</option>
+                <option>Cinzel</option>
+                <option selected>Lora</option>
+                <option>Inter</option>
+              </select>
+            </div>
+
           <div class="fg" style="margin-top:18px">
             <div class="card-title" style="font-size:13px;margin:0 0 10px">Benefícios</div>
 
@@ -1623,6 +1639,37 @@ async function loadSettings() {
     // mp_token/me_token não são expostos publicamente
     document.getElementById('set-mpToken').value = '';
     document.getElementById('set-meToken').value = '';
+
+    // Também carregamos o conteúdo dinâmico salvo em /api/config (sobre, benefícios e agora hero)
+    try {
+      const rc = await fetch(API + '/config');
+      if (rc.ok) {
+        const cd = await rc.json();
+        document.getElementById('sys-sobreTitulo').value = cd.sobreTitulo || '';
+        document.getElementById('sys-sobreTexto').value = cd.sobreTexto || '';
+        document.getElementById('sys-b1Titulo').value = cd.benef1Titulo || '';
+        document.getElementById('sys-b1Texto').value = cd.benef1Texto || '';
+        document.getElementById('sys-b1Ico').value = cd.benef1Ico || '';
+        document.getElementById('sys-b1IcoEnabled').checked = !!cd.benef1IcoEnabled;
+        document.getElementById('sys-b2Titulo').value = cd.benef2Titulo || '';
+        document.getElementById('sys-b2Texto').value = cd.benef2Texto || '';
+        document.getElementById('sys-b2Ico').value = cd.benef2Ico || '';
+        document.getElementById('sys-b2IcoEnabled').checked = !!cd.benef2IcoEnabled;
+        document.getElementById('sys-b3Titulo').value = cd.benef3Titulo || '';
+        document.getElementById('sys-b3Texto').value = cd.benef3Texto || '';
+        document.getElementById('sys-b3Ico').value = cd.benef3Ico || '';
+        document.getElementById('sys-b3IcoEnabled').checked = !!cd.benef3IcoEnabled;
+        document.getElementById('sys-b4Titulo').value = cd.benef4Titulo || '';
+        document.getElementById('sys-b4Texto').value = cd.benef4Texto || '';
+        document.getElementById('sys-b4Ico').value = cd.benef4Ico || '';
+        document.getElementById('sys-b4IcoEnabled').checked = !!cd.benef4IcoEnabled;
+
+        document.getElementById('sys-heroTitle').value = cd.heroTitle || '';
+        if (cd.heroFont) document.getElementById('sys-heroFont').value = cd.heroFont;
+      }
+    } catch (e) {
+      // ignore config fetch errors here; tokens still loaded
+    }
   } catch {
     showMsg(document.getElementById('setmsg'), 'Servidor offline. Rode: node server.js', 'er');
   }
@@ -1640,6 +1687,8 @@ async function salvarSettings() {
   // Conteúdo dinâmico (collection Config via /api/config)
   const sobreTitulo = document.getElementById('sys-sobreTitulo')?.value ?? '';
   const sobreTexto = document.getElementById('sys-sobreTexto')?.value ?? '';
+  const heroTitle = document.getElementById('sys-heroTitle')?.value ?? '';
+  const heroFont = document.getElementById('sys-heroFont')?.value ?? '';
 
   const benef1Titulo = document.getElementById('sys-b1Titulo')?.value ?? '';
   const benef1Texto = document.getElementById('sys-b1Texto')?.value ?? '';
@@ -1720,6 +1769,7 @@ async function salvarSettings() {
         benef4Texto,
         benef4IcoEnabled,
         benef4Ico
+        ,heroTitle,heroFont
       };
 
       const r2 = await fetch(API + '/config', {

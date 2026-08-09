@@ -3655,6 +3655,30 @@ async function carregarConfigLoja() {
       if (heroImgEl) heroImgEl.src = heroImgFinal;
     }
 
+    // Hero título dinâmico + fonte escolhida pelo admin
+    try {
+      const heroTitleEl = document.getElementById('heroTitle');
+      if (heroTitleEl && d.heroTitle && String(d.heroTitle).trim()) {
+        heroTitleEl.innerHTML = d.heroTitle;
+        revelarConteudoEl(heroTitleEl);
+      }
+      const fontName = d.heroFont ? String(d.heroFont).trim() : '';
+      if (fontName) {
+        const fontId = 'dynamicHeroFont';
+        if (!document.getElementById(fontId)) {
+          const familyParam = fontName.replace(/\s+/g, '+');
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.id = fontId;
+          link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(familyParam) + ':wght@400;700&display=swap';
+          document.head.appendChild(link);
+        }
+        if (heroTitleEl) heroTitleEl.style.fontFamily = '"' + fontName + '", var(--serif)';
+      }
+    } catch (e) {
+      // não crítico — fallback preservado
+    }
+
     // Barra de anúncio (frete grátis / parcelamento): só aparece se o admin
     // realmente ativou. Antes era texto fixo prometendo algo que a loja podia
     // nem oferecer (ex: parcelamento sem ter pagamento por cartão configurado).

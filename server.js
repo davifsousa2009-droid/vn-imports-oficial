@@ -570,6 +570,9 @@ const ConfigSchema = new mongoose.Schema({
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
   heroImagemUrl: { type: String, default: '' },
+  // Título do hero e fonte selecionada pelo admin
+  heroTitle: { type: String, default: '' },
+  heroFont: { type: String, default: 'Lora' },
 
   // ✅ NOVO: Configurações dinâmicas de conteúdo do site (Admin → vitrine)
   sobreTitulo: { type: String, default: 'Cibelle' },
@@ -678,6 +681,10 @@ function mergePublicConfig(doc) {
     promoTitulo: String(doc?.promoTitulo ?? '').trim(),
     promoSubtitulo: String(doc?.promoSubtitulo ?? '').trim(),
     promoCtaTexto: String(doc?.promoCtaTexto ?? '').trim() || 'Ver promoções'
+    ,
+    // Hero dinâmico: título (texto/HTML limitado) e fonte escolhida pelo admin
+    heroTitle: String(doc?.heroTitle ?? '').trim() || '',
+    heroFont: String(doc?.heroFont ?? 'Lora').trim()
   };
 }
 
@@ -1325,6 +1332,10 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
     if (heroImagemUrl !== undefined) dados.heroImagemUrl = String(heroImagemUrl).trim();
+    
+    // ✅ NOVO: hero title + fonte
+    if (req.body?.heroTitle !== undefined) dados.heroTitle = String(req.body.heroTitle).trim();
+    if (req.body?.heroFont !== undefined) dados.heroFont = String(req.body.heroFont).trim();
 
     // ✅ NOVO: Conteúdo dinâmico (About + Benefícios)
     if (sobreTitulo !== undefined) dados.sobreTitulo = String(sobreTitulo).trim();
