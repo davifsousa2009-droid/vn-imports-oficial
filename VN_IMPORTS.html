@@ -3233,6 +3233,8 @@ function escHtml(s){
 function starsToText(n){
   const k = Math.max(1, Math.min(5, Number(n)||0));
   return '<i class="fa-solid fa-star ui-ico" aria-hidden="true"></i>'.repeat(k);
+}
+
 function carregarReviewsPublic(){
   return (async () => {
     try{
