@@ -893,22 +893,22 @@ nav{
   transform:translateY(4px);
   transition:opacity .35s ease, transform .35s ease;
 }
-#sec-about .feat-title,
-#sec-about .feat-desc{
+#view-sobre .feat-title,
+#view-sobre .feat-desc{
   opacity:0;
   transition:opacity .35s ease;
 }
 .about-title.is-loading,
 .about-text.is-loading,
-#sec-about .feat-title.is-loading,
-#sec-about .feat-desc.is-loading{
+.view#view-sobre .feat-title.is-loading,
+.view#view-sobre .feat-desc.is-loading{
   opacity:1;
   transform:none;
 }
 .about-title.is-ready,
 .about-text.is-ready,
-#sec-about .feat-title.is-ready,
-#sec-about .feat-desc.is-ready{
+.view#view-sobre .feat-title.is-ready,
+.view#view-sobre .feat-desc.is-ready{
   opacity:1;
   transform:none;
 }
@@ -980,8 +980,8 @@ nav{
     min-height:0;
   }
   .about-benefits .feat{gap:12px}
-  #sec-about .feat-title{font-size:12px}
-  #sec-about .feat-desc{font-size:11px;line-height:1.45}
+  #view-sobre .feat-title{font-size:12px}
+  #view-sobre .feat-desc{font-size:11px;line-height:1.45}
 }
 @media(max-width:480px){
   .about-col{padding:18px 16px 14px}
@@ -1500,7 +1500,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     <ul class="nav-links">
       <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');setTimeout(()=>{const btn=document.querySelector('.flt.on')||document.querySelector('.flt'); if(btn) btn.click();},250);">Categorias</a></li>
       <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');">Produtos</a></li>
-      <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-about');">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
 
       <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
     </ul>
@@ -1626,130 +1627,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 
 
-<!-- SOBRE + BENEFÍCIOS (conteúdo dinâmico via /api/config — skeleton evita FOUC) -->
-<div class="feats-bar" id="sec-about">
-  <div class="feats-inner about-feats-inner">
-    <div class="about-col" id="about-col">
-      <div class="sec-eye" style="margin-bottom:0" id="about-eyebrow">Sobre nós</div>
-      <h2 class="sec-title about-title is-loading" id="about-title" aria-busy="true">
-        <span class="sk sk-title" aria-hidden="true"></span>
-        <span class="sk-label">Carregando…</span>
-      </h2>
-      <div id="about-text" class="about-text is-loading" aria-busy="true" aria-live="polite">
-        <span class="sk sk-line" aria-hidden="true"></span>
-        <span class="sk sk-line" aria-hidden="true"></span>
-        <span class="sk sk-line sk-short" aria-hidden="true"></span>
-      </div>
-    </div>
-    <div class="about-benefits" id="about-benefits">
-      <div class="feat" id="benefit-1">
-        <div class="feat-ico" id="benefit-1-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
-        <div>
-          <div class="feat-title is-loading" id="benefit-1-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
-          <div class="feat-desc is-loading" id="benefit-1-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
-        </div>
-      </div>
-      <div class="feat" id="benefit-2">
-        <div class="feat-ico" id="benefit-2-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-        <div>
-          <div class="feat-title is-loading" id="benefit-2-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
-          <div class="feat-desc is-loading" id="benefit-2-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
-        </div>
-      </div>
-      <div class="feat" id="benefit-3">
-        <div class="feat-ico" id="benefit-3-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-        <div>
-          <div class="feat-title is-loading" id="benefit-3-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
-          <div class="feat-desc is-loading" id="benefit-3-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
-        </div>
-      </div>
-      <div class="feat" id="benefit-4">
-        <div class="feat-ico" id="benefit-4-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
-        <div>
-          <div class="feat-title is-loading" id="benefit-4-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
-          <div class="feat-desc is-loading" id="benefit-4-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- About section moved to dedicated view (view-sobre) -->
 
 
-<!-- REVIEWS -->
-<div class="reviews-wrap" id="sec-reviews">
-  <div class="reviews-inner">
-    <div class="sec-eye">Depoimentos</div>
-    <h2 class="sec-title" style="margin-bottom:40px">O que dizem <em>nossos clientes</em></h2>
-
-    <div class="rev-summary">
-      <div style="text-align:center">
-        <div class="rev-avg-num" id="revAvgNum">—</div>
-        <div class="rev-avg-stars" aria-hidden="true"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-        <div class="rev-avg-label" id="revAvgLabel">0 avaliações</div>
-      </div>
-      <div class="rev-bars">
-        <div class="rbar-row">
-          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">5 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
-          <div class="rbar-track"><div class="rbar-fill" id="revBar5" style="width:0%"></div></div>
-          <span id="revBar5Txt" style="width:34px;text-align:right">0%</span>
-        </div>
-        <div class="rbar-row">
-          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">4 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
-          <div class="rbar-track"><div class="rbar-fill" id="revBar4" style="width:0%"></div></div>
-          <span id="revBar4Txt" style="width:34px;text-align:right">0%</span>
-        </div>
-        <div class="rbar-row">
-          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">3 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
-          <div class="rbar-track"><div class="rbar-fill" id="revBar3" style="width:0%"></div></div>
-          <span id="revBar3Txt" style="width:34px;text-align:right">0%</span>
-        </div>
-        <div class="rbar-row">
-          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">2 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
-          <div class="rbar-track"><div class="rbar-fill" id="revBar2" style="width:0%"></div></div>
-          <span id="revBar2Txt" style="width:34px;text-align:right">0%</span>
-        </div>
-        <div class="rbar-row">
-          <span style="width:40px;display:inline-flex;align-items:center;gap:4px">1 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
-          <div class="rbar-track"><div class="rbar-fill" id="revBar1" style="width:0%"></div></div>
-          <span id="revBar1Txt" style="width:34px;text-align:right">0%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="rev-grid" id="revGrid"></div>
-
-    <div class="reviews-form" style="margin-top:48px;max-width:640px">
-      <div class="reviews-form-title">Deixe sua avaliação</div>
-      <div class="reviews-form-sub">Seu depoimento passa por uma revisão rápida antes de aparecer publicamente.</div>
-      <form id="revPublicForm" onsubmit="submitReviewPublic(event)">
-        <div class="rev-2">
-          <div class="rev-fg">
-            <label class="rev-fl" for="revNome">Seu nome</label>
-            <input class="rev-inp" id="revNome" type="text" maxlength="60" placeholder="Ex: Maria Silva" required>
-          </div>
-          <div class="rev-fg">
-            <label class="rev-fl" for="revEstrelas">Sua nota</label>
-            <select class="rev-inp" id="revEstrelas" required>
-              <option value="5" selected>5 estrelas — Excelente</option>
-              <option value="4">4 estrelas — Muito bom</option>
-              <option value="3">3 estrelas — Bom</option>
-              <option value="2">2 estrelas — Regular</option>
-              <option value="1">1 estrela — Ruim</option>
-            </select>
-          </div>
-        </div>
-        <div class="rev-fg">
-          <label class="rev-fl" for="revComentario">Comentário</label>
-          <textarea class="rev-inp rev-area" id="revComentario" maxlength="500" placeholder="Conte como foi sua experiência com a loja..." required></textarea>
-        </div>
-        <div class="rev-actions">
-          <button type="submit" class="btn-fill">Enviar avaliação</button>
-        </div>
-        <div class="rev-form-msg" id="revFormMsg" style="display:none"></div>
-      </form>
-    </div>
-  </div>
-</div>
+<!-- Reviews section moved to dedicated view (view-avaliacoes) -->
 
 
 <!-- FOOTER -->
@@ -1782,7 +1663,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <ul>
         <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-cats')">Categorias</a></li>
         <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod')">Produtos</a></li>
-        <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-about')">Sobre</a></li>
+        <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+        <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
       </ul>
     </div>
     <div class="foot-col">
@@ -1807,6 +1689,164 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </footer>
 </div><!-- /view-home -->
+
+<!-- VIEW: SOBRE (seção movida para view separada) -->
+<div class="view" id="view-sobre">
+  <nav><div class="nav-inner">
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <div class="nav-right">
+      <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot4"></span></button>
+      <button class="nav-btn" onclick="openCart()" title="Carrinho">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 7h15l-1.5 14H7.5L6 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span class="nav-dot" id="cDot5"></span>
+      </button>
+    </div>
+  </div></nav>
+
+  <div style="max-width:1240px;margin:0 auto;padding:28px 36px 0">
+    <button class="pv-back" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar para a loja</button>
+  </div>
+  <div class="feats-bar" style="padding-top:40px">
+    <div class="feats-inner about-feats-inner">
+      <div class="about-col" id="about-col">
+        <div class="sec-eye" style="margin-bottom:0" id="about-eyebrow">Sobre nós</div>
+        <h2 class="sec-title about-title is-loading" id="about-title" aria-busy="true">
+          <span class="sk sk-title" aria-hidden="true"></span>
+          <span class="sk-label">Carregando…</span>
+        </h2>
+        <div id="about-text" class="about-text is-loading" aria-busy="true" aria-live="polite">
+          <span class="sk sk-line" aria-hidden="true"></span>
+          <span class="sk sk-line" aria-hidden="true"></span>
+          <span class="sk sk-line sk-short" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="about-benefits" id="about-benefits">
+        <div class="feat" id="benefit-1">
+          <div class="feat-ico" id="benefit-1-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
+          <div>
+            <div class="feat-title is-loading" id="benefit-1-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+            <div class="feat-desc is-loading" id="benefit-1-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+          </div>
+        </div>
+        <div class="feat" id="benefit-2">
+          <div class="feat-ico" id="benefit-2-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+          <div>
+            <div class="feat-title is-loading" id="benefit-2-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+            <div class="feat-desc is-loading" id="benefit-2-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+          </div>
+        </div>
+        <div class="feat" id="benefit-3">
+          <div class="feat-ico" id="benefit-3-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <div>
+            <div class="feat-title is-loading" id="benefit-3-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+            <div class="feat-desc is-loading" id="benefit-3-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+          </div>
+        </div>
+        <div class="feat" id="benefit-4">
+          <div class="feat-ico" id="benefit-4-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/></svg></div>
+          <div>
+            <div class="feat-title is-loading" id="benefit-4-title"><span class="sk sk-feat-title" aria-hidden="true"></span></div>
+            <div class="feat-desc is-loading" id="benefit-4-desc"><span class="sk sk-feat-desc" aria-hidden="true"></span><span class="sk sk-feat-desc sk-short" aria-hidden="true"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: AVALIAÇÕES (seção movida para view separada) -->
+<div class="view" id="view-avaliacoes">
+  <nav><div class="nav-inner">
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <div class="nav-right">
+      <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot5"></span></button>
+      <button class="nav-btn" onclick="openCart()" title="Carrinho">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 7h15l-1.5 14H7.5L6 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span class="nav-dot" id="cDot6"></span>
+      </button>
+    </div>
+  </div></nav>
+
+  <div style="max-width:1240px;margin:0 auto;padding:28px 36px 0">
+    <button class="pv-back" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar para a loja</button>
+  </div>
+  <div class="reviews-wrap" style="padding-top:40px">
+    <div class="reviews-inner">
+      <div class="sec-eye">Depoimentos</div>
+      <h2 class="sec-title" style="margin-bottom:40px">O que dizem <em>nossos clientes</em></h2>
+
+      <div class="rev-summary">
+        <div style="text-align:center">
+          <div class="rev-avg-num" id="revAvgNum">—</div>
+          <div class="rev-avg-stars" aria-hidden="true"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+          <div class="rev-avg-label" id="revAvgLabel">0 avaliações</div>
+        </div>
+        <div class="rev-bars">
+          <div class="rbar-row">
+            <span style="width:40px;display:inline-flex;align-items:center;gap:4px">5 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
+            <div class="rbar-track"><div class="rbar-fill" id="revBar5" style="width:0%"></div></div>
+            <span id="revBar5Txt" style="width:34px;text-align:right">0%</span>
+          </div>
+          <div class="rbar-row">
+            <span style="width:40px;display:inline-flex;align-items:center;gap:4px">4 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
+            <div class="rbar-track"><div class="rbar-fill" id="revBar4" style="width:0%"></div></div>
+            <span id="revBar4Txt" style="width:34px;text-align:right">0%</span>
+          </div>
+          <div class="rbar-row">
+            <span style="width:40px;display:inline-flex;align-items:center;gap:4px">3 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
+            <div class="rbar-track"><div class="rbar-fill" id="revBar3" style="width:0%"></div></div>
+            <span id="revBar3Txt" style="width:34px;text-align:right">0%</span>
+          </div>
+          <div class="rbar-row">
+            <span style="width:40px;display:inline-flex;align-items:center;gap:4px">2 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
+            <div class="rbar-track"><div class="rbar-fill" id="revBar2" style="width:0%"></div></div>
+            <span id="revBar2Txt" style="width:34px;text-align:right">0%</span>
+          </div>
+          <div class="rbar-row">
+            <span style="width:40px;display:inline-flex;align-items:center;gap:4px">1 <i class="fa-solid fa-star ui-ico" aria-hidden="true"></i></span>
+            <div class="rbar-track"><div class="rbar-fill" id="revBar1" style="width:0%"></div></div>
+            <span id="revBar1Txt" style="width:34px;text-align:right">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rev-grid" id="revGrid"></div>
+
+      <div class="reviews-form" style="margin-top:48px;max-width:640px">
+        <div class="reviews-form-title">Deixe sua avaliação</div>
+        <div class="reviews-form-sub">Seu depoimento passa por uma revisão rápida antes de aparecer publicamente.</div>
+        <form id="revPublicForm" onsubmit="submitReviewPublic(event)">
+          <div class="rev-2">
+            <div class="rev-fg">
+              <label class="rev-fl" for="revNome">Seu nome</label>
+              <input class="rev-inp" id="revNome" type="text" maxlength="60" placeholder="Ex: Maria Silva" required>
+            </div>
+            <div class="rev-fg">
+              <label class="rev-fl" for="revEstrelas">Sua nota</label>
+              <select class="rev-inp" id="revEstrelas" required>
+                <option value="5" selected>5 estrelas — Excelente</option>
+                <option value="4">4 estrelas — Muito bom</option>
+                <option value="3">3 estrelas — Bom</option>
+                <option value="2">2 estrelas — Regular</option>
+                <option value="1">1 estrela — Ruim</option>
+              </select>
+            </div>
+          </div>
+          <div class="rev-fg">
+            <label class="rev-fl" for="revComentario">Comentário</label>
+            <textarea class="rev-inp rev-area" id="revComentario" maxlength="500" placeholder="Conte como foi sua experiência com a loja..." required></textarea>
+          </div>
+          <div class="rev-actions">
+            <button type="submit" class="btn-fill">Enviar avaliação</button>
+          </div>
+          <div class="rev-form-msg" id="revFormMsg" style="display:none"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- VIEW: PRODUTO -->
 <div class="view" id="view-product">
@@ -2035,6 +2075,8 @@ function goView(id){
   syncDots();
 }
 function goHome(){ goView('view-home'); }
+function openSobre(){ goView('view-sobre'); }
+function openAvaliacoes(){ goView('view-avaliacoes'); }
 
 function scrollTo_(id){
   document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
