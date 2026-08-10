@@ -161,6 +161,47 @@ nav{
   color:var(--muted);transition:color .2s;text-transform:uppercase;
 }
 .nav-links a:hover{color:var(--ink)}
+.nav-item{position:relative}
+
+/* Mega Menu */
+.megamenu{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:calc(100% + 8px);
+  min-width:760px;
+  width:min(1000px,calc(100% - 160px));
+  background:var(--white);
+  border-radius:12px;
+  padding:18px 18px;
+  box-shadow:0 18px 50px rgba(12,12,12,.12);
+  z-index:1200;
+  display:block;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .22s ease,transform .22s ease,visibility .22s;
+  transform-origin:top center;
+}
+.megamenu .megamenu-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:start}
+.nav-item-mega:hover .megamenu,
+.nav-item-mega.open .megamenu{
+  opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);
+}
+.mega-col-title{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink)}
+.mega-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.mega-col a{font-size:14px;color:var(--muted);font-weight:500;transition:color .18s,transform .12s}
+.mega-col a:hover{color:var(--ink);transform:translateX(6px);text-decoration:none}
+
+/* mobile: transform megamenu into accordion inside nav */
+@media(max-width:768px){
+  .megamenu{position:static;left:auto;transform:none;top:auto;width:100%;min-width:0;border-radius:0;padding:0;margin-top:6px;box-shadow:none;border-top:1px solid var(--border);}
+  .megamenu .megamenu-inner{display:block;padding:12px 18px}
+  .mega-col{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
+  .megamenu{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .18s}
+  .nav-item-mega.open .megamenu{max-height:800px;opacity:1}
+  .nav-links{flex-direction:column;gap:8px}
+  .nav-link-cats{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;width:100%;border-radius:8px}
+}
 .nav-right{display:flex;gap:6px;align-items:center}
 .nav-btn{
   width:40px;height:40px;border-radius:50%;
@@ -1313,12 +1354,27 @@ footer{background:var(--ink);color:var(--bg)}
 
 /* ─── BACK TOP ─── */
 .btop{
-  position:fixed;bottom:28px;right:28px;
-  width:44px;height:44px;background:var(--ink);color:var(--bg);
-  border:none;font-size:17px;z-index:99;
-  display:none;align-items:center;justify-content:center;transition:background .2s;
+  position:fixed;
+  bottom:28px;
+  right:28px;
+  width:45px;
+  height:45px;
+  background:rgba(0,0,0,0.82);
+  color:var(--bg);
+  border:none;
+  border-radius:50%;
+  font-size:16px;
+  z-index:995;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+  transition:background .18s, transform .12s, box-shadow .18s;
+  padding:0;
 }
-.btop:hover{background:var(--ink2)}
+.btop i{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--bg);}
+.btop:hover{background:rgba(0,0,0,0.95);transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.22)}
+.btop:hover i{color:var(--gold2)}
 .btop.on{display:flex}
 
 /* ─── FADE IN ─── */
@@ -1518,7 +1574,45 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <span data-loja="nome">VN IMPORTS</span>
     </div>
     <ul class="nav-links">
-      <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');setTimeout(()=>{const btn=document.querySelector('.flt.on')||document.querySelector('.flt'); if(btn) btn.click();},250);">Categorias</a></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <div class="mega-col">
+              <h4 class="mega-col-title">Estilo</h4>
+              <ul>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Esportivo')">Esportivo</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Casual')">Casual</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Luxo')">Luxo</a></li>
+              </ul>
+            </div>
+            <div class="mega-col">
+              <h4 class="mega-col-title">Mecanismo</h4>
+              <ul>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Automático')">Automático</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Quartzo')">Quartzo</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Digital')">Digital</a></li>
+              </ul>
+            </div>
+            <div class="mega-col">
+              <h4 class="mega-col-title">Coleções</h4>
+              <ul>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Nova Coleção')">Nova Coleção</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Edição Limitada')">Edição Limitada</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Best Sellers')">Best Sellers</a></li>
+              </ul>
+            </div>
+            <div class="mega-col">
+              <h4 class="mega-col-title">Acessórios</h4>
+              <ul>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Pulseiras')">Pulseiras</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Braceletes')">Braceletes</a></li>
+                <li><a href="#" onclick="event.preventDefault();filterAndGo('Cintos')">Cintos</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </li>
       <li><a href="#" onclick="event.preventDefault();scrollTo_('sec-prod');">Produtos</a></li>
       <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
       <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
@@ -2024,7 +2118,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="toast" id="toast"><span id="toastIco"><i class="fa-solid fa-check" aria-hidden="true"></i></span><span id="toastMsg"></span></div>
 
 <!-- BACK TOP -->
-<button class="btop" id="btop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+<button class="btop" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
 
 <!-- ════════════════════════════════════════════════
      JAVASCRIPT
@@ -3485,7 +3579,37 @@ function showToast(ico,msg){
 }
 
 /* ─── SCROLL ─── */
-window.addEventListener('scroll',()=>{ document.getElementById('btop').classList.toggle('on',scrollY>500); });
+window.addEventListener('scroll',()=>{ const el=document.getElementById('back-to-top'); if(el) el.classList.toggle('on',scrollY>500); });
+
+/* Mega menu: mobile accordion toggle + close on outside click */
+(function(){
+  const navItem = document.querySelector('.nav-item-mega');
+  const toggleLink = navItem?.querySelector('.nav-link-cats');
+
+  function closeMega(){ if(navItem) navItem.classList.remove('open'); toggleLink?.setAttribute('aria-expanded','false'); }
+
+  // Toggle on click for small screens
+  toggleLink?.addEventListener('click', (e)=>{
+    if(window.innerWidth <= 768){
+      e.preventDefault();
+      navItem.classList.toggle('open');
+      const isOpen = navItem.classList.contains('open');
+      toggleLink.setAttribute('aria-expanded', String(isOpen));
+    }
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', (e)=>{
+    if(!navItem) return;
+    if(window.innerWidth <= 768 && navItem.classList.contains('open')){
+      if(!navItem.contains(e.target)) closeMega();
+    }
+  });
+
+  // Ensure hover on desktop keeps menu open when moving to megamenu (handled by CSS),
+  // but also close open state when resizing to desktop
+  window.addEventListener('resize', ()=>{ if(window.innerWidth>768) closeMega(); });
+})();
 
 /* ─── FADE IN ─── */
 const io=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); e.target.querySelectorAll('.rbar-fill[data-w]').forEach(b=>setTimeout(()=>b.style.width=b.dataset.w,150)); } }); },{threshold:.12});
