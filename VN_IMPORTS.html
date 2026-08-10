@@ -1577,39 +1577,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <li class="nav-item nav-item-mega">
         <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
         <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
-          <div class="megamenu-inner">
-            <div class="mega-col">
-              <h4 class="mega-col-title">Estilo</h4>
-              <ul>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Esportivo')">Esportivo</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Casual')">Casual</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Luxo')">Luxo</a></li>
-              </ul>
-            </div>
-            <div class="mega-col">
-              <h4 class="mega-col-title">Mecanismo</h4>
-              <ul>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Automático')">Automático</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Quartzo')">Quartzo</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Digital')">Digital</a></li>
-              </ul>
-            </div>
-            <div class="mega-col">
-              <h4 class="mega-col-title">Coleções</h4>
-              <ul>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Nova Coleção')">Nova Coleção</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Edição Limitada')">Edição Limitada</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Best Sellers')">Best Sellers</a></li>
-              </ul>
-            </div>
-            <div class="mega-col">
-              <h4 class="mega-col-title">Acessórios</h4>
-              <ul>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Pulseiras')">Pulseiras</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Braceletes')">Braceletes</a></li>
-                <li><a href="#" onclick="event.preventDefault();filterAndGo('Cintos')">Cintos</a></li>
-              </ul>
-            </div>
+          <div class="megamenu-inner" id="megaMenuInner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
           </div>
         </div>
       </li>
@@ -3622,6 +3591,51 @@ function observeFI(){ document.querySelectorAll('.fi').forEach(el=>io.observe(el
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
   : `${window.location.origin}/api`;
+
+// Carrega e renderiza o megamenu dinamicamente (não bloqueante)
+async function loadMegaMenu(){
+  const container = document.getElementById('megaMenuInner');
+  if(!container) return;
+  container.innerHTML = '<div style="padding:18px;color:var(--muted)">Carregando categorias…</div>';
+  try{
+    const res = await fetch(API_URL + '/categories/tree');
+    if(!res.ok) throw new Error('Não foi possível obter categorias');
+    const dados = await res.json();
+    if(!Array.isArray(dados) || dados.length===0){ container.innerHTML = '<div style="padding:18px;color:var(--muted)">Nenhuma categoria cadastrada</div>'; return; }
+
+    // monta colunas: cada objeto de topo vira uma coluna; children são subitens
+    container.innerHTML = '';
+    dados.forEach(cat => {
+      const col = document.createElement('div');
+      col.className = 'mega-col';
+      const h = document.createElement('h4'); h.className = 'mega-col-title'; h.textContent = cat.nome || '—';
+      const ul = document.createElement('ul');
+      (Array.isArray(cat.children) && cat.children.length ? cat.children : []).forEach(child => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = child.nome || child.slug || '—';
+        a.addEventListener('click', (e)=>{ e.preventDefault(); filterAndGo(child.slug || child.nome); });
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+      // se não tem children, permite clicar no título para ir para essa categoria
+      if(!(Array.isArray(cat.children) && cat.children.length)){
+        h.style.cursor = 'pointer';
+        h.addEventListener('click', ()=>{ filterAndGo(cat.slug || cat.nome); });
+      }
+      col.appendChild(h);
+      col.appendChild(ul);
+      container.appendChild(col);
+    });
+  }catch(e){
+    container.innerHTML = '<div style="padding:18px;color:var(--red)">Erro ao carregar categorias</div>';
+    console.error('loadMegaMenu:', e);
+  }
+}
+
+// Chama em background — não bloqueia renderização
+setTimeout(()=>{ try{ loadMegaMenu(); }catch(e){console.warn(e);} }, 200);
 
 // Garante que checkout consiga criar pedidos mesmo que chamado antes do DOMContentLoaded.
 // (API_URL é definida no final do arquivo, mas checkout só é acionado por clique do usuário.)

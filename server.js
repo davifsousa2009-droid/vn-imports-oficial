@@ -2171,6 +2171,13 @@ app.get('/VN_IMPORTS', async (req, res) => {
   res.send(await renderLojaHtmlComConfig());
 });
 
+// Categories API
+try {
+  app.use('/api/categories', require('./routes/categories'));
+} catch (e) {
+  console.warn('Falha ao montar /api/categories:', e.message);
+}
+
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
