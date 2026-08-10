@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Busca — VN IMPORTS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Barlow',sans-serif;margin:0;background:#f7f4f0;color:#111}
+    .container{max-width:1180px;margin:28px auto;padding:0 16px;display:grid;grid-template-columns:260px 1fr;gap:20px}
+    .top{margin-bottom:12px}
+    .qtitle{font-size:20px;margin-bottom:6px}
+    .qcount{color:#666;font-size:14px}
+    aside{background:#fff;padding:16px;border-radius:8px;border:1px solid #e6e0d9}
+    .filters h4{margin:0 0 8px 0}
+    @media(max-width:900px){.container{grid-template-columns:1fr;}}
+    .empty{padding:40px;text-align:center;color:#777}
+
+    /* Copiado de VN_IMPORTS.html — estilos da grade e cards para UI idêntica */
+    .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;background:transparent}
+    .prod-area{background:#f8f9fa;padding:24px;border-radius:16px}
+    .prod-card-frame{background:#ffffff}
+    @keyframes prodCardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .prod-card{cursor:pointer;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards;will-change:transform,opacity}
+    .prod-card-frame{border-radius:12px;overflow:hidden;background:#ffffff;border:1px solid rgba(0,0,0,.05);box-shadow:0 1px 2px rgba(17,17,17,.05),0 1px 6px rgba(17,17,17,.04);transition:all .3s ease}
+    .prod-card:hover .prod-card-frame{box-shadow:0 12px 24px rgba(0,0,0,.08);transform:translateY(-6px)}
+    .prod-card-media{position:relative;aspect-ratio:4/5;width:100%;background:#f6f6f6;overflow:hidden;border-radius:12px}
+    .prod-card-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;will-change:transform}
+    .prod-card:hover .prod-card-media img{transform:scale(1.05)}
+    .prod-card-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:12px}
+    .prod-wish-btn{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:999px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 18px rgba(17,17,17,.10);transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .2s ease}
+    .prod-wish-btn:hover{transform:scale(1.1)}
+    .prod-wish-btn:active{transform:scale(.9)}
+    .prod-wish-btn svg{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+    .prod-wish-btn.on{color:#A0391E}
+    .prod-card-body{padding:14px 10px 16px}
+    .prod-card-sub{font-size:.85rem;color:#757575;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .prod-card-name{font-size:1rem;font-weight:600;color:#111;margin-top:6px;line-height:1.25;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .prod-card-price-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+    .prod-old-price{text-decoration:line-through;color:#b0b0b0;font-weight:500;font-size:.95rem}
+    .prod-price{color:#111;font-weight:700;font-size:1.05rem}
+    .prod-off{color:#00875a;font-weight:700;font-size:.9rem}
+    .prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden}
+    .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
+    .prod-add-btn:active{transform:scale(.97)}
+    .prod-card{background:#ffffff;cursor:pointer;position:relative;transition:background .15s}
+    .prod-card:hover{background:#ffffff}
+    .prod-img-wrap{aspect-ratio:3/4;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:76px;position:relative;overflow:hidden}
+    .prod-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .45s}
+    .prod-card:hover .prod-img-wrap img{transform:scale(1.04)}
+    .prod-img-empty{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .prod-hover-btns{position:absolute;bottom:0;left:0;right:0;display:flex;gap:1px;background:var(--border);opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
+    .prod-card:hover .prod-hover-btns{opacity:1;transform:translateY(0)}
+    .phb{flex:1;padding:12px 6px;border:none;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:background .2s}
+    .phb-cart{background:var(--ink);color:var(--bg)}
+    .phb-cart:hover{background:var(--ink2)}
+    .phb-wish{background:var(--white);color:var(--ink);flex:none;padding:12px 15px;font-size:15px}
+    @media(max-width:1024px){.prod-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:768px){.prod-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.prod-grid{grid-template-columns:repeat(2,1fr)}}
+    .vni-toast{position:fixed;right:18px;top:18px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;z-index:9999;opacity:0;transition:opacity .25s}
+  </style>
+</head>
+<body>
+  <header style="background:#fff;padding:14px 16px;border-bottom:1px solid #eee">
+    <div style="max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px">
+      <a href="/" style="font-weight:700;color:#111;text-decoration:none">VN IMPORTS</a>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="nav-btn" onclick="location.href='/favorites.html'" title="Favoritos"><i class="fa-regular fa-heart"></i><span class="nav-dot" id="wDot" style="margin-left:6px"></span></button>
+        <button class="nav-btn" onclick="location.href='/cart.html'" title="Carrinho"><i class="fa-solid fa-bag-shopping"></i><span class="nav-dot" id="cDot" style="margin-left:6px"></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <aside>
+      <div class="filters">
+        <h4>Filtros</h4>
+        <p style="color:#666;font-size:14px">Use os filtros para refinar a busca.</p>
+        <div style="margin-top:12px">
+          <label style="font-size:13px;color:#444">Preço mínimo</label>
+          <input id="fmin" type="number" style="width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:6px">
+        </div>
+        <div style="margin-top:10px">
+          <label style="font-size:13px;color:#444">Preço máximo</label>
+          <input id="fmax" type="number" style="width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:6px">
+        </div>
+        <button id="applyFilters" class="btn" style="background:#eee;color:#111;margin-top:12px">Aplicar</button>
+      </div>
+    </aside>
+
+    <section>
+      <div class="top">
+        <div class="qtitle" id="qtitle">Resultados</div>
+        <div class="qcount" id="qcount"></div>
+      </div>
+
+      <div id="prodGrid" class="prod-grid"></div>
+      <div id="empty" class="empty" style="display:none">Nenhum produto encontrado. <br><br><a href="/" class="btn">Explorar produtos</a></div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
+
+    function R$(n){
+      const x = Number(n)||0;
+      return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+
+    // minimal store name used by converterProduto
+    const vitrineNomeLoja = 'VN IMPORTS';
+
+    // Converte produto do formato MongoDB → formato usado pelo renderGrid (copiado de VN_IMPORTS.html)
+    function converterProduto(p, index){
+      const rawSizes = Array.isArray(p?.sizes) ? p.sizes : Array.isArray(p?.tamanhos) ? p.tamanhos : [];
+      const normalizedSizes = rawSizes.map(s => String(s||'').trim()).filter(Boolean);
+      return {
+        id: index,
+        _id: p._id,
+        name: p.nome,
+        brand: vitrineNomeLoja,
+        cat: p.categoria || 'geral',
+        price: Number(p.preco),
+        old: null,
+        img: p.imagem || '',
+        imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
+        desc: p.descricao || p.nome,
+        sizes: normalizedSizes,
+        badge: null
+      };
+    }
+
+    function escapeHtmlTexto(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+    // --- Wishlist / Quick-add helpers ---
+    function getWishlist(){ try{ return JSON.parse(localStorage.getItem('vni_wishlist')||'[]'); }catch(e){ return []; } }
+    function saveWishlist(arr){ localStorage.setItem('vni_wishlist', JSON.stringify(arr||[])); }
+    function isInWishlist(id){ return getWishlist().includes(id); }
+    function toggleWishlist(id, btnEl){
+      const list = getWishlist();
+      const idx = list.indexOf(id);
+      if(idx>-1){ list.splice(idx,1); saveWishlist(list); showToast('Removido dos favoritos'); if(btnEl) btnEl.classList.remove('on'); }
+      else { list.push(id); saveWishlist(list); showToast('Adicionado aos favoritos'); if(btnEl) btnEl.classList.add('on'); }
+      // optionally update any other UI
+    }
+
+    function quickAddFromGrid(_id){
+      const base = window._searchBase || [];
+      const p = base.find(x=>x._id===_id);
+      const item = p ? { _id: p._id, nome: p.name, preco: p.price, imagem: p.img, size: null, qty: 1 } : { _id: _id, nome: 'Produto', preco:0, imagem:'', qty:1 };
+      const cart = JSON.parse(localStorage.getItem('vni_cart')||'[]'); cart.push(item); localStorage.setItem('vni_cart', JSON.stringify(cart)); showToast('Produto adicionado ao carrinho');
+      updateHeaderDots();
+      showCartConfirmation(item);
+    }
+
+    function showToast(msg){
+      let t = document.getElementById('vniToast');
+      if(!t){ t = document.createElement('div'); t.id='vniToast'; t.className='vni-toast'; document.body.appendChild(t); }
+      t.textContent = msg; t.style.opacity = '1'; clearTimeout(t._hide); t._hide = setTimeout(()=>{ t.style.opacity='0'; },1600);
+    }
+
+    // Header badges sync
+    function updateHeaderDots(){
+      try{
+        const cart = JSON.parse(localStorage.getItem('vni_cart')||'[]');
+        const cartCount = cart.reduce((s,i)=>s+(i.qty||1),0);
+        const w = JSON.parse(localStorage.getItem('vni_wishlist')||'[]');
+        const wishCount = w.length;
+        const cDot = document.getElementById('cDot'); if(cDot) cDot.textContent = cartCount?cartCount:'';
+        const wDot = document.getElementById('wDot'); if(wDot) wDot.textContent = wishCount?wishCount:'';
+      }catch(e){/* ignore */}
+    }
+
+    // Confirmation modal / drawer
+    function showCartConfirmation(item){
+      let m = document.getElementById('vniCartConfirm');
+      if(!m){
+        m = document.createElement('div'); m.id='vniCartConfirm'; m.style.cssText='position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.12);z-index:9999;padding:20px;transform:translateX(100%);transition:transform .32s';
+        const ov=document.createElement('div'); ov.id='vniCartConfirmOv'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;opacity:0;transition:opacity .25s'; ov.onclick = ()=>{ closeCartConfirm(); };
+        document.body.appendChild(ov); document.body.appendChild(m);
+      }
+      m.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div style="display:flex;align-items:center;gap:12px"><div style="width:78px;height:78px;flex:0 0 78px;border-radius:8px;overflow:hidden;background:#f6f6f6"><img src="${item.imagem||''}" style="width:100%;height:100%;object-fit:cover"></div><div><div style="font-weight:700">${escapeHtmlTexto(item.nome||'')}</div><div style="color:var(--muted);margin-top:6px">${R$(item.preco||0)}</div></div></div><div style="margin-top:14px;flex:1"><div style="font-size:13px;color:#666">Item adicionado ao carrinho</div></div><div style="display:flex;gap:12px"><button id="vniGotoCart" style="flex:1;padding:12px 14px;border-radius:10px;border:none;background:#111;color:#fff">Ver Carrinho / Finalizar</button><button id="vniContinue" style="flex:1;padding:12px 14px;border-radius:10px;border:1px solid #ddd;background:#fff">Continuar Comprando</button></div></div>`;
+      document.getElementById('vniCartConfirmOv').style.opacity='1'; setTimeout(()=>{ m.style.transform='translateX(0)'; },20);
+      document.getElementById('vniGotoCart').onclick = ()=>{ if(typeof openCart === 'function') openCart(); else location.href='/cart.html'; closeCartConfirm(); };
+      document.getElementById('vniContinue').onclick = ()=>{ closeCartConfirm(); };
+    }
+    function closeCartConfirm(){ const m=document.getElementById('vniCartConfirm'); const ov=document.getElementById('vniCartConfirmOv'); if(m) m.style.transform='translateX(100%)'; if(ov) ov.style.opacity='0'; setTimeout(()=>{ if(ov) ov.remove(); if(m) m.remove(); },350); }
+
+    // Render grid (replicates VN_IMPORTS.renderGrid but links to produto.html)
+    function renderGrid(list){
+      const container = document.getElementById('prodGrid');
+      if(!container){ console.error('renderGrid: container #prodGrid não encontrado.'); return; }
+      container.innerHTML = '';
+      if(!Array.isArray(list) || list.length === 0){
+        container.innerHTML = '<div style="padding:40px;color:#666;grid-column:1/-1">Nenhum produto encontrado com os filtros atuais</div>';
+        return;
+      }
+      // atualiza contador de resultados
+      const qc = document.getElementById('qcount'); if(qc) qc.textContent = `${list.length} produto${list.length>1?'s':''}`;
+
+      const html = list.map((p,i)=>{
+        const subTxt = (p.cat && String(p.cat).trim() && p.cat !== 'geral') ? String(p.cat) : (p.brand || 'Produto');
+        const inWish = isInWishlist(p._id) ? ' on' : '';
+        return `
+          <div class="prod-card" data-pid="${p._id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
+            <div class="prod-card-frame" onclick="window.location.href='/produto.html?id=${encodeURIComponent(p._id)}'">
+              <div class="prod-card-media">
+                ${p.img ? `<img src="${p.img}" alt="${escapeHtmlTexto(p.name)}" loading="lazy" />` : `<div class="prod-card-empty">Sem imagem</div>`}
+                <button class="prod-wish-btn${inWish}" onclick="event.stopPropagation();toggleWishlist('${p._id}', this)"><i class="fa-regular fa-heart"></i></button>
+              </div>
+              <div class="prod-card-body">
+                <div class="prod-card-sub">${escapeHtmlTexto(subTxt)}</div>
+                <div class="prod-card-name">${escapeHtmlTexto(p.name)}</div>
+                <div class="prod-card-price-row">
+                  ${p.old?`<span class="prod-old-price">${R$(p.old)}</span>`:''}
+                  <span class="prod-price">${R$(p.price)}</span>
+                </div>
+                <button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddFromGrid('${p._id}')">Adicionar</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    function renderProducts(list){
+      const c = document.getElementById('results');
+      const empty = document.getElementById('empty');
+      c.innerHTML = '';
+      if(!Array.isArray(list) || list.length===0){ empty.style.display='block'; c.style.display='none'; document.getElementById('qcount').textContent='0 produtos'; return; }
+      empty.style.display='none'; c.style.display='grid';
+      document.getElementById('qcount').textContent = `${list.length} produto${list.length>1?'s':''}`;
+      for(const p of list){
+        const d = document.createElement('div'); d.className='card';
+        const img = document.createElement('img'); img.src = p.imagem || '';
+        d.appendChild(img);
+        const name = document.createElement('div'); name.className='name'; name.textContent = p.nome || 'Produto'; d.appendChild(name);
+        const price = document.createElement('div'); price.className='price'; price.textContent = R$(p.preco); d.appendChild(price);
+        const a = document.createElement('a'); a.className='btn'; a.href = '/'; a.textContent = 'Ver'; d.appendChild(a);
+        c.appendChild(d);
+      }
+    }
+
+    function applyFilters(list){
+      const min = Number(document.getElementById('fmin').value) || 0;
+      const maxVal = document.getElementById('fmax').value;
+      const max = maxVal === '' ? Infinity : Number(maxVal);
+      return list.filter(p => {
+        const price = Number(p.price ?? p.preco) || 0;
+        return price >= min && price <= max;
+      });
+    }
+
+    async function doPageSearch(){
+      const params = new URLSearchParams(window.location.search);
+      const q = String(params.get('q')||'').trim();
+      const categoria = String(params.get('categoria')||'').trim();
+      document.getElementById('qtitle').textContent = categoria ? `Categoria: "${categoria}"` : (q ? `Resultados para: "${q}"` : 'Resultados');
+      if(!q && !categoria){ renderProducts([]); return; }
+      document.getElementById('qcount').textContent = 'Carregando…';
+      try{
+        let data = [];
+        if(categoria){
+          const r = await fetch(API_URL + '/produtos?categoria=' + encodeURIComponent(categoria));
+          if(!r.ok) throw new Error('http ' + r.status);
+          data = await r.json();
+        } else {
+          const r = await fetch(API_URL + '/produtos/search?q=' + encodeURIComponent(q) + '&limit=0');
+          if(!r.ok) throw new Error('http ' + r.status);
+          data = await r.json();
+        }
+        const raw = Array.isArray(data)?data:[];
+        window._searchBase = raw.map((p,i)=>converterProduto(p,i));
+        renderGrid(window._searchBase);
+      }catch(e){
+        console.warn('search page error', e);
+        renderProducts([]);
+      }
+    }
+
+    document.getElementById('applyFilters').addEventListener('click', () => {
+      const filtered = applyFilters(window._searchBase||[]);
+      renderGrid(filtered);
+    });
+
+    doPageSearch();
+    // inicializa badges e sincroniza entre abas
+    updateHeaderDots();
+    window.addEventListener('storage', (e)=>{ if(e.key==='vni_cart' || e.key==='vni_wishlist') updateHeaderDots(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Produto — VN IMPORTS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F7F4F0;--bg2:#EDE9E3;--ink:#111111;--ink2:#1E1E1E;--muted:#888;--border:#D9D4CC
+    }
+    body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--ink);margin:0}
+    /* Header / nav minimal styles (copied for consistency) */
+    #main-nav{background:#fff;border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;padding:14px 18px;gap:12px}
+    .nav-logo{font-weight:700;color:var(--ink);cursor:pointer}
+    .nav-links{list-style:none;display:flex;gap:18px;align-items:center;margin-left:18px}
+    .nav-links a{color:var(--ink);text-decoration:none}
+    .nav-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .nav-btn{background:transparent;border:none;padding:8px;border-radius:8px;cursor:pointer}
+    .search-wrap{position:relative;padding:12px}
+
+    /* Product layout */
+    .wrap{max-width:1180px;margin:22px auto;padding:0 16px;display:grid;grid-template-columns:420px 1fr;gap:24px}
+    .gallery{background:#fff;padding:18px;border-radius:12px;border:1px solid #e8e3db}
+    .main-img{width:100%;height:520px;object-fit:cover;border-radius:8px}
+    .thumbs{display:flex;gap:8px;margin-top:10px}
+    .thumbs img{width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid #eee}
+    .info{background:#fff;padding:20px;border-radius:12px;border:1px solid #e8e3db}
+    .brand{color:var(--muted);font-size:13px}
+    .name{font-size:24px;font-weight:700;margin:8px 0}
+    .price{color:var(--ink);font-weight:800;font-size:22px;margin-top:6px}
+    .desc{margin-top:12px;color:#444;line-height:1.6}
+    .variations{margin-top:14px}
+    .swatches{display:flex;gap:8px;align-items:center}
+    .swatch{width:34px;height:34px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.06);cursor:pointer}
+    .swatch.on{outline:3px solid rgba(0,0,0,.08)}
+    .sizes{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .size-btn{padding:10px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer}
+    .size-btn.on{border-color:var(--ink);background:var(--ink);color:#fff}
+    .add-btn{display:inline-block;padding:14px 18px;background:var(--ink);color:#fff;border-radius:10px;text-decoration:none;margin-top:18px;border:none;width:280px}
+    @media(max-width:900px){.wrap{grid-template-columns:1fr}.main-img{height:420px}.add-btn{width:100%}}
+    .vni-toast{position:fixed;right:18px;top:18px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;z-index:9999;opacity:0;transition:opacity .25s}
+  </style>
+</head>
+<body>
+  <!-- Copiado do header do site (mini versão) -->
+  <nav id="main-nav">
+    <div class="nav-inner">
+      <div class="nav-logo" onclick="location.href='/'">VN IMPORTS</div>
+      <ul class="nav-links">
+        <li class="nav-item nav-item-mega">
+          <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+          <div class="megamenu" role="menu" aria-label="Mega menu Categorias" style="position:absolute;z-index:60;display:none;background:#fff;padding:18px;border-radius:8px;border:1px solid var(--border);box-shadow:0 8px 30px rgba(0,0,0,.06)" id="miniMega">
+            <div id="megaMenuInner" style="display:flex;gap:18px"></div>
+          </div>
+        </li>
+        <li><a href="/">Produtos</a></li>
+        <li><a href="#" onclick="event.preventDefault();location.href='/search.html'">Buscar</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <button class="nav-btn" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        <button class="nav-btn" onclick="location.href='/favorites.html'" title="Favoritos"><i class="fa-regular fa-heart"></i><span class="nav-dot" id="wDot" style="margin-left:6px"></span></button>
+        <button class="nav-btn" onclick="openCart()" title="Carrinho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 7h15l-1.5 14H7.5L6 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="nav-dot" id="cDot" style="margin-left:6px"></span></button>
+      </div>
+    </div>
+    <div class="search-wrap" id="searchWrap" style="display:none;position:relative;max-width:1180px;margin:0 auto;padding:12px 18px">
+      <div class="search-row">
+        <input class="search-inp" id="searchInp" placeholder="Buscar produtos…" onkeydown="if(event.key==='Enter'){event.preventDefault();goToSearch(this.value);}if(event.key==='Escape'){toggleSearch();}">
+        <button class="search-close" onclick="toggleSearch()">Fechar</button>
+      </div>
+      <div class="search-results" id="searchRes" style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-top:8px;padding:8px;display:none"></div>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <div>
+      <div class="gallery">
+        <img id="mainImg" class="main-img" src="" alt="Imagem do produto">
+        <div id="thumbs" class="thumbs"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="info">
+          <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
+            <div>
+              <div class="brand" id="pBrand"></div>
+              <div class="name" id="pName"></div>
+            </div>
+            <div>
+              <button id="pWishBtn" class="nav-btn" style="border:1px solid #eee;border-radius:10px;padding:8px;" title="Favoritar"><i class="fa-regular fa-heart" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="price" id="pPrice"></div>
+          <div class="desc" id="pDesc"></div>
+
+          <div class="variations">
+            <div style="margin-top:10px"><strong>Cor</strong></div>
+            <div class="swatches" id="pColors"></div>
+
+            <div style="margin-top:12px"><strong>Tamanhos</strong></div>
+            <div class="sizes" id="pSizes"></div>
+          </div>
+
+          <div style="margin-top:18px">
+            <button id="addToCart" class="add-btn">Adicionar ao Carrinho</button>
+          </div>
+        </div>
+    </div>
+  </main>
+
+  <script>
+    const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
+
+    function R$(n){ const x = Number(n)||0; return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+    function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
+
+    function escapeHtmlTexto(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+    function toggleSearch(){ const w = document.getElementById('searchWrap'); if(!w) return; w.style.display = w.style.display==='none'?'block':'none'; }
+    function goToSearch(q){ const term = String(q||'').trim(); if(!term) return; window.location.href = '/search.html?q=' + encodeURIComponent(term); }
+
+    async function doSearch(q){
+      const query = String(q||'').trim();
+      const res = document.getElementById('searchRes'); if(!res) return;
+      if(!query || query.length<2){ res.style.display='none'; res.innerHTML=''; return; }
+      res.style.display='block'; res.innerHTML = '<div style="padding:8px;color:var(--muted)">Buscando…</div>';
+      try{
+        const r = await fetch(API_URL + '/produtos/search?q=' + encodeURIComponent(query));
+        if(!r.ok) throw new Error('http ' + r.status);
+        const data = await r.json();
+        res.innerHTML = '';
+        if(!Array.isArray(data) || data.length===0){ res.innerHTML = '<div style="padding:10px;color:var(--muted)">Nenhum resultado</div>'; return; }
+        for(const p of data.slice(0,6)){
+          const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; row.style.padding='8px'; row.style.cursor='pointer';
+          row.onclick = ()=>{ window.location.href = '/produto.html?id=' + encodeURIComponent(p._id); };
+          const img = document.createElement('img'); img.src = p.imagem || ''; img.style.width='46px'; img.style.height='46px'; img.style.objectFit='cover'; img.style.borderRadius='6px';
+          const meta = document.createElement('div');
+          const title = document.createElement('div'); title.style.fontSize='14px'; title.textContent = p.nome || '';
+          const price = document.createElement('div'); price.style.fontSize='12px'; price.style.color='var(--muted)'; price.textContent = R$(p.preco);
+          meta.appendChild(title); meta.appendChild(price);
+          row.appendChild(img); row.appendChild(meta);
+          res.appendChild(row);
+        }
+      }catch(e){ res.innerHTML = '<div style="padding:8px;color:var(--muted)">Erro na busca</div>'; }
+    }
+
+    // Carrega o mega menu (versão simples)
+    async function loadMegaMenu(){
+      const container = document.getElementById('megaMenuInner'); if(!container) return;
+      try{
+        const r = await fetch(API_URL + '/categories/tree'); if(!r.ok) throw new Error('cat http ' + r.status);
+        const dados = await r.json();
+        container.innerHTML = '';
+        for(const cat of dados){
+          const col = document.createElement('div'); col.style.minWidth='160px';
+          const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginBottom='8px'; h.textContent = cat.nome;
+          col.appendChild(h);
+          for(const ch of (cat.children||[])){
+            const a = document.createElement('a'); a.href = '/search.html?categoria=' + encodeURIComponent(ch.slug); a.textContent = ch.nome; a.style.display='block'; a.style.margin='6px 0';
+            col.appendChild(a);
+          }
+          container.appendChild(col);
+        }
+        const megaParent = document.getElementById('miniMega');
+        document.querySelectorAll('.nav-item-mega').forEach(it=>{ it.addEventListener('mouseenter',()=>{ if(megaParent) megaParent.style.display='block'; }); it.addEventListener('mouseleave',()=>{ if(megaParent) megaParent.style.display='none'; }); });
+      }catch(e){ container.innerHTML = '<div style="padding:12px;color:var(--muted)">Categorias indisponíveis</div>'; }
+    }
+
+    async function loadProduct(){
+      const id = getParam('id');
+      if(!id) return document.getElementById('pName').textContent = 'Produto não especificado';
+      try{
+        const r = await fetch(API_URL + '/produtos/' + encodeURIComponent(id));
+        if(!r.ok) throw new Error('http ' + r.status);
+        const p = await r.json();
+        document.getElementById('pBrand').textContent = p.categoria || '';
+        document.getElementById('pName').textContent = p.nome || '';
+        document.getElementById('pPrice').textContent = R$(p.preco);
+        document.getElementById('pDesc').textContent = p.descricao || '';
+        const main = document.getElementById('mainImg'); main.src = p.imagem || '';
+        const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+        const imgs = [p.imagem].concat(Array.isArray(p.imagens)?p.imagens:[]).filter(Boolean);
+        imgs.forEach(src=>{
+          const im = document.createElement('img'); im.src = src; im.onclick = ()=>{ main.src = src; }; thumbs.appendChild(im);
+        });
+        const sizesWrap = document.getElementById('pSizes'); sizesWrap.innerHTML = '';
+        const sizes = Array.isArray(p.sizes)?p.sizes:[];
+        sizes.forEach((s,i)=>{
+          const b = document.createElement('button'); b.className='size-btn'+(i===0?' on':''); b.textContent = s; b.onclick = ()=>{ document.querySelectorAll('.size-btn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); };
+          sizesWrap.appendChild(b);
+        });
+
+        // cores / swatches
+        const colorsWrap = document.getElementById('pColors'); if(colorsWrap){ colorsWrap.innerHTML = ''; const cores = Array.isArray(p.cores)?p.cores:(Array.isArray(p.colors)?p.colors:[]);
+          cores.forEach((c,i)=>{ const sw = document.createElement('button'); sw.className='swatch'+(i===0?' on':''); sw.title = c.label || c || ''; sw.style.background = (c.hex||c) || '#ddd'; sw.onclick = ()=>{ document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on')); sw.classList.add('on'); }; colorsWrap.appendChild(sw); }); }
+
+        // wishlist button state
+        const pw = document.getElementById('pWishBtn'); if(pw){ const wish = JSON.parse(localStorage.getItem('vni_wishlist')||'[]'); const is = wish.includes(p._id); pw.innerHTML = is ? '<i class="fa-solid fa-heart" aria-hidden="true"></i>' : '<i class="fa-regular fa-heart" aria-hidden="true"></i>'; pw.onclick = ()=>{ const list = JSON.parse(localStorage.getItem('vni_wishlist')||'[]'); const idx = list.indexOf(p._id); if(idx>-1){ list.splice(idx,1); localStorage.setItem('vni_wishlist',JSON.stringify(list)); pw.innerHTML = '<i class="fa-regular fa-heart" aria-hidden="true"></i>'; showToast('Removido dos favoritos'); } else { list.push(p._id); localStorage.setItem('vni_wishlist',JSON.stringify(list)); pw.innerHTML = '<i class="fa-solid fa-heart" aria-hidden="true"></i>'; showToast('Adicionado aos favoritos'); } } }
+
+        document.getElementById('addToCart').onclick = ()=>{
+          const cart = JSON.parse(localStorage.getItem('vni_cart')||'[]');
+          const selSizeEl = document.querySelector('.size-btn.on');
+          const selColorEl = document.querySelector('.swatch.on');
+          const item = { _id: p._id, nome: p.nome, preco: p.preco, imagem: p.imagem, size: selSizeEl?selSizeEl.textContent:null, color: selColorEl?selColorEl.title:null, qty:1 };
+          cart.push(item);
+          localStorage.setItem('vni_cart', JSON.stringify(cart));
+          // pequena confirmação visual
+          const old = document.getElementById('addToCart'); if(old){ old.textContent = 'Adicionado ✓'; setTimeout(()=>{ old.textContent = 'Adicionar ao Carrinho'; },1800); }
+          updateHeaderDots();
+          showCartConfirmation(item);
+        };
+
+        function showToast(msg){
+          let t = document.getElementById('vniToast');
+          if(!t){ t = document.createElement('div'); t.id='vniToast'; t.className='vni-toast'; document.body.appendChild(t); }
+          t.textContent = msg; t.style.opacity = '1'; clearTimeout(t._hide); t._hide = setTimeout(()=>{ t.style.opacity='0'; },1600);
+        }
+
+      }catch(e){ console.warn('Erro ao carregar produto', e); document.getElementById('pName').textContent='Erro ao carregar produto'; }
+    }
+
+    // funções globais: atualizar badges e modal de confirmação
+    function updateHeaderDots(){
+      try{
+        const cart = JSON.parse(localStorage.getItem('vni_cart')||'[]');
+        const cartCount = cart.reduce((s,i)=>s+(i.qty||1),0);
+        const w = JSON.parse(localStorage.getItem('vni_wishlist')||'[]');
+        const wishCount = w.length;
+        const cDot = document.getElementById('cDot'); if(cDot) cDot.textContent = cartCount?cartCount:'';
+        const wDot = document.getElementById('wDot'); if(wDot) wDot.textContent = wishCount?wishCount:'';
+      }catch(e){/* ignore */}
+    }
+    function showCartConfirmation(item){
+      let m = document.getElementById('vniCartConfirm');
+      if(!m){
+        m = document.createElement('div'); m.id='vniCartConfirm'; m.style.cssText='position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.12);z-index:9999;padding:20px;transform:translateX(100%);transition:transform .32s';
+        const ov=document.createElement('div'); ov.id='vniCartConfirmOv'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;opacity:0;transition:opacity .25s'; ov.onclick = ()=>{ closeCartConfirm(); };
+        document.body.appendChild(ov); document.body.appendChild(m);
+      }
+      m.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div style="display:flex;align-items:center;gap:12px"><div style="width:78px;height:78px;flex:0 0 78px;border-radius:8px;overflow:hidden;background:#f6f6f6"><img src="${item.imagem||''}" style="width:100%;height:100%;object-fit:cover"></div><div><div style="font-weight:700">${escapeHtmlTexto(item.nome||'')}</div><div style="color:var(--muted);margin-top:6px">${R$(item.preco||0)}</div></div></div><div style="margin-top:14px;flex:1"><div style="font-size:13px;color:#666">Item adicionado ao carrinho</div></div><div style="display:flex;gap:12px"><button id="vniGotoCart" style="flex:1;padding:12px 14px;border-radius:10px;border:none;background:#111;color:#fff">Ver Carrinho / Finalizar</button><button id="vniContinue" style="flex:1;padding:12px 14px;border-radius:10px;border:1px solid #ddd;background:#fff">Continuar Comprando</button></div></div>`;
+      document.getElementById('vniCartConfirmOv').style.opacity='1'; setTimeout(()=>{ m.style.transform='translateX(0)'; },20);
+      document.getElementById('vniGotoCart').onclick = ()=>{ if(typeof openCart === 'function') openCart(); else location.href='/cart.html'; closeCartConfirm(); };
+      document.getElementById('vniContinue').onclick = ()=>{ closeCartConfirm(); };
+    }
+    function closeCartConfirm(){ const m=document.getElementById('vniCartConfirm'); const ov=document.getElementById('vniCartConfirmOv'); if(m) m.style.transform='translateX(100%)'; if(ov) ov.style.opacity='0'; setTimeout(()=>{ if(ov) ov.remove(); if(m) m.remove(); },350); }
+
+    // inicializações
+    loadProduct();
+    loadMegaMenu();
+    // inicializa badges e sincroniza entre abas
+    updateHeaderDots();
+    window.addEventListener('storage', (e)=>{ if(e.key==='vni_cart' || e.key==='vni_wishlist') updateHeaderDots(); });
+    // liga input de busca à função doSearch
+    const si = document.getElementById('searchInp'); if(si){ si.addEventListener('input', (e)=>{ doSearch(e.target.value); }); }
+    // fecha resultados ao clicar fora
+    document.addEventListener('click', (e)=>{ const wrap = document.getElementById('searchWrap'); const res = document.getElementById('searchRes'); if(!wrap || !res) return; if(!wrap.contains(e.target)){ res.style.display='none'; } });
+  </script>
+  
+  <!-- FOOTER (copiado) -->
+  <footer style="margin-top:40px;background:#fff;padding:28px 18px;border-top:1px solid var(--border)">
+    <div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>VN IMPORTS</strong> — Moda importada premium.</div>
+        <div style="color:var(--muted)">© <span id="footYear2"></span> VN IMPORTS</div>
+      </div>
+      <div style="color:var(--muted);font-size:13px">Envio para todo o Brasil · Suporte via WhatsApp · Conexão criptografada (HTTPS)</div>
+    </div>
+  </footer>
+
+  <script>document.getElementById('footYear2').textContent = new Date().getFullYear();</script>
+</body>
+</html>

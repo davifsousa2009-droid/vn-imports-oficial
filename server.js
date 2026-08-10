@@ -815,18 +815,28 @@ app.get('/api/produtos/search', async (req, res) => {
     const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(esc, 'i');
 
-    const produtos = await Produto.find({
+    // Construção da query base
+    const baseQuery = {
       $or: [
         { nome: regex },
         { categoria: regex },
         { descricao: regex }
       ]
-    })
-      .sort({ createdAt: -1 })
-      .limit(12)
-      .lean();
+    };
 
-    res.json(produtos);
+    // Limite opcional: ?limit=0 => sem limite; ?limit=N => limitar N; default 12
+    const limParam = req.query.limit;
+    let queryExec = Produto.find(baseQuery).sort({ createdAt: -1 }).lean();
+    if (limParam !== undefined) {
+      const n = Number(limParam);
+      if (!Number.isNaN(n) && n > 0) queryExec = queryExec.limit(n);
+      // n === 0 => no limit
+    } else {
+      queryExec = queryExec.limit(12);
+    }
+
+    const results = await queryExec;
+    res.json(results);
   } catch (err) {
     res.status(500).json({ erro: 'Erro na busca de produtos', detalhe: err.message });
   }
