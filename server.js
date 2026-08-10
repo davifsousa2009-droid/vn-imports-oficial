@@ -2174,6 +2174,14 @@ app.get('/VN_IMPORTS.html', async (req, res) => {
   semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
+app.get('/search.html', async (req, res) => {
+  semCacheHtml(res);
+  res.sendFile(path.join(__dirname, 'search.html'));
+});
+app.get('/produto.html', async (req, res) => {
+  semCacheHtml(res);
+  res.sendFile(path.join(__dirname, 'produto.html'));
+});
 
 // serve também a raiz do app estático (garante consistência)
 app.get('/VN_IMPORTS', async (req, res) => {
