@@ -527,12 +527,12 @@ nav{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:20px;
+  margin-bottom:22px;
 }
 .filters-title{
   font-size:11px;
-  font-weight:800;
-  letter-spacing:.14em;
+  font-weight:700;
+  letter-spacing:.18em;
   text-transform:uppercase;
   color:var(--ink);
 }
@@ -540,8 +540,9 @@ nav{
   border:none;
   background:transparent;
   color:var(--muted);
-  font-size:12px;
+  font-size:11px;
   font-weight:600;
+  letter-spacing:.04em;
   cursor:pointer;
   padding:6px 8px;border-radius:8px;transition:color .18s,text-decoration .18s,background .18s;
 }
@@ -550,67 +551,96 @@ nav{
 .fblk{padding:0;border-top:1px solid var(--border)}
 .fblk:last-child{border-bottom:1px solid var(--border)}
 .fblk-title{
-  font-size:13px;
+  font-size:11px;
   font-weight:600;
-  color:var(--ink);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
   padding:16px 0;
   margin-bottom:0;
   display:flex;align-items:center;justify-content:space-between;
   cursor:pointer;
   user-select:none;
+  transition:color .18s;
 }
+.fblk-title:hover{color:var(--ink)}
+.fblk.open .fblk-title{color:var(--ink)}
 .fblk-chev{transition:transform .32s cubic-bezier(.2,.9,.2,1);flex:none;color:var(--muted)}
 .fblk.open .fblk-chev{transform:rotate(180deg)}
 /* Accordion content: smooth open/close */
-.fblk-list{display:flex;flex-direction:column;gap:10px;padding-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .36s ease,opacity .28s ease,padding .28s}
+.fblk-list{display:flex;flex-direction:column;gap:2px;padding-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .36s ease,opacity .28s ease,padding .28s}
 .fblk.open .fblk-list{max-height:600px;padding-bottom:18px;opacity:1}
-.size-grid{flex-wrap:wrap;gap:8px}
-.fblk.open .size-grid{display:flex}
+.fblk.open .size-grid{display:grid}
 .fblk.open .price-wrap{display:block}
-.fblk-list{flex-direction:column;gap:10px}
-.fcat{
-  display:flex;align-items:center;gap:12px;
+
+/* Categorias — lista de texto limpa, sem radio/checkbox nativo.
+   Seleção/hover indicados por negrito + traço lateral, não por um bullet. */
+.fcat-item{
+  display:block;width:100%;text-align:left;
+  border:none;background:transparent;
   cursor:pointer;
-  color:var(--ink);
-  font-size:14px;
+  color:var(--muted);
+  font-size:13.5px;
   font-weight:500;
-  padding:10px 12px;border-radius:10px;transition:background .18s,transform .12s;
+  letter-spacing:.01em;
+  padding:9px 2px 9px 14px;
+  border-left:2px solid transparent;
+  transition:color .18s,border-color .18s,padding-left .18s;
 }
-.fcat:hover{background:rgba(0,0,0,.02)}
-.fcat input{accent-color:var(--ink)}
+.fcat-item:hover{color:var(--ink)}
+.fcat-item.active{color:var(--ink);font-weight:700;border-left-color:var(--ink);padding-left:18px}
 
-/* Custom checkbox visuals using :has() for modern browsers */
-.fcat{position:relative;padding-left:44px}
-.fcat::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);background:transparent;display:inline-block}
-.fcat input{position:absolute;left:12px;opacity:0;width:20px;height:20px;margin:0}
-.fcat:has(input:checked)::before{background:var(--ink);border-color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.06)}
-.fcat:has(input:checked)::after{content:'\2713';position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--bg);font-size:12px;font-weight:700}
-
-.size-grid{flex-wrap:wrap;gap:8px}
-.schip{
-  border:1.5px solid var(--border);
+/* Tamanhos — grid de botões quadrados, estilo Nike */
+.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.prod-size-chip{
+  aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);
   background:transparent;
-  padding:10px 14px;
-  font-size:13px;
-  font-weight:700;
-  border-radius:999px;
+  padding:0;
+  font-size:12.5px;
+  font-weight:500;
+  letter-spacing:.02em;
+  border-radius:2px;
   cursor:pointer;
-  transition:all .18s cubic-bezier(.2,.9,.2,1);
   color:var(--ink);
+  transition:border-color .16s,font-weight .16s;
 }
-.schip.on{
-  background:var(--ink);
-  border-color:var(--ink);
-  color:var(--bg);
-  box-shadow:0 8px 22px rgba(43,43,43,.08);
-  transform:translateY(-2px);
+.prod-size-chip:hover{border-color:var(--ink)}
+.prod-size-chip.on{
+  border:1.5px solid var(--ink);
+  font-weight:700;
 }
 
-.price-wrap{padding-top:8px;display:flex;flex-direction:column;gap:10px}
-.price-hint{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:700}
-.price-range{width:100%;appearance:none; height:6px; background:var(--border); outline:none;border-radius:999px}
-.price-range::-webkit-slider-thumb{appearance:none; width:18px; height:18px; border-radius:50%; background:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.12)}
-.price-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:none}
+/* Preço — track fino, thumbs pequenos, faixa preenchida entre os dois puxadores */
+.price-wrap{padding-top:2px;display:flex;flex-direction:column;gap:16px}
+.price-hint{font-size:14px;color:var(--ink);font-weight:700;letter-spacing:.01em}
+.price-slider{position:relative;height:16px;display:flex;align-items:center}
+.price-slider-track{position:absolute;left:0;right:0;height:2px;background:var(--border);border-radius:999px}
+.price-slider-fill{position:absolute;height:2px;background:var(--ink);border-radius:999px}
+.price-range{
+  position:absolute;left:0;right:0;top:0;margin:0;
+  width:100%;height:16px;
+  appearance:none;background:transparent;outline:none;
+  pointer-events:none;
+}
+.price-range::-webkit-slider-runnable-track{background:transparent;height:16px}
+.price-range::-moz-range-track{background:transparent;height:16px;border:none}
+.price-range::-webkit-slider-thumb{
+  appearance:none;pointer-events:auto;
+  width:13px;height:13px;border-radius:50%;
+  background:#fff;border:1.5px solid var(--ink);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  cursor:pointer;transition:transform .15s;
+}
+.price-range::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.price-range::-moz-range-thumb{
+  pointer-events:auto;
+  width:13px;height:13px;border-radius:50%;
+  background:#fff;border:1.5px solid var(--ink);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  cursor:pointer;
+}
 
 .filters-mobile-bar{display:none;}
 .filters-mobile-btn{
@@ -1615,8 +1645,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="fblk-title" onclick="toggleFblk(this)">Preço<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div class="price-wrap">
         <div class="price-hint" id="priceHint">—</div>
-        <input class="price-range" type="range" min="0" max="1000" value="1000" step="1" id="priceMaxRange" oninput="onPriceChange()"/>
-        <input class="price-range" type="range" min="0" max="1000" value="0" step="1" id="priceMinRange" oninput="onPriceChange()"/>
+        <div class="price-slider">
+          <div class="price-slider-track"></div>
+          <div class="price-slider-fill" id="priceFill"></div>
+          <input class="price-range" type="range" min="0" max="1000" value="0" step="1" id="priceMinRange" oninput="onPriceChange()"/>
+          <input class="price-range" type="range" min="0" max="1000" value="1000" step="1" id="priceMaxRange" oninput="onPriceChange()"/>
+        </div>
       </div>
     </div>
 
@@ -1838,13 +1872,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const dados = await res.json();
       const lista = Array.isArray(dados) ? dados.filter(c=>c && c.slug && c.nome) : [];
       if(!lista.length){ box.innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhuma categoria</div>'; return; }
-      box.innerHTML = lista.map(c => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-        <input type="radio" name="fltCatRadio" value="${escapeHtmlTexto(c.slug)}" onchange="setFiltroCategoria('${escapeHtmlTexto(c.slug)}')"> ${escapeHtmlTexto(c.nome)}
-      </label>`).join('');
+      box.innerHTML = lista.map(c => `<button type="button" class="fcat-item" data-slug="${escapeHtmlTexto(c.slug)}" onclick="setFiltroCategoria('${escapeHtmlTexto(c.slug)}',this)">${escapeHtmlTexto(c.nome)}</button>`).join('');
     }catch(e){ box.innerHTML = '<div style="font-size:12px;color:var(--red)">Erro ao carregar</div>'; }
   }
 
-  function setFiltroCategoria(slug){ filtroState.categoria = slug; aplicarFiltrosNaBase(); }
+  function setFiltroCategoria(slug, el){
+    const jaAtiva = filtroState.categoria === slug;
+    document.querySelectorAll('#fltCats .fcat-item').forEach(b=>b.classList.remove('active'));
+    filtroState.categoria = jaAtiva ? '' : slug;
+    if(!jaAtiva && el) el.classList.add('active');
+    aplicarFiltrosNaBase();
+  }
 
   function popularFiltroTamanhos(base){
     const set = new Set();
@@ -1861,6 +1899,24 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     aplicarFiltrosNaBase();
   }
 
+  // Atualiza a faixa preenchida do slider entre os dois puxadores (min/max reais,
+  // não os valores brutos dos inputs — evita a barra "inverter" se min > max).
+  function updatePriceFill(){
+    const minEl = document.getElementById('priceMinRange');
+    const maxEl = document.getElementById('priceMaxRange');
+    const fill = document.getElementById('priceFill');
+    if(!minEl || !maxEl || !fill) return;
+    const lo = Number(minEl.min) || 0;
+    const hi = Number(maxEl.max) || 1000;
+    const range = (hi - lo) || 1;
+    const min = Math.min(Number(minEl.value), Number(maxEl.value));
+    const max = Math.max(Number(minEl.value), Number(maxEl.value));
+    const left = ((min - lo) / range) * 100;
+    const right = ((max - lo) / range) * 100;
+    fill.style.left = Math.max(0, left) + '%';
+    fill.style.width = Math.max(0, right - left) + '%';
+  }
+
   function onPriceChange(){
     const minEl = document.getElementById('priceMinRange');
     const maxEl = document.getElementById('priceMaxRange');
@@ -1868,12 +1924,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     if(min > max){ [min,max] = [max,min]; }
     filtroState.precoMin = min; filtroState.precoMax = max;
     document.getElementById('priceHint').textContent = `${R$(min)} — ${R$(max)}`;
+    updatePriceFill();
     aplicarFiltrosNaBase();
   }
 
   function resetSearchFilters(){
     filtroState = { categoria: '', tamanho: '', precoMin: 0, precoMax: Infinity };
-    document.querySelectorAll('input[name="fltCatRadio"]').forEach(r=>r.checked=false);
+    document.querySelectorAll('#fltCats .fcat-item').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('#fltSizes .prod-size-chip').forEach(b=>b.classList.remove('on'));
     const maxEl = document.getElementById('priceMaxRange');
     const minEl = document.getElementById('priceMinRange');
@@ -1949,7 +2006,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     document.getElementById('qtitle').textContent = categoria ? `Categoria: "${categoria}"` : (q ? `Resultados para "${q}"` : 'Todos os produtos');
     document.getElementById('pageSearchInp').value = q;
     if(categoria){
-      document.querySelectorAll('input[name="fltCatRadio"]').forEach(r=>{ if(r.value===categoria){ r.checked = true; filtroState.categoria = categoria; } });
+      document.querySelectorAll('#fltCats .fcat-item').forEach(b=>{ if(b.dataset.slug===categoria){ b.classList.add('active'); filtroState.categoria = categoria; } });
     }
     document.getElementById('qcount').textContent = 'Carregando…';
     document.getElementById('prodGrid').innerHTML = '<div class="search-loading">Carregando produtos…</div>';
@@ -1981,6 +2038,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         minEl.max = maxPreco; minEl.value = 0;
         document.getElementById('priceHint').textContent = `${R$(0)} — ${R$(maxPreco)}`;
         filtroState.precoMax = maxPreco;
+        updatePriceFill();
       }
 
       popularFiltroTamanhos(window._searchBase);
