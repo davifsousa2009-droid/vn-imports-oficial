@@ -565,6 +565,12 @@ const ConfigSchema = new mongoose.Schema({
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
   heroImagemUrl: { type: String, default: '' },
+  // Textos do hero (título, selo "Coleção Exclusiva" e subtítulo). Vazio = mantém
+  // o texto padrão já escrito no HTML (o front só sobrescreve quando vier algo).
+  heroTitle: { type: String, default: '' },
+  heroFont: { type: String, default: '' },
+  heroEyebrow: { type: String, default: '' },
+  heroSubtitulo: { type: String, default: '' },
 
   // ✅ NOVO: Configurações dinâmicas de conteúdo do site (Admin → vitrine)
   sobreTitulo: { type: String, default: 'Cibelle' },
@@ -634,6 +640,13 @@ function mergePublicConfig(doc) {
     cidadeLoja: String(doc?.cidadeLoja || '').trim().toUpperCase() || 'SAO PAULO',
     colors: colorsMerged,
     pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium',
+
+    // Textos do hero — vazio de propósito quando não configurado no admin,
+    // pra o front saber que deve preservar o texto padrão já no HTML.
+    heroTitle: String(doc?.heroTitle ?? '').trim(),
+    heroFont: String(doc?.heroFont ?? '').trim(),
+    heroEyebrow: String(doc?.heroEyebrow ?? '').trim(),
+    heroSubtitulo: String(doc?.heroSubtitulo ?? '').trim(),
 
     // Conteúdo (About + Benefícios)
     sobreTitulo: String(doc?.sobreTitulo ?? '').trim() || 'Cibelle',
@@ -1261,6 +1274,10 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       // ✅ NOVO: hero do split
       heroImagem,
       heroImagemUrl,
+      heroTitle,
+      heroFont,
+      heroEyebrow,
+      heroSubtitulo,
 
       // ✅ NOVO: Conteúdo dinâmico
       sobreTitulo,
@@ -1312,6 +1329,10 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
     if (heroImagemUrl !== undefined) dados.heroImagemUrl = String(heroImagemUrl).trim();
+    if (heroTitle !== undefined) dados.heroTitle = String(heroTitle).trim();
+    if (heroFont !== undefined) dados.heroFont = String(heroFont).trim();
+    if (heroEyebrow !== undefined) dados.heroEyebrow = String(heroEyebrow).trim();
+    if (heroSubtitulo !== undefined) dados.heroSubtitulo = String(heroSubtitulo).trim();
 
     // ✅ NOVO: Conteúdo dinâmico (About + Benefícios)
     if (sobreTitulo !== undefined) dados.sobreTitulo = String(sobreTitulo).trim();

@@ -390,6 +390,10 @@ tr:hover td{background:#FAFAF8}
               <p style="font-size:13px;color:#888;line-height:1.3;margin:6px 0 10px">Controle o título principal da vitrine e a fonte usada nele.</p>
               <label class="fl">Título do Hero (HTML simples permitido: &lt;em&gt;)</label>
               <input class="fi" id="sys-heroTitle" placeholder="Ex: Qualidade que <em>fala</em> antes de você" type="text" autocomplete="off">
+              <label class="fl" style="margin-top:8px">Selo do Hero (texto pequeno acima do título)</label>
+              <input class="fi" id="sys-heroEyebrow" placeholder="Ex: Relógios Importados" type="text" autocomplete="off">
+              <label class="fl" style="margin-top:8px">Subtítulo do Hero</label>
+              <textarea class="fta" id="sys-heroSubtitulo" placeholder="Peças selecionadas para quem exige qualidade e presença em cada detalhe." autocomplete="off"></textarea>
               <label class="fl" style="margin-top:8px">Fonte do Hero</label>
               <select class="fsel" id="sys-heroFont">
                 <option>Playfair Display</option>
@@ -1665,6 +1669,8 @@ async function loadSettings() {
         document.getElementById('sys-b4IcoEnabled').checked = !!cd.benef4IcoEnabled;
 
         document.getElementById('sys-heroTitle').value = cd.heroTitle || '';
+        document.getElementById('sys-heroEyebrow').value = cd.heroEyebrow || '';
+        document.getElementById('sys-heroSubtitulo').value = cd.heroSubtitulo || '';
         if (cd.heroFont) document.getElementById('sys-heroFont').value = cd.heroFont;
       }
     } catch (e) {
@@ -1689,6 +1695,8 @@ async function salvarSettings() {
   const sobreTexto = document.getElementById('sys-sobreTexto')?.value ?? '';
   const heroTitle = document.getElementById('sys-heroTitle')?.value ?? '';
   const heroFont = document.getElementById('sys-heroFont')?.value ?? '';
+  const heroEyebrow = document.getElementById('sys-heroEyebrow')?.value ?? '';
+  const heroSubtitulo = document.getElementById('sys-heroSubtitulo')?.value ?? '';
 
   const benef1Titulo = document.getElementById('sys-b1Titulo')?.value ?? '';
   const benef1Texto = document.getElementById('sys-b1Texto')?.value ?? '';
@@ -1769,7 +1777,7 @@ async function salvarSettings() {
         benef4Texto,
         benef4IcoEnabled,
         benef4Ico
-        ,heroTitle,heroFont
+        ,heroTitle,heroFont,heroEyebrow,heroSubtitulo
       };
 
       const r2 = await fetch(API + '/config', {

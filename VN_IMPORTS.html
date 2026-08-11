@@ -1614,7 +1614,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <!-- LEFT: texto -->
   <div class="hero-left">
 
-    <div class="hero-season"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i>Coleção Exclusiva</div>
+    <div class="hero-season" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
     <h1 class="hero-title" id="heroTitle">
       Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
     </h1>
@@ -3888,6 +3888,18 @@ async function carregarConfigLoja() {
       if (heroTitleEl && d.heroTitle && String(d.heroTitle).trim()) {
         // Atualiza o conteúdo do título (pode conter <em>)
         heroTitleEl.innerHTML = d.heroTitle;
+      }
+
+      // Selo "Coleção Exclusiva" e subtítulo — só sobrescreve se vier algo do
+      // admin; sem isso, o texto original do HTML permanece como fallback.
+      const heroEyebrowEl = document.getElementById('heroEyebrowText');
+      if (heroEyebrowEl && d.heroEyebrow && String(d.heroEyebrow).trim()) {
+        heroEyebrowEl.textContent = String(d.heroEyebrow).trim();
+      }
+
+      const heroDescEl = document.getElementById('heroDesc');
+      if (heroDescEl && d.heroSubtitulo && String(d.heroSubtitulo).trim()) {
+        heroDescEl.textContent = String(d.heroSubtitulo).trim();
       }
 
       const fontName = d.heroFont ? String(d.heroFont).trim() : '';
