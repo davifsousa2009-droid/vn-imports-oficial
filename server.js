@@ -120,8 +120,8 @@ app.use(
         // CSP trata isso como uma diretiva separada de <script>; sem isso, todo botão
         // com onclick inline fica bloqueado silenciosamente no console do navegador.
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
         connectSrc: ["'self'"]
       }
@@ -502,8 +502,6 @@ const Banner = mongoose.models.Banner || mongoose.model('Banner', BannerSchema);
 const SettingsSchema = new mongoose.Schema(
   {
     mp_token: { type: String, default: '' },
-    /** Chave pública do Mercado Pago — usada no front para tokenizar cartão (SDK). */
-    mp_public_key: { type: String, default: '' },
     me_token: { type: String, default: '' },
     pix_key: { type: String, default: '' }
   },
@@ -525,9 +523,6 @@ const OrderSchema = new mongoose.Schema(
     },
     total: { type: Number, required: true },
     cep: { type: String, default: '' },
-    frete: { type: Number, default: 0 },
-    freteNome: { type: String, default: '' },
-    freteEmpresa: { type: String, default: '' },
     status: { type: String, default: 'Pendente' },
     // ID do pagamento no Mercado Pago, salvo quando o QR Pix é gerado.
     // Usado pelo webhook (/api/pix/webhook) para confirmar o pagamento e atualizar o status.
@@ -570,9 +565,6 @@ const ConfigSchema = new mongoose.Schema({
   // ✅ NOVO: hero do split (imagem principal do rapaz na vitrine)
   heroImagem: { type: String, default: '' },
   heroImagemUrl: { type: String, default: '' },
-  // Título do hero e fonte selecionada pelo admin
-  heroTitle: { type: String, default: '' },
-  heroFont: { type: String, default: 'Lora' },
 
   // ✅ NOVO: Configurações dinâmicas de conteúdo do site (Admin → vitrine)
   sobreTitulo: { type: String, default: 'Cibelle' },
@@ -596,7 +588,7 @@ const ConfigSchema = new mongoose.Schema({
 
   // Benefício 3: Pagamento Seguro
   benef3Titulo: { type: String, default: 'Pagamento Seguro' },
-  benef3Texto: { type: String, default: 'PIX, cartão e boleto com total segurança.' },
+  benef3Texto: { type: String, default: 'PIX com total segurança.' },
   benef3IcoEnabled: { type: Boolean, default: true },
   benef3Ico: { type: String, default: '🔒' },
 
@@ -610,8 +602,7 @@ const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 
 function mergePublicSettings(doc) {
   return {
-    pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : '',
-    mp_public_key: doc?.mp_public_key != null ? String(doc.mp_public_key).trim() : ''
+    pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : ''
   };
 }
 
@@ -660,7 +651,7 @@ function mergePublicConfig(doc) {
     benef2Ico: String(doc?.benef2Ico ?? '').trim() || '🔄',
 
     benef3Titulo: String(doc?.benef3Titulo ?? '').trim() || 'Pagamento Seguro',
-    benef3Texto: String(doc?.benef3Texto ?? '').trim() || 'PIX, cartão e boleto com total segurança.',
+    benef3Texto: String(doc?.benef3Texto ?? '').trim() || 'PIX com total segurança.',
     benef3IcoEnabled: bool(doc?.benef3IcoEnabled, true),
     benef3Ico: String(doc?.benef3Ico ?? '').trim() || '🔒',
 
@@ -681,10 +672,6 @@ function mergePublicConfig(doc) {
     promoTitulo: String(doc?.promoTitulo ?? '').trim(),
     promoSubtitulo: String(doc?.promoSubtitulo ?? '').trim(),
     promoCtaTexto: String(doc?.promoCtaTexto ?? '').trim() || 'Ver promoções'
-    ,
-    // Hero dinâmico: título (texto/HTML limitado) e fonte escolhida pelo admin
-    heroTitle: String(doc?.heroTitle ?? '').trim() || '',
-    heroFont: String(doc?.heroFont ?? 'Lora').trim()
   };
 }
 
@@ -801,44 +788,6 @@ app.get('/api/produtos/:id', async (req, res) => {
     res.json(produto);
   } catch (err) {
     res.status(500).json({ erro: 'Erro ao buscar produto', detalhe: err.message });
-  }
-});
-
-// Busca por termo: nome, categoria ou descrição (case-insensitive). Limita resultados.
-app.get('/api/produtos/search', async (req, res) => {
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const q = String(req.query.q || '').trim();
-    if (!q) return res.json([]);
-
-    // Escapa caracteres especiais para uso em regex
-    const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(esc, 'i');
-
-    // Construção da query base
-    const baseQuery = {
-      $or: [
-        { nome: regex },
-        { categoria: regex },
-        { descricao: regex }
-      ]
-    };
-
-    // Limite opcional: ?limit=0 => sem limite; ?limit=N => limitar N; default 12
-    const limParam = req.query.limit;
-    let queryExec = Produto.find(baseQuery).sort({ createdAt: -1 }).lean();
-    if (limParam !== undefined) {
-      const n = Number(limParam);
-      if (!Number.isNaN(n) && n > 0) queryExec = queryExec.limit(n);
-      // n === 0 => no limit
-    } else {
-      queryExec = queryExec.limit(12);
-    }
-
-    const results = await queryExec;
-    res.json(results);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro na busca de produtos', detalhe: err.message });
   }
 });
 
@@ -1076,14 +1025,9 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
     const me_token = req.body?.me_token != null ? String(req.body.me_token).trim() : '';
     const pix_key = req.body?.pix_key != null ? String(req.body.pix_key).trim() : '';
 
-    const updateFields = { mp_token, me_token, pix_key };
-    if (req.body?.mp_public_key !== undefined) {
-      updateFields.mp_public_key = String(req.body.mp_public_key).trim();
-    }
-
     const updated = await Settings.findOneAndUpdate(
       {},
-      { $set: updateFields },
+      { mp_token, me_token, pix_key },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -1183,20 +1127,6 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
 
     totalNum = Math.round(totalNum * 100) / 100;
 
-    // Frete (Melhor Envio / checkout). Se frete grátis da loja bater, zera.
-    let freteNum = Math.max(0, Math.min(800, Number(req.body?.frete) || 0));
-    const freteNome = req.body?.freteNome != null ? String(req.body.freteNome).trim().slice(0, 120) : '';
-    const freteEmpresa = req.body?.freteEmpresa != null ? String(req.body.freteEmpresa).trim().slice(0, 80) : '';
-    try {
-      const cfgFrete = await Config.findOne().lean();
-      if (cfgFrete?.freteGratisAtivo && Number(cfgFrete.freteGratisValor) > 0 && totalNum >= Number(cfgFrete.freteGratisValor)) {
-        freteNum = 0;
-      }
-    } catch {
-      /* mantém freteNum */
-    }
-    totalNum = Math.round((totalNum + freteNum) * 100) / 100;
-
     // Status sempre começa "Pendente" — o cliente não pode definir o status do próprio pedido.
     // A confirmação de pagamento (Pix) deve ser tratada separadamente, ver /api/pix/webhook.
     const order = await Order.create({
@@ -1204,9 +1134,6 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
       items: itemsForOrder,
       total: totalNum,
       cep,
-      frete: freteNum,
-      freteNome,
-      freteEmpresa,
       status: 'Pendente'
     });
 
@@ -1356,11 +1283,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       promoCtaTexto
     } = req.body;
 
-    // Build a partial `dados` object: only include fields explicitly provided
-    // by the client. This avoids overwriting existing DB values with defaults
-    // when the request omits certain keys (fixes the "store name resets" bug).
-    const dados = {};
-    if (nomeLoja !== undefined) dados.nomeLoja = String(nomeLoja).trim() || shopConfig.nomeLoja;
+    const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
     if (chavePix !== undefined) dados.chavePix = String(chavePix).trim();
     if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
@@ -1369,14 +1292,11 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
     if (cidadeLoja !== undefined) dados.cidadeLoja = String(cidadeLoja).trim().toUpperCase().slice(0, 15);
+    if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
 
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
     if (heroImagemUrl !== undefined) dados.heroImagemUrl = String(heroImagemUrl).trim();
-    
-    // ✅ NOVO: hero title + fonte
-    if (req.body?.heroTitle !== undefined) dados.heroTitle = String(req.body.heroTitle).trim();
-    if (req.body?.heroFont !== undefined) dados.heroFont = String(req.body.heroFont).trim();
 
     // ✅ NOVO: Conteúdo dinâmico (About + Benefícios)
     if (sobreTitulo !== undefined) dados.sobreTitulo = String(sobreTitulo).trim();
@@ -1426,373 +1346,6 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     res.json({ mensagem: 'Configuração atualizada!', config: mergePublicConfig(atualizado) });
   } catch (err) {
     res.status(500).json({ erro: err.message });
-  }
-});
-
-// ── PAGAMENTOS MERCADO PAGO ────────────────────────────
-
-function onlyDigits(v) {
-  return String(v || '').replace(/\D/g, '');
-}
-
-/**
- * Cotação de frete via Melhor Envio (me_token em Settings).
- * Body: { cep, subtotal, products? }
- */
-app.post('/api/frete/calcular', async (req, res) => {
-  try {
-    if (!(await tryConnectDb())) {
-      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE', options: [] });
-    }
-
-    const cep = onlyDigits(req.body?.cep);
-    if (cep.length !== 8) {
-      return res.status(400).json({ ok: false, reason: 'CEP_INVALIDO', options: [] });
-    }
-
-    const subtotal = Number(req.body?.subtotal) || 0;
-    const cfg = await Config.findOne().lean();
-    if (cfg?.freteGratisAtivo && Number(cfg.freteGratisValor) > 0 && subtotal >= Number(cfg.freteGratisValor)) {
-      return res.json({ ok: true, freeShipping: true, options: [] });
-    }
-
-    const settings = await Settings.findOne().lean();
-    const meToken = settings?.me_token ? String(settings.me_token).trim() : '';
-    if (!meToken) {
-      return res.json({ ok: false, reason: 'NO_ME_TOKEN', options: [] });
-    }
-
-    const fromCep = onlyDigits(process.env.ME_CEP_ORIGEM || cfg?.cepOrigem || '01310100');
-    const rawProducts = Array.isArray(req.body?.products) ? req.body.products : [];
-    const products = (rawProducts.length ? rawProducts : [{ quantity: 1, unitary_value: subtotal || 1 }]).map((p) => ({
-      id: String(p.id || 'item'),
-      width: Number(p.width) || 11,
-      height: Number(p.height) || 2,
-      length: Number(p.length) || 16,
-      weight: Number(p.weight) || 0.3,
-      insurance_value: Number(p.unitary_value || p.price || 0) || 0,
-      quantity: Math.max(1, Number(p.quantity || p.qty) || 1)
-    }));
-
-    const meUrl =
-      (process.env.ME_API_BASE || 'https://melhorenvio.com.br') +
-      '/api/v2/me/shipment/calculate';
-
-    const meRes = await fetch(meUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + meToken,
-        'User-Agent': 'VN Imports (contato@' + (shopConfig.nomeLoja || 'loja').toLowerCase().replace(/\s+/g, '') + '.com.br)'
-      },
-      body: JSON.stringify({
-        from: { postal_code: fromCep },
-        to: { postal_code: cep },
-        products
-      })
-    });
-
-    const meJson = await meRes.json().catch(() => ([]));
-    if (!meRes.ok) {
-      return res.status(502).json({
-        ok: false,
-        reason: 'ME_QUOTE_FAILED',
-        options: [],
-        meStatus: meRes.status,
-        meError: meJson
-      });
-    }
-
-    const list = Array.isArray(meJson) ? meJson : [];
-    const options = list
-      .filter((o) => o && !o.error && (o.price != null || o.custom_price != null))
-      .map((o) => ({
-        id: o.id != null ? String(o.id) : '',
-        name: o.name || o.service || 'Frete',
-        company: (o.company && (o.company.name || o.company)) || '',
-        price: Number(o.custom_price != null ? o.custom_price : o.price) || 0,
-        delivery_time: o.custom_delivery_time || o.delivery_time || null
-      }))
-      .sort((a, b) => a.price - b.price)
-      .slice(0, 8);
-
-    return res.json({ ok: true, freeShipping: false, options });
-  } catch (e) {
-    console.error('[frete/calcular]', e.message);
-    return res.status(500).json({ ok: false, reason: 'ERROR', options: [], detalhe: e.message });
-  }
-});
-
-function splitPayerName(fullName) {
-  const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return { first_name: 'Cliente', last_name: '' };
-  if (parts.length === 1) return { first_name: parts[0], last_name: '' };
-  return { first_name: parts[0], last_name: parts.slice(1).join(' ') };
-}
-
-async function criarPagamentoMP(mpToken, payload, idempotencyKey) {
-  const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mpToken}`,
-      'X-Idempotency-Key': idempotencyKey || crypto.randomUUID()
-    },
-    body: JSON.stringify(payload)
-  });
-  const mpJson = await mpRes.json().catch(() => ({}));
-  return { mpRes, mpJson };
-}
-
-/**
- * Config pública do checkout (sem expor mp_token).
- * mp_public_key é segura para o browser (tokenização de cartão).
- */
-app.get('/api/payment/config', async (req, res) => {
-  try {
-    if (!(await tryConnectDb())) {
-      return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
-    }
-    const doc = await Settings.findOne().lean();
-    return res.json({
-      hasMpToken: temMpTokenSalvo(doc),
-      mpPublicKey: doc?.mp_public_key ? String(doc.mp_public_key).trim() : '',
-      pixKeyFallback: sanitizarChavePix(mergePublicSettings(doc).pix_key)
-    });
-  } catch {
-    return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
-  }
-});
-
-/**
- * Cria pagamento no Mercado Pago (Pix ou Cartão).
- * Body: {
- *   method: 'pix' | 'card',
- *   orderId,
- *   payerEmail, payerName, payerCpf,
- *   // card:
- *   token, installments, payment_method_id, issuer_id?
- * }
- * O valor cobrado SEMPRE vem de order.total no banco (nunca do cliente).
- */
-app.post('/api/payment/create', async (req, res) => {
-  try {
-    if (!(await tryConnectDb())) {
-      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE' });
-    }
-
-    const settings = await Settings.findOne().lean();
-    if (!temMpTokenSalvo(settings)) {
-      return res.status(400).json({ ok: false, reason: 'NO_MP_TOKEN' });
-    }
-    const mpToken = String(settings.mp_token).trim();
-
-    const method = String(req.body?.method || 'pix').trim().toLowerCase();
-    if (method !== 'pix' && method !== 'card') {
-      return res.status(400).json({ ok: false, reason: 'INVALID_METHOD' });
-    }
-
-    const orderId = req.body?.orderId ? String(req.body.orderId) : '';
-    if (!orderId) {
-      return res.status(400).json({ ok: false, reason: 'MISSING_ORDER_ID' });
-    }
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND' });
-    }
-    if (order.status !== 'Pendente') {
-      return res.status(409).json({ ok: false, reason: 'ORDER_ALREADY_PROCESSED', status: order.status });
-    }
-
-    const amount = Number(order.total);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ ok: false, reason: 'INVALID_AMOUNT' });
-    }
-
-    const payerEmail = String(req.body?.payerEmail || req.body?.email || '').trim() || 'cliente@email.com';
-    const payerName = String(req.body?.payerName || req.body?.first_name || order.customerName || 'Cliente').trim();
-    const { first_name, last_name } = splitPayerName(payerName);
-    const cpf = onlyDigits(req.body?.payerCpf || req.body?.cpf || '');
-
-    const payer = {
-      email: payerEmail,
-      first_name,
-      last_name
-    };
-    if (cpf.length === 11) {
-      payer.identification = { type: 'CPF', number: cpf };
-    }
-
-    let payload;
-    if (method === 'pix') {
-      payload = {
-        transaction_amount: amount,
-        description: `Pedido ${orderId} — ${shopConfig.nomeLoja || 'Loja'}`,
-        payment_method_id: 'pix',
-        payer
-      };
-    } else {
-      const token = String(req.body?.token || '').trim();
-      const payment_method_id = String(req.body?.payment_method_id || '').trim();
-      const installments = Math.max(1, Number(req.body?.installments) || 1);
-      const issuer_id = req.body?.issuer_id != null ? String(req.body.issuer_id).trim() : '';
-
-      if (!token) {
-        return res.status(400).json({ ok: false, reason: 'MISSING_CARD_TOKEN' });
-      }
-      if (!payment_method_id) {
-        return res.status(400).json({ ok: false, reason: 'MISSING_PAYMENT_METHOD_ID' });
-      }
-
-      payload = {
-        transaction_amount: amount,
-        token,
-        description: `Pedido ${orderId} — ${shopConfig.nomeLoja || 'Loja'}`,
-        installments,
-        payment_method_id,
-        payer
-      };
-      if (issuer_id) payload.issuer_id = issuer_id;
-    }
-
-    const idempotencyKey = `order-${orderId}-${method}-${Date.now()}`;
-    const { mpRes, mpJson } = await criarPagamentoMP(mpToken, payload, idempotencyKey);
-
-    if (!mpRes.ok) {
-      return res.status(502).json({
-        ok: false,
-        reason: 'MP_PAYMENT_CREATE_FAILED',
-        mpStatus: mpRes.status,
-        mpError: mpJson
-      });
-    }
-
-    const paymentId = mpJson?.id != null ? String(mpJson.id) : '';
-    if (paymentId) {
-      try {
-        order.mpPaymentId = paymentId;
-        await order.save();
-      } catch (e) {
-        console.warn('[payment/create] Falha ao salvar mpPaymentId:', e.message);
-      }
-    }
-
-    const mpStatus = String(mpJson?.status || '');
-
-    // Cartão aprovado na hora → marca pedido como Pago
-    if (method === 'card' && mpStatus === 'approved') {
-      try {
-        order.status = 'Pago';
-        await order.save();
-      } catch (e) {
-        console.warn('[payment/create] Falha ao marcar pedido como Pago:', e.message);
-      }
-    }
-
-    if (method === 'pix') {
-      const tx = mpJson?.point_of_interaction?.transaction_data || {};
-      const qr_code = String(tx.qr_code || mpJson?.qr_code || '').trim();
-      const qr_code_base64 = String(tx.qr_code_base64 || mpJson?.qr_code_base64 || '').trim();
-
-      if (!qr_code && !qr_code_base64) {
-        return res.status(502).json({
-          ok: false,
-          reason: 'MP_QR_NOT_FOUND',
-          mpPayment: mpJson
-        });
-      }
-
-      return res.json({
-        ok: true,
-        method: 'pix',
-        paymentId,
-        status: mpStatus,
-        orderId,
-        total: amount,
-        qr_code,
-        qr_code_base64,
-        // aliases amigáveis pro front
-        qrCode: qr_code,
-        qrCodeBase64: qr_code_base64
-      });
-    }
-
-    return res.json({
-      ok: true,
-      method: 'card',
-      paymentId,
-      status: mpStatus,
-      status_detail: mpJson?.status_detail || '',
-      orderId,
-      total: amount,
-      approved: mpStatus === 'approved'
-    });
-  } catch (e) {
-    console.error('[payment/create]', e.message);
-    return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
-  }
-});
-
-/**
- * Status do pagamento (polling do checkout).
- * Consulta o pedido no banco e, se ainda Pendente, sincroniza com o Mercado Pago.
- */
-app.get('/api/payment/status/:orderId', async (req, res) => {
-  try {
-    if (!(await tryConnectDb())) {
-      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE' });
-    }
-
-    const orderId = String(req.params.orderId || '');
-    const order = await Order.findById(orderId).lean();
-    if (!order) {
-      return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND' });
-    }
-
-    let status = String(order.status || 'Pendente');
-    let mpStatus = null;
-
-    if (status === 'Pendente' && order.mpPaymentId) {
-      const settings = await Settings.findOne().lean();
-      if (temMpTokenSalvo(settings)) {
-        const mpToken = String(settings.mp_token).trim();
-        try {
-          const mpRes = await fetch(
-            `https://api.mercadopago.com/v1/payments/${encodeURIComponent(order.mpPaymentId)}`,
-            { headers: { Authorization: `Bearer ${mpToken}` } }
-          );
-          const mpJson = await mpRes.json().catch(() => ({}));
-          if (mpRes.ok) {
-            mpStatus = String(mpJson?.status || '');
-            if (mpStatus === 'approved') {
-              await Order.findOneAndUpdate(
-                { _id: orderId, status: 'Pendente' },
-                { status: 'Pago' }
-              );
-              status = 'Pago';
-            } else if (mpStatus === 'cancelled' || mpStatus === 'rejected') {
-              // mantém Pendente para revisão manual; expõe mpStatus ao front
-            }
-          }
-        } catch (e) {
-          console.warn('[payment/status] Falha ao consultar MP:', e.message);
-        }
-      }
-    }
-
-    return res.json({
-      ok: true,
-      orderId,
-      status,
-      approved: status === 'Pago',
-      mpPaymentId: order.mpPaymentId || '',
-      mpStatus,
-      total: order.total
-    });
-  } catch (e) {
-    return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
   }
 });
 
@@ -2174,27 +1727,12 @@ app.get('/VN_IMPORTS.html', async (req, res) => {
   semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
-app.get('/search.html', async (req, res) => {
-  semCacheHtml(res);
-  res.sendFile(path.join(__dirname, 'search.html'));
-});
-app.get('/produto.html', async (req, res) => {
-  semCacheHtml(res);
-  res.sendFile(path.join(__dirname, 'produto.html'));
-});
 
 // serve também a raiz do app estático (garante consistência)
 app.get('/VN_IMPORTS', async (req, res) => {
   semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
 });
-
-// Categories API
-try {
-  app.use('/api/categories', require('./routes/categories'));
-} catch (e) {
-  console.warn('Falha ao montar /api/categories:', e.message);
-}
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
