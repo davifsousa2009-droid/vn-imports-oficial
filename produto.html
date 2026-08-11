@@ -199,6 +199,11 @@ nav{
 }
 .nav-dot.on{display:block}
 
+/* Nome da loja (logo/rodapé/copyright) — evita o FOUC do nome antigo:
+   começa invisível e só aparece (cache local ou API) via classe .is-ready. */
+[data-loja="nome"]{opacity:0;transition:opacity .3s ease}
+[data-loja="nome"].is-ready{opacity:1}
+
 /* ─── HERO (Split 50/50) ─── */
 .hero{
   max-width:1240px;
@@ -1556,7 +1561,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <nav id="main-nav">
   <div class="nav-inner">
     <div class="nav-logo" onclick="location.href='/'" style="cursor:pointer">
-      <span data-loja="nome">VN IMPORTS</span>
+      <span data-loja="nome"></span>
     </div>
     <ul class="nav-links">
       <li class="nav-item nav-item-mega">
@@ -1659,7 +1664,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   <div class="foot-top">
     <div>
-      <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
+      <div class="foot-logo"><span data-loja="nome"></span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials" id="footSocials">
         <a href="#" class="fsoc" id="igLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
@@ -1689,7 +1694,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
   </div>
   <div class="foot-bottom">
-    <span>© <span id="footYear"></span> <span data-loja="nome">VN IMPORTS</span>. Todos os direitos reservados.</span>
+    <span>© <span id="footYear"></span> <span data-loja="nome"></span>. Todos os direitos reservados.</span>
     <div class="foot-pays">
       <span class="fpay">PIX</span>
     </div>
@@ -1706,19 +1711,46 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   let vitrineNomeLoja = 'VN IMPORTS';
 
-  // Puxa o nome real da loja (Shop Config) e atualiza logo do header, footer e
-  // copyright — mesma lógica usada em VN_IMPORTS.html. Se o fetch falhar ou
-  // demorar, o texto padrão que já está no HTML permanece intacto.
+  // ─── NOME DA LOJA — stale-while-revalidate (evita FOUC) ─────────────────
+  // O HTML não tem mais nenhum nome chumbado nos spans [data-loja="nome"]
+  // (ficam vazios/opacity:0 até serem preenchidos). Ordem: 1) se houver cache
+  // local, aplica na hora, sem esperar rede; 2) busca a API em paralelo e,
+  // se vier algo, atualiza DOM + cache; 3) se não havia cache e a API falhar,
+  // usa o padrão local (vitrineNomeLoja) como último recurso, pra nunca
+  // deixar o espaço em branco pra sempre.
+  const LOJA_CACHE_KEY = 'vni_shopConfigCache';
+
+  function lerConfigCache(){
+    try{ const raw = localStorage.getItem(LOJA_CACHE_KEY); return raw ? JSON.parse(raw) : null; }
+    catch(e){ return null; }
+  }
+  function salvarConfigCache(d){
+    try{ localStorage.setItem(LOJA_CACHE_KEY, JSON.stringify(d)); }catch(e){ /* localStorage indisponível — segue sem cache */ }
+  }
+  function aplicarNomeLoja(nome){
+    const nomeFinal = String(nome || '').trim();
+    if(!nomeFinal) return;
+    vitrineNomeLoja = nomeFinal;
+    document.querySelectorAll('[data-loja="nome"]').forEach(el => {
+      el.textContent = nomeFinal;
+      el.classList.add('is-ready');
+    });
+    document.title = document.title.replace('VN IMPORTS', nomeFinal);
+  }
+
   async function carregarNomeLoja(){
+    const cache = lerConfigCache();
+    if(cache && cache.nomeLoja) aplicarNomeLoja(cache.nomeLoja);
+
     try{
       const r = await fetch(API_URL + '/config');
-      if(!r.ok) return;
+      if(!r.ok) throw new Error('config http ' + r.status);
       const d = await r.json();
-      const nome = (d.nomeLoja && String(d.nomeLoja).trim()) || vitrineNomeLoja;
-      vitrineNomeLoja = nome;
-      document.querySelectorAll('[data-loja="nome"]').forEach(el => { el.textContent = nome; });
-      document.title = document.title.replace('VN IMPORTS', nome);
-    }catch(e){ /* mantém o nome padrão já no HTML */ }
+      if(d && d.nomeLoja) aplicarNomeLoja(d.nomeLoja);
+      salvarConfigCache(d);
+    }catch(e){
+      if(!cache) aplicarNomeLoja(vitrineNomeLoja); // sem cache e rede falhou — evita ficar em branco pra sempre
+    }
   }
 
   function R$(n){ const x = Number(n)||0; return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }

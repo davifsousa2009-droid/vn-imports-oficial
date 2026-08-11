@@ -217,6 +217,11 @@ nav{
 }
 .nav-dot.on{display:block}
 
+/* Nome da loja (logo/rodapé/copyright) — evita o FOUC do nome antigo:
+   começa invisível e só aparece (cache local ou API) via classe .is-ready. */
+[data-loja="nome"]{opacity:0;transition:opacity .3s ease}
+[data-loja="nome"].is-ready{opacity:1}
+
 /* ─── HERO (Split 50/50) ─── */
 .hero{
   max-width:1240px;
@@ -1571,7 +1576,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <nav id="main-nav">
   <div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer">
-      <span data-loja="nome">VN IMPORTS</span>
+      <span data-loja="nome"></span>
     </div>
     <ul class="nav-links">
       <li class="nav-item nav-item-mega">
@@ -1732,7 +1737,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   <div class="foot-top">
     <div>
-      <div class="foot-logo"><span data-loja="nome">VN IMPORTS</span></div>
+      <div class="foot-logo"><span data-loja="nome"></span></div>
       <p class="foot-desc">Moda importada premium. Cada peça é selecionada para quem exige estilo, qualidade e exclusividade.</p>
       <div class="foot-socials" id="footSocials">
         <a href="#" class="fsoc" id="igLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
@@ -1762,7 +1767,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
   </div>
   <div class="foot-bottom">
-    <span>© <span id="footYear"></span> <span data-loja="nome">VN IMPORTS</span>. Todos os direitos reservados.</span>
+    <span>© <span id="footYear"></span> <span data-loja="nome"></span>. Todos os direitos reservados.</span>
     <div class="foot-pays">
       <span class="fpay">PIX</span>
     </div>
@@ -1773,7 +1778,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- VIEW: SOBRE (seção movida para view separada) -->
 <div class="view" id="view-sobre">
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot4"></span></button>
@@ -1838,7 +1843,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- VIEW: AVALIAÇÕES (seção movida para view separada) -->
 <div class="view" id="view-avaliacoes">
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot5"></span></button>
@@ -1932,7 +1937,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-product">
   <div class="announce announce-alt" id="announceProduct" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteProd">299</span> &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal" id="anParcProd">12</em>x sem juros</div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot2"></span></button>
@@ -1986,7 +1991,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-wishlist">
   <div class="announce announce-alt" id="announceWishlist" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteWl">299</span></div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
 <button class="nav-btn" onclick="openCart()">
     <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
@@ -2004,7 +2009,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-contact">
   <div class="announce announce-alt" id="announceContact" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteCt">299</span></div>
   <nav><div class="nav-inner">
-    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome">VN IMPORTS</span></div>
+    <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
     <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot3"></span></button>
@@ -3668,6 +3673,30 @@ window.addEventListener('storage', (e)=>{ if(e.key==='vni_cart' || e.key==='vni_
 
 let vitrineNomeLoja = DEF.store;
 
+// ─── SHOP CONFIG — cache local (stale-while-revalidate) ──────────────────
+// Evita o FOUC do nome/logo antigo: aplica o que já está salvo no dispositivo
+// na hora (sem esperar rede) e só então busca a config real em background,
+// atualizando o DOM e o cache se algo tiver mudado.
+const LOJA_CACHE_KEY = 'vni_shopConfigCache';
+
+function lerConfigCache(){
+  try{ const raw = localStorage.getItem(LOJA_CACHE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function salvarConfigCache(d){
+  try{ localStorage.setItem(LOJA_CACHE_KEY, JSON.stringify(d)); }catch(e){ /* localStorage indisponível — segue sem cache */ }
+}
+function aplicarNomeLojaCache(nome){
+  const nomeFinal = String(nome || '').trim();
+  if(!nomeFinal) return;
+  vitrineNomeLoja = nomeFinal;
+  S.store = nomeFinal;
+  document.querySelectorAll('[data-loja="nome"]').forEach((el) => {
+    el.textContent = nomeFinal;
+    el.classList.add('is-ready');
+  });
+}
+
 function aplicarCoresDaLoja(colors) {
   if (!colors || typeof colors !== 'object') return;
   const root = document.documentElement;
@@ -3793,10 +3822,19 @@ async function carregarConteudoDinamico(preloaded) {
 
 // Injeta nome da loja, sufixo do título e variáveis CSS da vitrine
 async function carregarConfigLoja() {
+  // Aplica o nome cacheado imediatamente (antes de qualquer fetch) — some com
+  // o flash do nome antigo em visitas repetidas, sem esperar a rede.
+  const _cache = lerConfigCache();
+  if (_cache && _cache.nomeLoja) aplicarNomeLojaCache(_cache.nomeLoja);
+
   try {
     const r = await fetch(API_URL + '/config');
-    if (!r.ok) return;
+    if (!r.ok) {
+      if (!_cache) aplicarNomeLojaCache(vitrineNomeLoja);
+      return;
+    }
     const d = await r.json();
+    salvarConfigCache(d);
 
     const nome = (d.nomeLoja && String(d.nomeLoja).trim()) || vitrineNomeLoja;
     vitrineNomeLoja = nome;
@@ -3834,6 +3872,7 @@ async function carregarConfigLoja() {
 
     document.querySelectorAll('[data-loja="nome"]').forEach((el) => {
       el.textContent = nome;
+      el.classList.add('is-ready');
     });
 
     aplicarCoresDaLoja(d.colors);
@@ -4011,7 +4050,10 @@ async function carregarConfigLoja() {
     // - se existir paylink fixo em algum lugar, usamos.
     // - caso contrário, o checkout vai falhar e exibirá instrução.
   } catch {
-    /* mantém defaults do HTML / DEF */
+    // Rede falhou. Se não havia cache pra ter aplicado nome nenhum ainda,
+    // usa o padrão local (DEF.store) como último recurso — nunca deixa o
+    // logo/nome em branco pra sempre.
+    if (!_cache) aplicarNomeLojaCache(vitrineNomeLoja);
   }
 }
 
