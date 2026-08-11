@@ -16,6 +16,14 @@
       "destination": "/server.js"
     },
     {
+      "source": "/search.html",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/produto.html",
+      "destination": "/server.js"
+    },
+    {
       "source": "/",
       "destination": "/server.js"
     },

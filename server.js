@@ -860,6 +860,21 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+// Árvore de categorias (consumida pelo Mega Menu do site e do produto).
+// O schema de Category hoje é flat (sem campo "parent" — não existe UI de
+// subcategoria no admin), então cada categoria vira uma raiz sem filhos;
+// o front já trata "sem children" tornando o próprio título clicável.
+app.get('/api/categories/tree', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const list = await Category.find().sort({ nome: 1 }).lean();
+    const tree = list.map(c => ({ ...c, children: [] }));
+    res.json(tree);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao montar árvore de categorias', detalhe: err.message });
+  }
+});
+
 app.post('/api/categories', verificarJWT, async (req, res) => {
 
   if (!(await ensureDbConnected(res))) return;
@@ -1732,6 +1747,28 @@ app.get('/VN_IMPORTS.html', async (req, res) => {
 app.get('/VN_IMPORTS', async (req, res) => {
   semCacheHtml(res);
   res.send(await renderLojaHtmlComConfig());
+});
+
+// search.html e produto.html não têm dados injetados pelo servidor (tudo é
+// buscado via fetch no client), então só cacheamos o arquivo bruto em memória.
+// Em produção o express.static abaixo fica desligado, e sem essas rotas
+// explícitas + os rewrites correspondentes no vercel.json essas páginas
+// batiam 404 (a Vercel roteia "/search.html" e "/produto.html" para a
+// function em vez de servir o arquivo estático diretamente).
+const searchHtmlPath = path.join(__dirname, 'search.html');
+let searchHtmlCache = null;
+app.get('/search.html', (req, res) => {
+  if (!searchHtmlCache) searchHtmlCache = fs.readFileSync(searchHtmlPath, 'utf8');
+  semCacheHtml(res);
+  res.send(searchHtmlCache);
+});
+
+const produtoHtmlPath = path.join(__dirname, 'produto.html');
+let produtoHtmlCache = null;
+app.get('/produto.html', (req, res) => {
+  if (!produtoHtmlCache) produtoHtmlCache = fs.readFileSync(produtoHtmlPath, 'utf8');
+  semCacheHtml(res);
+  res.send(produtoHtmlCache);
 });
 
 if (process.env.NODE_ENV !== 'production') {
