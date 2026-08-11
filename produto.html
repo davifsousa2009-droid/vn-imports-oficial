@@ -1577,10 +1577,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <button class="nav-btn" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <button class="nav-btn" onclick="location.href='/'" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot"></span></button>
       <button class="nav-btn" onclick="location.href='/'" title="Carrinho">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M6 7h15l-1.5 14H7.5L6 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-          <path d="M9 7a3 3 0 0 1 6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
+        <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
         <span class="nav-dot" id="cDot"></span>
       </button>
     </div>
@@ -1706,6 +1703,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <script>
   const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
+
+  let vitrineNomeLoja = 'VN IMPORTS';
+
+  // Puxa o nome real da loja (Shop Config) e atualiza logo do header, footer e
+  // copyright — mesma lógica usada em VN_IMPORTS.html. Se o fetch falhar ou
+  // demorar, o texto padrão que já está no HTML permanece intacto.
+  async function carregarNomeLoja(){
+    try{
+      const r = await fetch(API_URL + '/config');
+      if(!r.ok) return;
+      const d = await r.json();
+      const nome = (d.nomeLoja && String(d.nomeLoja).trim()) || vitrineNomeLoja;
+      vitrineNomeLoja = nome;
+      document.querySelectorAll('[data-loja="nome"]').forEach(el => { el.textContent = nome; });
+      document.title = document.title.replace('VN IMPORTS', nome);
+    }catch(e){ /* mantém o nome padrão já no HTML */ }
+  }
 
   function R$(n){ const x = Number(n)||0; return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
   function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
@@ -1888,7 +1902,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const p = await r.json();
       produtoAtual = p;
 
-      document.title = (p.nome || 'Produto') + ' — VN IMPORTS';
+      document.title = (p.nome || 'Produto') + ' — ' + vitrineNomeLoja;
       document.getElementById('pvBrand').textContent = p.categoria || 'Produto';
       document.getElementById('pvName').textContent = p.nome || '';
       document.getElementById('pvPrice').textContent = R$(p.preco);
@@ -1916,6 +1930,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     }
   }
 
+  carregarNomeLoja();
   loadProduct();
   updateHeaderDots();
   document.getElementById('footYear').textContent = new Date().getFullYear();
