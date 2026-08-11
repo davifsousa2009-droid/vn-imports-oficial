@@ -793,6 +793,43 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
+// Precisa vir antes de '/api/produtos/:id' — senão o Express casa "search" como
+// se fosse o :id, e o findById("search") quebra com CastError (500).
+app.get('/api/produtos/search', async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const q = String(req.query.q || '').trim();
+
+    let limit = parseInt(req.query.limit, 10);
+    if (!Number.isFinite(limit) || limit <= 0) limit = 20;
+
+    let skip = parseInt(req.query.skip, 10);
+    if (!Number.isFinite(skip) || skip < 0) {
+      let page = parseInt(req.query.page, 10);
+      if (!Number.isFinite(page) || page <= 0) page = 1;
+      skip = (page - 1) * limit;
+    }
+
+    // $regex simples em vez de $text — evita depender de um índice de texto
+    // que pode não existir na collection.
+    const filtro = q
+      ? {
+          $or: [
+            { nome: { $regex: q, $options: 'i' } },
+            { titulo: { $regex: q, $options: 'i' } },
+            { descricao: { $regex: q, $options: 'i' } }
+          ]
+        }
+      : {};
+
+    const produtos = await Produto.find(filtro).sort({ createdAt: -1 }).skip(skip).limit(limit);
+    res.json(produtos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/produtos/:id', async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
