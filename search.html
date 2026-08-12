@@ -181,8 +181,49 @@ nav{
   .mega-col{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
   .megamenu{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .18s}
   .nav-item-mega.open .megamenu{max-height:800px;opacity:1}
-  .nav-links{flex-direction:column;gap:8px}
   .nav-link-cats{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;width:100%;border-radius:8px}
+}
+
+/* ─── MENU MOBILE (off-canvas) ─── */
+.nav-hamburger{
+  display:none;
+  width:44px;height:44px;border-radius:10px;flex:none;
+  border:1px solid var(--border);background:transparent;
+  align-items:center;justify-content:center;
+  font-size:17px;color:var(--ink);cursor:pointer;
+}
+.mobile-nav-overlay{
+  position:fixed;inset:0;z-index:1400;
+  background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+.mobile-nav-overlay.on{opacity:1;pointer-events:all}
+.mobile-nav-close-row{display:none}
+@media(max-width:768px){
+  .nav-hamburger{display:flex}
+  .nav-links{
+    display:flex;flex-direction:column;gap:2px;
+    position:fixed;top:0;left:0;bottom:0;z-index:1500;
+    width:min(320px,84vw);
+    background:var(--bg);
+    align-items:stretch;
+    padding:14px 12px 24px;
+    overflow-y:auto;
+    box-shadow:0 0 44px rgba(0,0,0,.22);
+    transform:translateX(-100%);
+    transition:transform .32s cubic-bezier(.2,.9,.2,1);
+  }
+  .nav-links.open{transform:translateX(0)}
+  .nav-links a{padding:14px 10px;display:flex;align-items:center;font-size:13px;min-height:44px}
+  .nav-item-mega{width:100%}
+  .mega-col a{min-height:44px;display:flex;align-items:center}
+  .mobile-nav-close-row{display:flex;justify-content:flex-end;padding:0 2px 8px}
+  .mobile-nav-close{
+    width:44px;height:44px;border-radius:50%;flex:none;
+    border:1px solid var(--border);background:transparent;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;color:var(--ink);cursor:pointer;
+  }
 }
 .nav-right{display:flex;gap:6px;align-items:center}
 .nav-btn{
@@ -527,6 +568,51 @@ nav{
 .filters{
   position:sticky;
   top: 110px;
+}
+.filters-mobile-close{display:none}
+.filters-mobile-trigger{display:none}
+.filters-overlay{
+  position:fixed;inset:0;z-index:1400;
+  background:rgba(0,0,0,.45);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+  backdrop-filter:blur(4px);
+}
+.filters-overlay.on{opacity:1;pointer-events:all}
+
+/* ─── FILTROS MOBILE: sidebar não empurra a grade — vira bottom sheet ─── */
+@media(max-width:900px){
+  .filters-mobile-trigger{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;min-height:44px;
+    border:1px solid var(--border);background:var(--bg2);
+    border-radius:999px;
+    font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink);cursor:pointer;margin-bottom:20px;
+  }
+  .filters-mobile-close{
+    display:flex;width:44px;height:44px;border-radius:50%;flex:none;
+    border:1px solid var(--border);background:transparent;color:var(--ink);
+    align-items:center;justify-content:center;font-size:15px;cursor:pointer;
+  }
+  .filters{
+    position:fixed;left:0;right:0;bottom:0;top:auto;z-index:1500;
+    max-height:85dvh;overflow-y:auto;
+    background:var(--bg);
+    border-top:1px solid var(--border);
+    border-radius:20px 20px 0 0;
+    padding:14px 20px 24px;
+    box-shadow:0 -10px 40px rgba(0,0,0,.18);
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.2,.9,.2,1);
+  }
+  .filters.open{transform:translateY(0)}
+  .filters::before{
+    content:'';display:block;
+    width:40px;height:4px;border-radius:999px;background:var(--border2);
+    margin:0 auto 14px;
+  }
+  /* Busca da página sempre visível no topo, logo abaixo do logo/nav */
+  .page-search-box{position:sticky;top:60px;z-index:80;background:var(--bg)}
 }
 .filters-head{
   display:flex;
@@ -1536,8 +1622,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .rev-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:768px){
-  .nav-links{display:none}
-  .nav-inner{padding:0 20px}
+  .nav-inner{padding:0 20px;height:60px}
+
+  /* Zonas de toque ≥44px no header */
+  .nav-btn{width:44px;height:44px}
+
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
   .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
   .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
@@ -1545,8 +1634,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .sec{padding:60px 20px}
   .cats-inner{padding:0 20px}
   .cats-grid{grid-template-columns:1fr 1fr}
-  .prod-grid{grid-template-columns:1fr 1fr;gap:16px}
-  .prod-area{padding:16px;border-radius:12px}
+
+  /* Grid de produtos: 2 por linha, cards mais compactos */
+  .prod-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .prod-area{padding:12px;border-radius:12px}
+  .prod-info{padding:12px 12px 14px}
+  .prod-brand{font-size:8px;margin-bottom:3px}
+  .prod-name{font-size:14px;margin-bottom:2px}
+  .prod-price{font-size:14px}
+  .prod-old{font-size:10px}
+  .prod-wish-btn{width:36px;height:36px}
+  .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
+
+  /* Zonas de toque ≥44px nos controles de filtro */
+  .filters-reset{min-height:44px;padding:10px 12px}
+  .fcat-item{min-height:44px;display:flex;align-items:center}
   .pv-grid{grid-template-columns:1fr;gap:36px}
   .pv-info{position:static}
   .contact-layout{grid-template-columns:1fr;gap:36px}
@@ -1597,10 +1699,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <nav id="main-nav">
   <div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="location.href='/'" style="cursor:pointer">
       <span data-loja="nome"></span>
     </div>
     <ul class="nav-links">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
       <li class="nav-item nav-item-mega">
         <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
         <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
@@ -1626,11 +1730,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
   </nav>
 
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="fecharMenuMobile()"></div>
+<div class="filters-overlay" id="filtersOverlay" onclick="fecharFiltrosMobile()"></div>
+
 <div class="search-page-wrap">
   <aside class="filters" id="filtersAside" aria-label="Filtros">
     <div class="filters-head">
       <div class="filters-title">Filtros</div>
-      <button class="filters-reset" onclick="resetSearchFilters()">Limpar</button>
+      <div style="display:flex;align-items:center;gap:2px">
+        <button class="filters-reset" onclick="resetSearchFilters()">Limpar</button>
+        <button class="filters-mobile-close" onclick="fecharFiltrosMobile()" aria-label="Fechar filtros"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
     </div>
 
     <div class="fblk open">
@@ -1672,6 +1782,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="pageSearchInp" placeholder="Buscar produtos…" onkeydown="if(event.key==='Enter'){event.preventDefault();goToSearchPage(this.value);}">
     </div>
+
+    <button class="filters-mobile-trigger" onclick="abrirFiltrosMobile()"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Filtrar</button>
 
     <div class="prod-area">
       <div id="prodGrid" class="prod-grid"></div>
@@ -1905,6 +2017,40 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     const blk = titleEl.closest('.fblk');
     if (blk) blk.classList.toggle('open');
   }
+
+  // ─── MENU MOBILE (off-canvas) ─────────────────────────────────────────
+  function abrirMenuMobile(btn){
+    const nav = btn.closest('nav');
+    const links = nav && nav.querySelector('.nav-links');
+    if(links) links.classList.add('open');
+    document.getElementById('mobileNavOverlay')?.classList.add('on');
+    document.body.style.overflow = 'hidden';
+  }
+  function fecharMenuMobile(){
+    document.querySelectorAll('.nav-links.open').forEach(el=>el.classList.remove('open'));
+    document.getElementById('mobileNavOverlay')?.classList.remove('on');
+    if(!document.getElementById('filtersAside')?.classList.contains('open')) document.body.style.overflow = '';
+  }
+
+  // ─── FILTROS MOBILE (bottom sheet) — sidebar não empurra a grade pra baixo ──
+  function abrirFiltrosMobile(){
+    document.getElementById('filtersAside')?.classList.add('open');
+    document.getElementById('filtersOverlay')?.classList.add('on');
+    document.body.style.overflow = 'hidden';
+  }
+  function fecharFiltrosMobile(){
+    document.getElementById('filtersAside')?.classList.remove('open');
+    document.getElementById('filtersOverlay')?.classList.remove('on');
+    if(!document.querySelector('.nav-links.open')) document.body.style.overflow = '';
+  }
+  // Fecha a gaveta ao navegar (menos no toggle "Categorias", que só expande o acordeão).
+  document.querySelectorAll('.nav-links').forEach(nav=>{
+    nav.addEventListener('click', (e)=>{
+      const a = e.target.closest('a');
+      if(!a || a.classList.contains('nav-link-cats')) return;
+      if(window.innerWidth <= 768) fecharMenuMobile();
+    });
+  });
 
   // ─── FILTROS DA BUSCA ───────────────────────────────────────────
   let filtroState = { categoria: '', tamanho: '', precoMin: 0, precoMax: Infinity };

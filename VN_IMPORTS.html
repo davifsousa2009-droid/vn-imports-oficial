@@ -199,8 +199,59 @@ nav{
   .mega-col{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
   .megamenu{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .18s}
   .nav-item-mega.open .megamenu{max-height:800px;opacity:1}
-  .nav-links{flex-direction:column;gap:8px}
   .nav-link-cats{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;width:100%;border-radius:8px}
+}
+
+/* ─── MENU MOBILE (off-canvas) ───────────────────────────────────────────
+   .nav-links vira a própria gaveta lateral no mobile (evita duplicar a
+   estrutura do menu/mega-menu numa segunda árvore de DOM). */
+.nav-hamburger{
+  display:none;
+  width:44px;height:44px;border-radius:10px;flex:none;
+  border:1px solid var(--border);background:transparent;
+  align-items:center;justify-content:center;
+  font-size:17px;color:var(--ink);cursor:pointer;
+}
+.mobile-nav-overlay{
+  position:fixed;inset:0;z-index:1400;
+  background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+.mobile-nav-overlay.on{opacity:1;pointer-events:all}
+.mobile-nav-close-row{display:none}
+@media(max-width:768px){
+  .nav-hamburger{display:flex}
+  .nav-links{
+    display:flex;flex-direction:column;gap:2px;
+    position:fixed;top:0;left:0;bottom:0;z-index:1500;
+    width:min(320px,84vw);
+    background:var(--bg);
+    align-items:stretch;
+    padding:14px 12px 24px;
+    overflow-y:auto;
+    box-shadow:0 0 44px rgba(0,0,0,.22);
+    transform:translateX(-100%);
+    transition:transform .32s cubic-bezier(.2,.9,.2,1);
+  }
+  .nav-links.open{transform:translateX(0)}
+  .nav-links a{padding:14px 10px;display:block;font-size:13px;min-height:44px;display:flex;align-items:center}
+  .nav-item-mega{width:100%}
+  .mega-col a{min-height:44px;display:flex;align-items:center}
+  .mobile-nav-close-row{display:flex;justify-content:flex-end;padding:0 2px 8px}
+  .mobile-nav-close{
+    width:44px;height:44px;border-radius:50%;flex:none;
+    border:1px solid var(--border);background:transparent;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;color:var(--ink);cursor:pointer;
+  }
+  /* Navs secundários (wishlist/produto/contato) só têm "Voltar à loja" —
+     redundante com o clique no logo, então fica inline em vez de virar
+     gaveta off-canvas (sem sentido abrir uma gaveta pra um único link). */
+  .nav-links-simple{
+    position:static;transform:none;box-shadow:none;width:auto;
+    flex-direction:row;padding:0;background:transparent;overflow:visible;
+  }
+  .nav-links-simple a{padding:10px 8px;min-height:44px;display:flex;align-items:center;font-size:12px}
 }
 .nav-right{display:flex;gap:6px;align-items:center}
 .nav-btn{
@@ -640,45 +691,62 @@ nav{
   border:1px solid var(--border);
   background:var(--bg2);
   padding:12px 16px;
+  min-height:44px;
   border-radius:999px;
   font-size:12px;
   font-weight:800;
   letter-spacing:.1em;
   text-transform:uppercase;
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
 .filters-mobile-btn:active{transform:translateY(1px)}
 
 .mobile-filters-overlay{
-  position:fixed;inset:0;z-index:650;
+  position:fixed;inset:0;z-index:1400;
   background:rgba(0,0,0,.45);
   opacity:0;pointer-events:none;transition:opacity .25s;
   backdrop-filter:blur(4px);
 }
 .mobile-filters-overlay.on{opacity:1;pointer-events:all}
+/* Bottom sheet: sobe da base da tela em vez de cair do topo — mais fácil de
+   alcançar com o polegar num app mobile. */
 .mobile-filters-panel{
-  position:absolute;left:0;right:0;top:0;
+  position:fixed;left:0;right:0;bottom:0;
   background:var(--bg);
-  border-bottom:1px solid var(--border);
-  transform:translateY(-8px);
-  opacity:0;transition:opacity .25s, transform .25s;
-  max-height:86dvh; overflow:auto;
+  border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.2,.9,.2,1);
+  max-height:85dvh;overflow:auto;
+  box-shadow:0 -10px 40px rgba(0,0,0,.18);
 }
-.mobile-filters-overlay.on .mobile-filters-panel{opacity:1;transform:translateY(0)}
+.mobile-filters-overlay.on .mobile-filters-panel{transform:translateY(0)}
+.mobile-filters-panel::before{
+  content:'';position:sticky;top:10px;display:block;
+  width:40px;height:4px;border-radius:999px;background:var(--border2);
+  margin:0 auto 2px;
+}
 .mobile-filters-close{
-  border:none;background:transparent;color:var(--muted);cursor:pointer;
-  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+  width:44px;height:44px;border-radius:50%;flex:none;
+  border:1px solid var(--border);background:transparent;color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
 }
 .mobile-filters-top{
   position:sticky;top:0;background:var(--bg);
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 18px;border-bottom:1px solid var(--border);
+  padding:6px 18px 14px;border-bottom:1px solid var(--border);
 }
 .mobile-filters-wrap{padding:0 18px 22px;}
 
 @media(max-width:768px){
   .sec-prod-wrap{grid-template-columns:1fr;gap:0}
   .filters{display:none}
-  .filters-mobile-bar{display:block;padding:0 0 20px}
+  .filters-mobile-bar{
+    display:block;padding:0 0 16px;
+    position:sticky;top:120px;z-index:80;
+    background:var(--bg);margin:0 -1px;
+  }
 }
 
 
@@ -1524,8 +1592,16 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .rev-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:768px){
-  .nav-links{display:none}
-  .nav-inner{padding:0 20px}
+  .nav-inner{padding:0 20px;height:60px}
+
+  /* Busca sempre visível no mobile — sem depender do toggle do desktop */
+  .search-wrap{max-height:60px !important;padding:10px 20px !important;overflow:visible}
+  .search-wrap .search-close{display:none}
+  .nav-btn.nav-btn-search{display:none}
+
+  /* Zonas de toque ≥44px no header e nos ícones do topo */
+  .nav-btn{width:44px;height:44px}
+
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
   .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
   .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
@@ -1533,8 +1609,22 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .sec{padding:60px 20px}
   .cats-inner{padding:0 20px}
   .cats-grid{grid-template-columns:1fr 1fr}
-  .prod-grid{grid-template-columns:1fr 1fr;gap:16px}
-  .prod-area{padding:16px;border-radius:12px}
+
+  /* Grid de produtos: 2 por linha, cards mais compactos */
+  .prod-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .prod-area{padding:12px;border-radius:12px}
+  .prod-info{padding:12px 12px 14px}
+  .prod-brand{font-size:8px;margin-bottom:3px}
+  .prod-name{font-size:14px;margin-bottom:2px}
+  .prod-price{font-size:14px}
+  .prod-old{font-size:10px}
+  .prod-wish-btn{width:36px;height:36px}
+  .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
+
+  /* Zonas de toque ≥44px nos controles de filtro */
+  .filters-reset{min-height:44px;padding:10px 12px}
+  .fcat{min-height:44px}
+  .schip{min-height:44px;padding:10px 16px}
   .pv-grid{grid-template-columns:1fr;gap:36px}
   .pv-info{position:static}
   .contact-layout{grid-template-columns:1fr;gap:36px}
@@ -1566,6 +1656,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 </head>
 <body>
 
+<!-- Overlay compartilhado pelo menu off-canvas mobile (todas as views) -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="fecharMenuMobile()"></div>
+
 <!-- ══ VIEWS ══════════════════════════════════════ -->
 
 <!-- VIEW: HOME -->
@@ -1575,10 +1668,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 <nav id="main-nav">
   <div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer">
       <span data-loja="nome"></span>
     </div>
     <ul class="nav-links">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
       <li class="nav-item nav-item-mega">
         <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
         <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
@@ -1594,7 +1689,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
     </ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button class="nav-btn nav-btn-search" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot"></span></button>
       <button class="nav-btn" onclick="openCart()" title="Carrinho">
         <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
@@ -1779,7 +1874,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-sobre">
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot4"></span></button>
       <button class="nav-btn" onclick="openCart()" title="Carrinho">
@@ -1844,7 +1939,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-avaliacoes">
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot5"></span></button>
       <button class="nav-btn" onclick="openCart()" title="Carrinho">
@@ -1938,7 +2033,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceProduct" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteProd">299</span> &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal" id="anParcProd">12</em>x sem juros</div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot2"></span></button>
 <button class="nav-btn" onclick="openCart()">
@@ -1992,7 +2087,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceWishlist" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteWl">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
 <button class="nav-btn" onclick="openCart()">
     <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
     <span class="nav-dot" id="cDot3"></span>
@@ -2010,7 +2105,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <div class="announce announce-alt" id="announceContact" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteCt">299</span></div>
   <nav><div class="nav-inner">
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
-    <ul class="nav-links"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
+    <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot3"></span></button>
 <button class="nav-btn" onclick="openCart()">
@@ -3299,6 +3394,29 @@ function syncDots(){
   ['cDot','cDot2','cDot3','cDot4'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('on',hC); });
   ['wDot','wDot2','wDot3'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('on',hW); });
 }
+
+/* ─── MENU MOBILE (off-canvas) ─── */
+function abrirMenuMobile(btn){
+  const nav = btn.closest('nav');
+  const links = nav && nav.querySelector('.nav-links');
+  if(links) links.classList.add('open');
+  document.querySelectorAll('.mobile-nav-overlay').forEach(o=>o.classList.add('on'));
+  document.body.style.overflow = 'hidden';
+}
+function fecharMenuMobile(){
+  document.querySelectorAll('.nav-links.open').forEach(el=>el.classList.remove('open'));
+  document.querySelectorAll('.mobile-nav-overlay').forEach(o=>o.classList.remove('on'));
+  document.body.style.overflow = '';
+}
+// Fecha a gaveta ao navegar (menos no toggle "Categorias", que só expande o acordeão).
+// Delegado no .nav-links pra também pegar os links do mega menu, injetados depois via JS.
+document.querySelectorAll('.nav-links').forEach(nav=>{
+  nav.addEventListener('click', (e)=>{
+    const a = e.target.closest('a');
+    if(!a || a.classList.contains('nav-link-cats')) return;
+    if(window.innerWidth <= 768) fecharMenuMobile();
+  });
+});
 
 /* ─── SEARCH ─── */
 let srOpen=false;

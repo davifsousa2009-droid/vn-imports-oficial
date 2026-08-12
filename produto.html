@@ -181,8 +181,49 @@ nav{
   .mega-col{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
   .megamenu{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .18s}
   .nav-item-mega.open .megamenu{max-height:800px;opacity:1}
-  .nav-links{flex-direction:column;gap:8px}
   .nav-link-cats{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;width:100%;border-radius:8px}
+}
+
+/* ─── MENU MOBILE (off-canvas) ─── */
+.nav-hamburger{
+  display:none;
+  width:44px;height:44px;border-radius:10px;flex:none;
+  border:1px solid var(--border);background:transparent;
+  align-items:center;justify-content:center;
+  font-size:17px;color:var(--ink);cursor:pointer;
+}
+.mobile-nav-overlay{
+  position:fixed;inset:0;z-index:1400;
+  background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+.mobile-nav-overlay.on{opacity:1;pointer-events:all}
+.mobile-nav-close-row{display:none}
+@media(max-width:768px){
+  .nav-hamburger{display:flex}
+  .nav-links{
+    display:flex;flex-direction:column;gap:2px;
+    position:fixed;top:0;left:0;bottom:0;z-index:1500;
+    width:min(320px,84vw);
+    background:var(--bg);
+    align-items:stretch;
+    padding:14px 12px 24px;
+    overflow-y:auto;
+    box-shadow:0 0 44px rgba(0,0,0,.22);
+    transform:translateX(-100%);
+    transition:transform .32s cubic-bezier(.2,.9,.2,1);
+  }
+  .nav-links.open{transform:translateX(0)}
+  .nav-links a{padding:14px 10px;display:flex;align-items:center;font-size:13px;min-height:44px}
+  .nav-item-mega{width:100%}
+  .mega-col a{min-height:44px;display:flex;align-items:center}
+  .mobile-nav-close-row{display:flex;justify-content:flex-end;padding:0 2px 8px}
+  .mobile-nav-close{
+    width:44px;height:44px;border-radius:50%;flex:none;
+    border:1px solid var(--border);background:transparent;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;color:var(--ink);cursor:pointer;
+  }
 }
 .nav-right{display:flex;gap:6px;align-items:center}
 .nav-btn{
@@ -1506,8 +1547,16 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .rev-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:768px){
-  .nav-links{display:none}
-  .nav-inner{padding:0 20px}
+  .nav-inner{padding:0 20px;height:60px}
+
+  /* Busca sempre visível no mobile — sem depender do toggle do desktop */
+  .search-wrap{max-height:60px !important;padding:10px 20px !important;overflow:visible}
+  .search-wrap .search-close{display:none}
+  .nav-btn.nav-btn-search{display:none}
+
+  /* Zonas de toque ≥44px no header */
+  .nav-btn{width:44px;height:44px}
+
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
   .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
   .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
@@ -1515,8 +1564,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .sec{padding:60px 20px}
   .cats-inner{padding:0 20px}
   .cats-grid{grid-template-columns:1fr 1fr}
-  .prod-grid{grid-template-columns:1fr 1fr;gap:16px}
-  .prod-area{padding:16px;border-radius:12px}
+
+  /* Grid de relacionados: 2 por linha, cards mais compactos */
+  .prod-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .prod-area{padding:12px;border-radius:12px}
+  .prod-info{padding:12px 12px 14px}
+  .prod-brand{font-size:8px;margin-bottom:3px}
+  .prod-name{font-size:14px;margin-bottom:2px}
+  .prod-price{font-size:14px}
+  .prod-old{font-size:10px}
+  .prod-wish-btn{width:36px;height:36px}
+  .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
   .pv-grid{grid-template-columns:1fr;gap:36px}
   .pv-info{position:static}
   .contact-layout{grid-template-columns:1fr;gap:36px}
@@ -1558,12 +1616,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </style>
 </head>
 <body>
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="fecharMenuMobile()"></div>
 <nav id="main-nav">
   <div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="location.href='/'" style="cursor:pointer">
       <span data-loja="nome"></span>
     </div>
     <ul class="nav-links">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
       <li class="nav-item nav-item-mega">
         <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
         <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
@@ -1579,7 +1640,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <li><a href="/" onclick="event.preventDefault();location.href='/'">Contato</a></li>
     </ul>
     <div class="nav-right">
-      <button class="nav-btn" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button class="nav-btn nav-btn-search" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <button class="nav-btn" onclick="location.href='/'" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot"></span></button>
       <button class="nav-btn" onclick="location.href='/'" title="Carrinho">
         <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
@@ -1786,6 +1847,27 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     const t=document.getElementById('toast'); t.classList.add('on');
     clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),3000);
   }
+
+  // ─── MENU MOBILE (off-canvas) ───
+  function abrirMenuMobile(btn){
+    const nav = btn.closest('nav');
+    const links = nav && nav.querySelector('.nav-links');
+    if(links) links.classList.add('open');
+    document.getElementById('mobileNavOverlay')?.classList.add('on');
+    document.body.style.overflow = 'hidden';
+  }
+  function fecharMenuMobile(){
+    document.querySelectorAll('.nav-links.open').forEach(el=>el.classList.remove('open'));
+    document.getElementById('mobileNavOverlay')?.classList.remove('on');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.nav-links').forEach(nav=>{
+    nav.addEventListener('click', (e)=>{
+      const a = e.target.closest('a');
+      if(!a || a.classList.contains('nav-link-cats')) return;
+      if(window.innerWidth <= 768) fecharMenuMobile();
+    });
+  });
 
   // ─── BUSCA (dropdown do header) ───
   function toggleSearch(){
