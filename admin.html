@@ -79,6 +79,22 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 .size-chip:has(input:checked){border-color:#9A7A3A;background:#fff}
 .size-chip:has(input:checked)::after{content:'✓';margin-left:2px;color:#9A7A3A;font-weight:800;font-size:12px}
 
+/* TEMA DE FUNDO — amostras clicáveis (nunca hex livre, ver comentário no HTML) */
+.theme-swatch-grid{display:flex;flex-wrap:wrap;gap:18px}
+.theme-swatch-item{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;background:none;border:none;padding:0;font-family:'Barlow',sans-serif}
+.theme-swatch-circle{
+  width:44px;height:44px;border-radius:50%;
+  border:1px solid #E0DBD4;
+  position:relative;
+  transition:box-shadow .15s,transform .15s;
+}
+.theme-swatch-item:hover .theme-swatch-circle{transform:translateY(-2px)}
+.theme-swatch-item.on .theme-swatch-circle{box-shadow:0 0 0 2px #fff,0 0 0 4px #9A7A3A}
+.theme-swatch-check{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#9A7A3A;font-weight:800;font-size:15px;text-shadow:0 1px 2px rgba(255,255,255,.9)}
+.theme-swatch-item.on .theme-swatch-check{display:flex}
+.theme-swatch-label{font-size:11px;color:#888;text-align:center;max-width:68px;line-height:1.3}
+.theme-swatch-item.on .theme-swatch-label{color:#111;font-weight:600}
+
 
 .img-preview{display:none;align-items:center;gap:12px;margin-top:8px;padding:10px;background:#F7F4F0;border:1px solid #E0DBD4}
 .galeria-preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
@@ -626,6 +642,14 @@ tr:hover td{background:#FAFAF8}
               <label class="fl">E-mail de Contato</label>
               <input class="fi" id="cfg-emailContato" placeholder="contato@sualoja.com" type="email">
             </div>
+          </div>
+
+          <div class="fg" style="margin-top:18px">
+            <label class="fl">Tema de Cores de Fundo</label>
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 14px">
+              Muda o fundo da loja inteira — cards e divisórias já vêm calibrados junto com cada tema. Sem campo de hex livre aqui de propósito: essa cor de fundo também é reaproveitada como cor de <em>texto</em> em vários lugares (rodapé, botões no hover, badges), e um tom escolhido só pensando em "fundo" pode deixar esse texto ilegível sem nenhum aviso.
+            </p>
+            <div class="theme-swatch-grid" id="temaFundoGrid"></div>
           </div>
 
           <div style="height:18px"></div>
@@ -1977,6 +2001,41 @@ async function excluirPedido(id) {
   }
 }
 
+// ── TEMA DE FUNDO (amostras clicáveis) ────────────────
+// Espelha TEMAS_FUNDO do server.js — mantenha os dois catálogos em
+// sincronia se adicionar/mudar um tema. bg/bg2/border sempre juntos porque
+// foram calibrados visualmente em conjunto (trocar só um deixa cards e
+// divisórias com contraste estranho contra o fundo novo).
+const TEMAS_FUNDO = {
+  creme: { nome: 'Creme Clássico', bg: '#F7F4F0', bg2: '#EDE9E3', border: '#D9D4CC' },
+  gelo: { nome: 'Branco Gelo', bg: '#F7F8FA', bg2: '#ECEEF1', border: '#DBDFE4' },
+  rose: { nome: 'Rosé Suave', bg: '#FAF3F2', bg2: '#F3E7E5', border: '#E3D0CD' },
+  salvia: { nome: 'Verde Sálvia', bg: '#F4F6F1', bg2: '#E8ECE2', border: '#D3D9C8' },
+  neblina: { nome: 'Azul Névoa', bg: '#F2F5F8', bg2: '#E5EBF0', border: '#CFD9E1' }
+};
+let temaFundoSelecionado = 'creme';
+
+function renderTemaFundoGrid() {
+  const grid = document.getElementById('temaFundoGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(TEMAS_FUNDO).map(([key, t]) => `
+    <button type="button" class="theme-swatch-item${key === temaFundoSelecionado ? ' on' : ''}" onclick="selecionarTemaFundo('${key}')" title="${escHtml(t.nome)}">
+      <span class="theme-swatch-circle" style="background:linear-gradient(135deg, ${t.bg} 50%, ${t.bg2} 50%);border-color:${t.border}">
+        <span class="theme-swatch-check">✓</span>
+      </span>
+      <span class="theme-swatch-label">${escHtml(t.nome)}</span>
+    </button>
+  `).join('');
+}
+
+function selecionarTemaFundo(key) {
+  if (!TEMAS_FUNDO[key]) return;
+  temaFundoSelecionado = key;
+  renderTemaFundoGrid();
+}
+
+renderTemaFundoGrid();
+
 // ── CONFIGURAÇÃO DA LOJA ──────────────────────────────
 async function loadConfig() {
   try {
@@ -1987,6 +2046,8 @@ async function loadConfig() {
     document.getElementById('cfg-chavePix').value = d.chavePix != null ? String(d.chavePix) : '';
     document.getElementById('cfg-corPrimaria').value = d.corPrimaria || '';
     document.getElementById('cfg-corSecundaria').value = d.corSecundaria || '';
+    temaFundoSelecionado = TEMAS_FUNDO[d.temaFundo] ? d.temaFundo : 'creme';
+    renderTemaFundoGrid();
     document.getElementById('cfg-whatsappContato').value = d.whatsappContato || '';
     document.getElementById('cfg-instagramLink').value = d.instagramLink || '';
     document.getElementById('cfg-emailContato').value = d.emailContato || '';
@@ -2020,6 +2081,8 @@ async function loadConfig() {
     document.getElementById('cfg-chavePix').value = '';
     document.getElementById('cfg-corPrimaria').value = '';
     document.getElementById('cfg-corSecundaria').value = '';
+    temaFundoSelecionado = 'creme';
+    renderTemaFundoGrid();
     document.getElementById('cfg-whatsappContato').value = '';
     document.getElementById('cfg-instagramLink').value = '';
     document.getElementById('cfg-emailContato').value = '';
@@ -2073,6 +2136,7 @@ async function salvarConfig() {
     chavePix,
     corPrimaria,
     corSecundaria,
+    temaFundo: temaFundoSelecionado,
     whatsappContato,
     instagramLink,
     emailContato,

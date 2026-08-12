@@ -540,11 +540,31 @@ const OrderSchema = new mongoose.Schema(
 const Settings = mongoose.models.Settings || mongoose.model('Settings', SettingsSchema);
 const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 
+// Temas de fundo pré-calibrados pro painel admin (white-label). De propósito
+// NÃO é um campo de hex livre como corPrimaria/corSecundaria: --bg também é
+// reaproveitado como cor de TEXTO em dezenas de lugares (rodapé, botões no
+// hover, badges) sempre que a superfície por trás é escura — um hex qualquer
+// escolhido "só pensando em fundo" pode deixar esse texto ilegível sem
+// nenhum aviso. bg/bg2/border sempre mudam juntos porque foram calibrados
+// visualmente em conjunto (trocar só o --bg deixa cards e divisórias com
+// contraste estranho contra o fundo novo). Espelhado em admin.html — mantenha
+// os dois catálogos em sincronia se adicionar/mudar um tema.
+const TEMAS_FUNDO = {
+  creme: { nome: 'Creme Clássico', bg: '#F7F4F0', bg2: '#EDE9E3', border: '#D9D4CC' },
+  gelo: { nome: 'Branco Gelo', bg: '#F7F8FA', bg2: '#ECEEF1', border: '#DBDFE4' },
+  rose: { nome: 'Rosé Suave', bg: '#FAF3F2', bg2: '#F3E7E5', border: '#E3D0CD' },
+  salvia: { nome: 'Verde Sálvia', bg: '#F4F6F1', bg2: '#E8ECE2', border: '#D3D9C8' },
+  neblina: { nome: 'Azul Névoa', bg: '#F2F5F8', bg2: '#E5EBF0', border: '#CFD9E1' }
+};
+
 const ConfigSchema = new mongoose.Schema({
   nomeLoja: { type: String, default: shopConfig.nomeLoja },
   chavePix: { type: String, default: '' },
   corPrimaria: { type: String, default: shopConfig.corPrimaria },
   corSecundaria: { type: String, default: shopConfig.corSecundaria },
+  // Chave de um tema pré-calibrado em TEMAS_FUNDO — nunca um hex livre (ver
+  // comentário acima do catálogo).
+  temaFundo: { type: String, default: 'creme' },
   whatsappContato: { type: String, default: shopConfig.whatsappContato },
   instagramLink: { type: String, default: shopConfig.instagramLink },
   emailContato: { type: String, default: shopConfig.emailContato },
@@ -627,8 +647,14 @@ function mergePublicConfig(doc) {
   const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
   const corPrimaria = String(doc?.corPrimaria || shopConfig.corPrimaria || '').trim();
   const corSecundaria = String(doc?.corSecundaria || shopConfig.corSecundaria || '').trim();
+  // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
+  const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
+  const temaFundo = TEMAS_FUNDO[temaFundoKey];
   const colorsMerged = {
     ...(shopConfig.colors || {}),
+    bg: temaFundo.bg,
+    bg2: temaFundo.bg2,
+    border: temaFundo.border,
     ...(corPrimaria ? { gold: corPrimaria } : {}),
     ...(corSecundaria ? { gold2: corSecundaria } : {})
   };
@@ -643,6 +669,7 @@ function mergePublicConfig(doc) {
     chavePix: pixDb || (shopConfig.chavePix || '').trim(),
     corPrimaria,
     corSecundaria,
+    temaFundo: temaFundoKey,
     whatsappContato: String(doc?.whatsappContato || shopConfig.whatsappContato || '').trim(),
     instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
     emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
@@ -1370,6 +1397,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       chavePix,
       corPrimaria,
       corSecundaria,
+      temaFundo,
       whatsappContato,
       instagramLink,
       emailContato,
@@ -1424,6 +1452,9 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (chavePix !== undefined) dados.chavePix = String(chavePix).trim();
     if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
+    // Só grava se for uma chave conhecida do catálogo — barra tentativa de
+    // salvar um valor arbitrário direto na API, não só na UI do admin.
+    if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'creme';
     if (whatsappContato !== undefined) dados.whatsappContato = String(whatsappContato).trim();
     if (instagramLink !== undefined) dados.instagramLink = String(instagramLink).trim();
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();

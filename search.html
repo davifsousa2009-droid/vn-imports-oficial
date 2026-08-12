@@ -1896,15 +1896,30 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     document.title = document.title.replace('VN IMPORTS', nomeFinal);
   }
 
-  async function carregarNomeLoja(){
+  // Aplica as cores da loja (tema de fundo + cor primária/secundária) como
+  // variáveis CSS — mesma função/lógica do VN_IMPORTS.html. Qualquer chave
+  // que não vier em `colors` simplesmente não sobrescreve o :root padrão
+  // já embutido no CSS deste arquivo.
+  function aplicarCoresDaLoja(colors){
+    if(!colors || typeof colors !== 'object') return;
+    const root = document.documentElement;
+    Object.keys(colors).forEach((k) => {
+      const v = colors[k];
+      if(typeof v === 'string' && v.trim()) root.style.setProperty('--' + k, v.trim());
+    });
+  }
+
+  async function carregarConfigLoja(){
     const cache = lerConfigCache();
     if(cache && cache.nomeLoja) aplicarNomeLoja(cache.nomeLoja);
+    if(cache && cache.colors) aplicarCoresDaLoja(cache.colors);
 
     try{
       const r = await fetch(API_URL + '/config');
       if(!r.ok) throw new Error('config http ' + r.status);
       const d = await r.json();
       if(d && d.nomeLoja) aplicarNomeLoja(d.nomeLoja);
+      if(d && d.colors) aplicarCoresDaLoja(d.colors);
       salvarConfigCache(d);
     }catch(e){
       if(!cache) aplicarNomeLoja(vitrineNomeLoja); // sem cache e rede falhou — evita ficar em branco pra sempre
@@ -2259,7 +2274,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     }
   }
 
-  carregarNomeLoja();
+  carregarConfigLoja();
   popularFiltroCategorias();
   doPageSearch();
   updateHeaderDots();
