@@ -13,14 +13,26 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 
 /* SIDEBAR */
 .sidebar{background:#111;color:#F7F4F0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sb-top{display:flex;align-items:center;justify-content:space-between}
 .sb-logo{padding:22px 18px;border-bottom:1px solid #222;font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;letter-spacing:.1em;color:#C4A55A}
 .sb-logo span{display:block;font-family:'Barlow',sans-serif;font-size:10px;color:#444;letter-spacing:.15em;text-transform:uppercase;margin-top:3px}
+.sb-close{display:none}
 .sb-nav{padding:14px 0;flex:1}
 .sb-item{display:flex;align-items:center;gap:12px;padding:12px 18px;font-size:13px;font-weight:500;color:#555;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
 .sb-item:hover{color:#F7F4F0;background:#1a1a1a}
 .sb-item.on{color:#F7F4F0;border-left-color:#C4A55A;background:#1a1a1a}
 .sb-foot{padding:14px 18px;border-top:1px solid #1a1a1a;font-size:11px;color:#444}
 .sb-foot a{color:#C4A55A;text-decoration:none}
+
+/* SIDEBAR MOBILE (retrátil) — o botão/overlay ficam escondidos no desktop;
+   vira gaveta off-canvas só dentro do @media abaixo. */
+.admin-hamburger{display:none}
+.sidebar-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.sidebar-overlay.on{opacity:1;pointer-events:all}
 
 /* MAIN */
 .main{display:flex;flex-direction:column;overflow:hidden}
@@ -116,6 +128,10 @@ body{font-family:'Barlow',sans-serif;background:#F0EDE8;color:#111;min-height:10
 .tbl-head-title{font-size:13px;font-weight:600}
 .search-inp{background:#F7F4F0;border:1px solid #E0DBD4;padding:7px 13px;font-size:13px;font-family:'Barlow',sans-serif;outline:none;width:200px;transition:border-color .2s}
 .search-inp:focus{border-color:#9A7A3A}
+/* Envolve o body de cada tabela (produtos/pedidos/avaliações/categorias/
+   banners) — deixa arrastar pros lados em telas estreitas em vez de
+   espremer/quebrar as colunas. Sem efeito quando a tabela já cabe. */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
 thead{background:#F7F4F0}
 th{padding:10px 15px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;border-bottom:1px solid #E0DBD4}
@@ -155,9 +171,34 @@ tr:hover td{background:#FAFAF8}
 /* RESPONSIVE */
 @media(max-width:700px){
   .layout{grid-template-columns:1fr}
-  .sidebar{display:none}
   .stats{grid-template-columns:1fr 1fr}
   .fg2{grid-template-columns:1fr}
+
+  .content{padding:16px}
+  .card{padding:18px}
+
+  /* Sidebar retrátil: em vez de sumir (display:none) sem volta, vira gaveta
+     off-canvas acionada pelo hambúrguer da topbar. */
+  .admin-hamburger{
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;flex:none;
+    border:1px solid #E0DBD4;background:transparent;color:#111;
+    cursor:pointer;margin-right:12px;border-radius:2px;
+  }
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:1000;
+    width:min(260px,80vw);
+    transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.2,.9,.2,1);
+    box-shadow:0 0 40px rgba(0,0,0,.3);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sb-close{
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;flex:none;margin-right:6px;
+    border:1px solid #333;border-radius:2px;background:transparent;color:#F7F4F0;
+    cursor:pointer;
+  }
 }
 </style>
 </head>
@@ -177,11 +218,18 @@ tr:hover td{background:#FAFAF8}
   </div>
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharSidebarMobile()"></div>
+
 <div class="layout">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sb-logo">VN IMPORTS<span>Painel Admin</span></div>
+    <div class="sb-top">
+      <div class="sb-logo">VN IMPORTS<span>Painel Admin</span></div>
+      <button type="button" class="sb-close" onclick="fecharSidebarMobile()" aria-label="Fechar menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <nav class="sb-nav">
       <div class="sb-item on" onclick="showPanel('dash',this)">Dashboard</div>
       <div class="sb-item" onclick="showPanel('cadastrar',this)">Cadastrar Produto</div>
@@ -201,7 +249,12 @@ tr:hover td{background:#FAFAF8}
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title" id="panelTitle">Dashboard</div>
+      <div style="display:flex;align-items:center">
+        <button type="button" class="admin-hamburger" onclick="abrirSidebarMobile()" aria-label="Abrir menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-title" id="panelTitle">Dashboard</div>
+      </div>
       <div style="display:flex;align-items:center;gap:14px">
         <button type="button" class="btn-logout" onclick="sairAdmin()" title="Encerra a sessão (JWT)">Sair</button>
         <div class="status-row">
@@ -287,7 +340,7 @@ tr:hover td{background:#FAFAF8}
             <span class="tbl-head-title">Todos os Produtos</span>
             <input class="search-inp" placeholder="Buscar…" oninput="filtrar(this.value)">
           </div>
-          <div id="tblBody"><div class="empty">Carregando…</div></div>
+          <div id="tblBody" class="tbl-scroll"><div class="empty">Carregando…</div></div>
         </div>
       </div>
 
@@ -311,7 +364,7 @@ tr:hover td{background:#FAFAF8}
           <div class="tbl-head">
             <span class="tbl-head-title">Categorias cadastradas</span>
           </div>
-          <div id="catTableBody"><div class="empty">Carregando…</div></div>
+          <div id="catTableBody" class="tbl-scroll"><div class="empty">Carregando…</div></div>
         </div>
       </div>
 
@@ -340,7 +393,7 @@ tr:hover td{background:#FAFAF8}
           <div class="tbl-head">
             <span class="tbl-head-title">Banners cadastrados</span>
           </div>
-          <div id="banTableBody"><div class="empty">Carregando…</div></div>
+          <div id="banTableBody" class="tbl-scroll"><div class="empty">Carregando…</div></div>
         </div>
       </div>
 
@@ -356,7 +409,7 @@ tr:hover td{background:#FAFAF8}
               <span class="tbl-head-title">Avaliações cadastradas</span>
               <button class="btn btn-g" onclick="loadReviewsAdmin()">Atualizar</button>
             </div>
-            <div id="reviewsAdminBody" class="" style="padding:18px">
+            <div id="reviewsAdminBody" class="tbl-scroll" style="padding:18px">
               <div class="empty">Carregando…</div>
             </div>
           </div>
@@ -534,7 +587,7 @@ tr:hover td{background:#FAFAF8}
               <span class="tbl-head-title">Pedidos</span>
               <button class="btn btn-g" onclick="loadOrders()">Atualizar</button>
             </div>
-            <div id="ordersBody" style="padding:18px"> <div class="empty">Carregando…</div></div>
+            <div id="ordersBody" class="tbl-scroll" style="padding:18px"> <div class="empty">Carregando…</div></div>
           </div>
         </div>
       </div>
@@ -860,6 +913,18 @@ document.getElementById('gatePass')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') fazerLoginAdmin();
 });
 
+// ── SIDEBAR MOBILE (retrátil) ──────────────────────────
+function abrirSidebarMobile() {
+  document.querySelector('.sidebar')?.classList.add('open');
+  document.getElementById('sidebarOverlay')?.classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function fecharSidebarMobile() {
+  document.querySelector('.sidebar')?.classList.remove('open');
+  document.getElementById('sidebarOverlay')?.classList.remove('on');
+  document.body.style.overflow = '';
+}
+
 // ── PANELS ────────────────────────────────────────────
 function showPanel(name, el) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
@@ -876,6 +941,9 @@ function showPanel(name, el) {
     config: 'Configuração da Loja'
   };
   document.getElementById('panelTitle').textContent = titles[name] || name;
+  // No mobile, trocar de painel pelo menu já indica que o lojista escolheu
+  // onde quer ir — fecha a gaveta em vez de deixá-la aberta por cima do conteúdo.
+  if (window.innerWidth <= 700) fecharSidebarMobile();
 }
 
 // ── STATUS ────────────────────────────────────────────

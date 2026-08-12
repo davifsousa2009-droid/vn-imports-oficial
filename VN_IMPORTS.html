@@ -219,6 +219,10 @@ nav{
 }
 .mobile-nav-overlay.on{opacity:1;pointer-events:all}
 .mobile-nav-close-row{display:none}
+/* Menu completo adicionado às views secundárias (Sobre/Avaliações/Produto/
+   Wishlist/Contato) — some no desktop (essas views já têm .nav-links-simple
+   como menu principal lá) e vira a gaveta off-canvas só no mobile, igual à home. */
+.nav-links-full{display:none}
 @media(max-width:768px){
   .nav-hamburger{display:flex}
   .nav-links{
@@ -1652,6 +1656,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .btn-fill,.btn-line{width:100%;justify-content:center}
   .ep-2{grid-template-columns:1fr}
 }
+
+/* Checkout (#pixModalVn — função que monta o form, ~linha 2983): pares de
+   campo lado a lado (CEP + "Calcular frete", Validade + CVV) que ficam
+   apertados em telas muito estreitas (iPhone SE, 320-375px). O resto do
+   modal continua todo em style="" inline — só esses dois pares usam essa
+   classe, pra dar um gancho de sobrescrever com media query sem reescrever
+   o resto do inline style. */
+.vn-ck-pair{display:flex;gap:10px}
+@media(max-width:380px){
+  .vn-ck-pair{flex-direction:column}
+}
 </style>
 </head>
 <body>
@@ -1873,7 +1888,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- VIEW: SOBRE (seção movida para view separada) -->
 <div class="view" id="view-sobre">
   <nav><div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
+    <ul class="nav-links nav-links-full">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
+          </div>
+        </div>
+      </li>
+      <li><a href="#" onclick="event.preventDefault();garantirViewHome();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
+      <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
+    </ul>
     <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot4"></span></button>
@@ -1938,7 +1969,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- VIEW: AVALIAÇÕES (seção movida para view separada) -->
 <div class="view" id="view-avaliacoes">
   <nav><div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
+    <ul class="nav-links nav-links-full">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
+          </div>
+        </div>
+      </li>
+      <li><a href="#" onclick="event.preventDefault();garantirViewHome();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
+      <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
+    </ul>
     <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot5"></span></button>
@@ -2032,7 +2079,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-product">
   <div class="announce announce-alt" id="announceProduct" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteProd">299</span> &nbsp;·&nbsp; Parcele em até <em style="color:var(--gold2);font-style:normal" id="anParcProd">12</em>x sem juros</div>
   <nav><div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
+    <ul class="nav-links nav-links-full">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
+          </div>
+        </div>
+      </li>
+      <li><a href="#" onclick="event.preventDefault();garantirViewHome();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
+      <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
+    </ul>
     <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot2"></span></button>
@@ -2086,7 +2149,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-wishlist">
   <div class="announce announce-alt" id="announceWishlist" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteWl">299</span></div>
   <nav><div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
+    <ul class="nav-links nav-links-full">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
+          </div>
+        </div>
+      </li>
+      <li><a href="#" onclick="event.preventDefault();garantirViewHome();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
+      <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
+    </ul>
     <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
 <button class="nav-btn" onclick="openCart()">
     <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
@@ -2104,7 +2183,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="view" id="view-contact">
   <div class="announce announce-alt" id="announceContact" style="display:none">Frete <em style="color:var(--gold2);font-style:normal">GRÁTIS</em> acima de R$<span id="anFreteCt">299</span></div>
   <nav><div class="nav-inner">
+    <button class="nav-hamburger" onclick="abrirMenuMobile(this)" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <div class="nav-logo" onclick="goHome()" style="cursor:pointer"><span data-loja="nome"></span></div>
+    <ul class="nav-links nav-links-full">
+      <li class="mobile-nav-close-row"><button class="mobile-nav-close" onclick="fecharMenuMobile()" aria-label="Fechar menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></li>
+      <li class="nav-item nav-item-mega">
+        <a href="#" class="nav-link-cats" onclick="event.preventDefault();return false;">Categorias <i class="fa-solid fa-chevron-down ui-ico" aria-hidden="true"></i></a>
+        <div class="megamenu" role="menu" aria-label="Mega menu Categorias">
+          <div class="megamenu-inner">
+            <!-- Conteúdo será carregado dinamicamente via JS -->
+          </div>
+        </div>
+      </li>
+      <li><a href="#" onclick="event.preventDefault();garantirViewHome();scrollTo_('sec-prod');">Produtos</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-sobre')">Sobre</a></li>
+      <li><a href="#" onclick="event.preventDefault();goView('view-avaliacoes')">Avaliações</a></li>
+      <li><a href="#" onclick="goView('view-contact')">Contato</a></li>
+    </ul>
     <ul class="nav-links nav-links-simple"><li><a href="#" onclick="goHome()"><i class="fa-solid fa-arrow-left ui-ico ui-ico-gap" aria-hidden="true"></i>Voltar à loja</a></li></ul>
     <div class="nav-right">
       <button class="nav-btn" onclick="goView('view-wishlist')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot3"></span></button>
@@ -2250,6 +2345,15 @@ function goView(id){
 function goHome(){ goView('view-home'); }
 function openSobre(){ goView('view-sobre'); }
 function openAvaliacoes(){ goView('view-avaliacoes'); }
+
+// Usado por links que só existem/fazem sentido dentro da view-home (rolar até
+// uma seção dela) mas agora também aparecem no menu completo das views
+// secundárias — garante que a home esteja ativa antes de rolar, senão
+// scrollIntoView não funciona num elemento escondido (display:none).
+function garantirViewHome(){
+  const home = document.getElementById('view-home');
+  if(home && !home.classList.contains('active')) goHome();
+}
 
 function scrollTo_(id){
   document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
@@ -2411,6 +2515,7 @@ function filter(btn, cat){
 }
 
 function filterAndGo(cat){
+  garantirViewHome();
   scrollTo_('sec-prod');
   setTimeout(()=>{
     const btns = document.querySelectorAll('.flt');
@@ -2909,7 +3014,7 @@ async function checkout() {
         <input id="vnCkCpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
         <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CEP (Melhor Envio)</label>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="vn-ck-pair" style="margin-bottom:10px">
           <input id="vnCkCep" required inputmode="numeric" placeholder="00000-000" maxlength="9" style="flex:1;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           <button type="button" id="vnCkFreteBtn" class="btn-fill" style="white-space:nowrap;padding:12px 14px">Calcular frete</button>
         </div>
@@ -2929,7 +3034,7 @@ async function checkout() {
         <div id="vnCardFields" style="display:none;margin-bottom:14px">
           <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número do cartão</label>
           <input id="vnCardNumber" autocomplete="cc-number" placeholder="•••• •••• •••• ••••" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
-          <div style="display:flex;gap:10px">
+          <div class="vn-ck-pair">
             <div style="flex:1">
               <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Validade</label>
               <input id="vnCardExp" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
@@ -3406,7 +3511,15 @@ function abrirMenuMobile(btn){
 function fecharMenuMobile(){
   document.querySelectorAll('.nav-links.open').forEach(el=>el.classList.remove('open'));
   document.querySelectorAll('.mobile-nav-overlay').forEach(o=>o.classList.remove('on'));
-  document.body.style.overflow = '';
+  // Só libera o scroll do body se nenhum outro overlay que também trava
+  // scroll (filtros mobile ou lightbox de fotos) continuar aberto — evita
+  // destravar o body enquanto outro modal ainda está em cima. Elementos que
+  // não existem nesta página avaliam pra undefined e o check não se aplica.
+  const outroOverlayAberto =
+    document.getElementById('filtersAside')?.classList.contains('open') ||
+    document.getElementById('mobileFiltersOverlayVn')?.classList.contains('on') ||
+    document.getElementById('pvLightbox')?.classList.contains('on');
+  if(!outroOverlayAberto) document.body.style.overflow = '';
 }
 // Fecha a gaveta ao navegar (menos no toggle "Categorias", que só expande o acordeão).
 // Delegado no .nav-links pra também pegar os links do mega menu, injetados depois via JS.
@@ -3668,34 +3781,42 @@ function showToast(ico,msg){
 /* ─── SCROLL ─── */
 window.addEventListener('scroll',()=>{ const el=document.getElementById('back-to-top'); if(el) el.classList.toggle('on',scrollY>500); });
 
-/* Mega menu: mobile accordion toggle + close on outside click */
+/* Mega menu: acordeão mobile + fecha ao clicar fora. Delegado em document
+   (em vez de pegar só o primeiro .nav-item-mega) porque agora existe um em
+   cada nav — a home e as gavetas das views secundárias. */
 (function(){
-  const navItem = document.querySelector('.nav-item-mega');
-  const toggleLink = navItem?.querySelector('.nav-link-cats');
+  function closeAllMega(){
+    document.querySelectorAll('.nav-item-mega.open').forEach(item=>{
+      item.classList.remove('open');
+      item.querySelector('.nav-link-cats')?.setAttribute('aria-expanded','false');
+    });
+  }
 
-  function closeMega(){ if(navItem) navItem.classList.remove('open'); toggleLink?.setAttribute('aria-expanded','false'); }
-
-  // Toggle on click for small screens
-  toggleLink?.addEventListener('click', (e)=>{
-    if(window.innerWidth <= 768){
-      e.preventDefault();
-      navItem.classList.toggle('open');
-      const isOpen = navItem.classList.contains('open');
-      toggleLink.setAttribute('aria-expanded', String(isOpen));
-    }
-  });
-
-  // Close when clicking outside
   document.addEventListener('click', (e)=>{
-    if(!navItem) return;
-    if(window.innerWidth <= 768 && navItem.classList.contains('open')){
-      if(!navItem.contains(e.target)) closeMega();
+    const toggleLink = e.target.closest('.nav-link-cats');
+    if(toggleLink){
+      if(window.innerWidth <= 768){
+        e.preventDefault();
+        const navItem = toggleLink.closest('.nav-item-mega');
+        if(navItem){
+          const vaiAbrir = !navItem.classList.contains('open');
+          closeAllMega();
+          if(vaiAbrir){
+            navItem.classList.add('open');
+            toggleLink.setAttribute('aria-expanded', 'true');
+          }
+        }
+      }
+      return;
+    }
+    // Clique fora de qualquer .nav-item-mega aberto: fecha.
+    if(window.innerWidth <= 768 && !e.target.closest('.nav-item-mega')){
+      closeAllMega();
     }
   });
 
-  // Ensure hover on desktop keeps menu open when moving to megamenu (handled by CSS),
-  // but also close open state when resizing to desktop
-  window.addEventListener('resize', ()=>{ if(window.innerWidth>768) closeMega(); });
+  // Fecha o estado mobile ao redimensionar pra desktop (hover cuida do resto via CSS).
+  window.addEventListener('resize', ()=>{ if(window.innerWidth>768) closeAllMega(); });
 })();
 
 /* ─── FADE IN ─── */
@@ -3711,43 +3832,53 @@ const API_URL = window.location.hostname === 'localhost'
   : `${window.location.origin}/api`;
 
 // Carrega e renderiza o megamenu dinamicamente (não bloqueante)
+// Monta as colunas do mega menu (DOM de verdade, não string) dentro de um
+// container — precisa ser chamada uma vez por container porque
+// addEventListener não sobrevive a cópia por innerHTML/cloneNode.
+function montarColunasMegaMenu(container, dados){
+  container.innerHTML = '';
+  dados.forEach(cat => {
+    const col = document.createElement('div');
+    col.className = 'mega-col';
+    const h = document.createElement('h4'); h.className = 'mega-col-title'; h.textContent = cat.nome || '—';
+    const ul = document.createElement('ul');
+    (Array.isArray(cat.children) && cat.children.length ? cat.children : []).forEach(child => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#';
+      a.textContent = child.nome || child.slug || '—';
+      a.addEventListener('click', (e)=>{ e.preventDefault(); filterAndGo(child.slug || child.nome); });
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    // se não tem children, permite clicar no título para ir para essa categoria
+    if(!(Array.isArray(cat.children) && cat.children.length)){
+      h.style.cursor = 'pointer';
+      h.addEventListener('click', ()=>{ filterAndGo(cat.slug || cat.nome); });
+    }
+    col.appendChild(h);
+    col.appendChild(ul);
+    container.appendChild(col);
+  });
+}
+
+// Um .megamenu-inner por nav — a home e cada gaveta das views secundárias —
+// todos precisam ser preenchidos com o mesmo conteúdo.
 async function loadMegaMenu(){
-  const container = document.getElementById('megaMenuInner');
-  if(!container) return;
-  container.innerHTML = '<div style="padding:18px;color:var(--muted)">Carregando categorias…</div>';
+  const containers = document.querySelectorAll('.megamenu-inner');
+  if(!containers.length) return;
+  containers.forEach(c => { c.innerHTML = '<div style="padding:18px;color:var(--muted)">Carregando categorias…</div>'; });
   try{
     const res = await fetch(API_URL + '/categories/tree');
     if(!res.ok) throw new Error('Não foi possível obter categorias');
     const dados = await res.json();
-    if(!Array.isArray(dados) || dados.length===0){ container.innerHTML = '<div style="padding:18px;color:var(--muted)">Nenhuma categoria cadastrada</div>'; return; }
-
-    // monta colunas: cada objeto de topo vira uma coluna; children são subitens
-    container.innerHTML = '';
-    dados.forEach(cat => {
-      const col = document.createElement('div');
-      col.className = 'mega-col';
-      const h = document.createElement('h4'); h.className = 'mega-col-title'; h.textContent = cat.nome || '—';
-      const ul = document.createElement('ul');
-      (Array.isArray(cat.children) && cat.children.length ? cat.children : []).forEach(child => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = '#';
-        a.textContent = child.nome || child.slug || '—';
-        a.addEventListener('click', (e)=>{ e.preventDefault(); filterAndGo(child.slug || child.nome); });
-        li.appendChild(a);
-        ul.appendChild(li);
-      });
-      // se não tem children, permite clicar no título para ir para essa categoria
-      if(!(Array.isArray(cat.children) && cat.children.length)){
-        h.style.cursor = 'pointer';
-        h.addEventListener('click', ()=>{ filterAndGo(cat.slug || cat.nome); });
-      }
-      col.appendChild(h);
-      col.appendChild(ul);
-      container.appendChild(col);
-    });
+    if(!Array.isArray(dados) || dados.length===0){
+      containers.forEach(c => { c.innerHTML = '<div style="padding:18px;color:var(--muted)">Nenhuma categoria cadastrada</div>'; });
+      return;
+    }
+    containers.forEach(c => montarColunasMegaMenu(c, dados));
   }catch(e){
-    container.innerHTML = '<div style="padding:18px;color:var(--red)">Erro ao carregar categorias</div>';
+    containers.forEach(c => { c.innerHTML = '<div style="padding:18px;color:var(--red)">Erro ao carregar categorias</div>'; });
     console.error('loadMegaMenu:', e);
   }
 }

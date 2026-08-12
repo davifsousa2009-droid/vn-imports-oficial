@@ -1853,14 +1853,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     const nav = btn.closest('nav');
     const links = nav && nav.querySelector('.nav-links');
     if(links) links.classList.add('open');
-    document.getElementById('mobileNavOverlay')?.classList.add('on');
+    document.querySelectorAll('.mobile-nav-overlay').forEach(o=>o.classList.add('on'));
     document.body.style.overflow = 'hidden';
   }
   function fecharMenuMobile(){
     document.querySelectorAll('.nav-links.open').forEach(el=>el.classList.remove('open'));
-    document.getElementById('mobileNavOverlay')?.classList.remove('on');
-    document.body.style.overflow = '';
+    document.querySelectorAll('.mobile-nav-overlay').forEach(o=>o.classList.remove('on'));
+    // Só libera o scroll do body se nenhum outro overlay que também trava
+    // scroll (filtros mobile ou lightbox de fotos) continuar aberto — evita
+    // destravar o body enquanto outro modal ainda está em cima. Elementos que
+    // não existem nesta página avaliam pra undefined e o check não se aplica.
+    const outroOverlayAberto =
+      document.getElementById('filtersAside')?.classList.contains('open') ||
+      document.getElementById('mobileFiltersOverlayVn')?.classList.contains('on') ||
+      document.getElementById('pvLightbox')?.classList.contains('on');
+    if(!outroOverlayAberto) document.body.style.overflow = '';
   }
+  // Fecha a gaveta ao navegar (menos no toggle "Categorias", que só expande o acordeão).
   document.querySelectorAll('.nav-links').forEach(nav=>{
     nav.addEventListener('click', (e)=>{
       const a = e.target.closest('a');
