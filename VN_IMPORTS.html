@@ -149,8 +149,13 @@ nav{
    .nav-links.open só vale ali dentro, não no documento inteiro. Sem isto, o
    .mobile-nav-overlay (z-index:1400, irmão de nav no body) fica acima da nav
    toda, e a gaveta aberta renderiza atrás do fundo escuro: visível, mas sem
-   clique nos links. */
-nav:has(.nav-links.open){z-index:1500}
+   clique nos links. Também zeramos o backdrop-filter aqui: um filter/
+   backdrop-filter no ancestral vira containing block pra descendente
+   position:fixed — a gaveta (.nav-links, fixed) ficava presa à altura da
+   própria nav (~60px) em vez da tela inteira. O cart-drawer não tem esse
+   problema porque vive fora da nav no body; aqui a gaveta é descendente
+   da nav, então neutralizamos o blur só enquanto ela está aberta. */
+nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .nav-inner{
   max-width:1240px;margin:0 auto;
   display:flex;align-items:center;justify-content:space-between;
@@ -204,7 +209,7 @@ nav:has(.nav-links.open){z-index:1500}
   .megamenu .megamenu-inner{display:block;padding:12px 18px}
   .mega-col{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
   .megamenu{max-height:0;overflow:hidden;transition:max-height .28s ease,opacity .18s}
-  .nav-item-mega.open .megamenu{max-height:800px;opacity:1}
+  .nav-item-mega.open .megamenu{max-height:800px;opacity:1;transform:none}
   .nav-link-cats{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;width:100%;border-radius:8px}
 }
 
