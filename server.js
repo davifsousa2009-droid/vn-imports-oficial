@@ -524,6 +524,11 @@ const OrderSchema = new mongoose.Schema(
     },
     total: { type: Number, required: true },
     cep: { type: String, default: '' },
+    // Frete escolhido no checkout — valor sempre revalidado no servidor
+    // (ver /api/orders), nunca aceito cru do que o cliente mandou.
+    frete: { type: Number, default: 0 },
+    freteNome: { type: String, default: '' },
+    freteEmpresa: { type: String, default: '' },
     status: { type: String, default: 'Pendente' },
     // ID do pagamento no Mercado Pago, salvo quando o QR Pix é gerado.
     // Usado pelo webhook (/api/pix/webhook) para confirmar o pagamento e atualizar o status.
@@ -1234,13 +1239,34 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
 
     totalNum = Math.round(totalNum * 100) / 100;
 
+    // Frete: o valor numérico do body é só uma sugestão do que o front cotou
+    // via /api/frete/calcular — nunca é aceito cru, mesmo padrão de "preço
+    // nunca vem do cliente" usado acima pros itens. Revalidamos contra a regra
+    // de frete grátis do Config: se o subtotal já bate o valor mínimo, o frete
+    // final é sempre 0 no servidor, independente do que o cliente mandou.
+    const freteNome = req.body?.freteNome != null ? String(req.body.freteNome).trim() : '';
+    const freteEmpresa = req.body?.freteEmpresa != null ? String(req.body.freteEmpresa).trim() : '';
+    let freteNum = Number(req.body?.frete);
+    if (!Number.isFinite(freteNum) || freteNum < 0) freteNum = 0;
+
+    const cfgFrete = await buscarConfigCompleta();
+    if (cfgFrete.freteGratisAtivo && totalNum >= cfgFrete.freteGratisValor) {
+      freteNum = 0;
+    }
+    freteNum = Math.round(freteNum * 100) / 100;
+
+    const totalComFrete = Math.round((totalNum + freteNum) * 100) / 100;
+
     // Status sempre começa "Pendente" — o cliente não pode definir o status do próprio pedido.
     // A confirmação de pagamento (Pix) deve ser tratada separadamente, ver /api/pix/webhook.
     const order = await Order.create({
       customerName,
       items: itemsForOrder,
-      total: totalNum,
+      total: totalComFrete,
       cep,
+      frete: freteNum,
+      freteNome,
+      freteEmpresa,
       status: 'Pendente'
     });
 
@@ -1534,6 +1560,290 @@ app.get('/api/payment/config', async (req, res) => {
     });
   } catch {
     return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
+  }
+});
+
+/**
+ * Cria o pagamento no Mercado Pago (cartão ou Pix via MP) para um pedido já
+ * existente. Chamada pelo checkout do VN_IMPORTS.html depois que o cartão foi
+ * tokenizado no navegador (ou, no caso do Pix, direto após criar o pedido).
+ *
+ * IMPORTANTE: o valor cobrado é sempre order.total, já salvo no banco quando
+ * o pedido foi criado em /api/orders — nunca o "total" que vem no corpo desta
+ * requisição. Confiar no total do cliente reabriria a mesma brecha de
+ * manipulação de preço que /api/orders já corrige na criação do pedido.
+ */
+app.post('/api/payment/create', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE' });
+    }
+
+    const settings = await Settings.findOne().lean();
+    if (!temMpTokenSalvo(settings)) {
+      return res.status(400).json({ ok: false, reason: 'NO_MP_TOKEN' });
+    }
+    const mpToken = String(settings.mp_token).trim();
+
+    const method = req.body?.method === 'card' ? 'card' : (req.body?.method === 'pix' ? 'pix' : null);
+    if (!method) {
+      return res.status(400).json({ ok: false, reason: 'INVALID_METHOD' });
+    }
+
+    const orderId = req.body?.orderId ? String(req.body.orderId) : null;
+    if (!orderId) {
+      return res.status(400).json({ ok: false, reason: 'MISSING_ORDER_ID' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND' });
+    }
+    if (order.status !== 'Pendente') {
+      return res.status(409).json({ ok: false, reason: 'ORDER_ALREADY_PROCESSED' });
+    }
+
+    const amount = Number(order.total);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ ok: false, reason: 'INVALID_AMOUNT' });
+    }
+
+    const payerEmail = req.body?.payerEmail ? String(req.body.payerEmail).trim() : '';
+    const payerCpf = req.body?.payerCpf ? String(req.body.payerCpf).replace(/\D/g, '') : '';
+    const payer = {
+      email: payerEmail || 'test@test.com',
+      identification: { type: 'CPF', number: payerCpf }
+    };
+
+    let payload;
+    if (method === 'card') {
+      const token = req.body?.token ? String(req.body.token) : '';
+      if (!token) {
+        return res.status(400).json({ ok: false, reason: 'MISSING_CARD_TOKEN' });
+      }
+      payload = {
+        transaction_amount: amount,
+        token,
+        installments: Number(req.body?.installments) || 1,
+        payment_method_id: req.body?.payment_method_id ? String(req.body.payment_method_id) : '',
+        payer
+      };
+    } else {
+      payload = {
+        transaction_amount: amount,
+        payment_method_id: 'pix',
+        payer
+      };
+    }
+
+    const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mpToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const mpJson = await mpRes.json().catch(() => ({}));
+
+    if (!mpRes.ok) {
+      return res.status(502).json({ ok: false, reason: 'MP_PAYMENT_CREATE_FAILED', mpError: mpJson });
+    }
+
+    const mpStatus = mpJson?.status || '';
+    const approved = mpStatus === 'approved';
+
+    // Guarda o ID do pagamento no pedido em qualquer desfecho — o webhook
+    // (/api/pix/webhook) usa isso pra confirmar depois, e vale como registro
+    // da tentativa mesmo se for recusada.
+    if (mpJson?.id) order.mpPaymentId = String(mpJson.id);
+    if (approved) order.status = 'Pago';
+    // pendente/em análise (in_process, pending, etc.) mantém status 'Pendente'.
+    await order.save();
+
+    if (mpStatus === 'rejected') {
+      // Recusado pela operadora/MP — pedido continua Pendente, nada de estoque
+      // é decrementado de novo (isso já aconteceu na criação do pedido).
+      return res.json({
+        ok: false,
+        reason: 'MP_PAYMENT_REJECTED',
+        mpError: mpJson,
+        orderId: String(order._id),
+        status: order.status
+      });
+    }
+
+    const qrCode =
+      mpJson?.point_of_interaction?.transaction_data?.qr_code || mpJson?.qr_code || '';
+    const qrCodeBase64 =
+      mpJson?.point_of_interaction?.transaction_data?.qr_code_base64 || mpJson?.qr_code_base64 || '';
+
+    return res.json({
+      ok: true,
+      method,
+      paymentId: mpJson?.id ? String(mpJson.id) : '',
+      status: mpStatus,
+      orderId: String(order._id),
+      total: order.total,
+      approved,
+      ...(method === 'pix' ? { qr_code: qrCode, qr_code_base64: qrCodeBase64 } : {})
+    });
+  } catch (e) {
+    console.error('[payment/create] Erro:', e.message);
+    return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
+  }
+});
+
+/**
+ * Consultado pelo checkout em polling (a cada poucos segundos) depois de gerar
+ * um Pix ou um cartão que ficou em análise, pra saber se o pagamento já foi
+ * confirmado. Mesmo padrão de consulta ao MP do webhook (/api/pix/webhook):
+ * nunca deixa a consulta quebrar o processo, só loga e devolve o status atual
+ * do pedido se a chamada ao MP falhar.
+ */
+app.get('/api/payment/status/:orderId', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE' });
+    }
+
+    const orderId = String(req.params.orderId || '');
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ ok: false, reason: 'ORDER_NOT_FOUND' });
+    }
+
+    // Só consulta o MP se ainda estiver pendente e tiver um pagamento associado —
+    // se já está 'Pago', devolve direto lá embaixo sem gastar uma chamada à API do MP.
+    if (order.status === 'Pendente' && order.mpPaymentId) {
+      const settings = await Settings.findOne().lean();
+      if (temMpTokenSalvo(settings)) {
+        const mpToken = String(settings.mp_token).trim();
+        try {
+          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${order.mpPaymentId}`, {
+            headers: { Authorization: `Bearer ${mpToken}` }
+          });
+          const mpJson = await mpRes.json().catch(() => ({}));
+          if (mpRes.ok && mpJson?.status === 'approved') {
+            order.status = 'Pago';
+            await order.save();
+          } else if (!mpRes.ok) {
+            console.warn('[payment/status] Falha ao consultar pagamento no MP:', mpJson);
+          }
+        } catch (e) {
+          console.error('[payment/status] Erro ao consultar MP:', e.message);
+        }
+      }
+    }
+
+    return res.json({
+      ok: true,
+      orderId: String(order._id),
+      status: order.status,
+      approved: order.status === 'Pago',
+      mpPaymentId: order.mpPaymentId || '',
+      total: order.total
+    });
+  } catch (e) {
+    console.error('[payment/status] Erro:', e.message);
+    return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
+  }
+});
+
+// CEP de origem (remetente) usado na cotação do Melhor Envio. LOJA_CEP_ORIGEM
+// no .env tem prioridade; sem ele, cai no cepOrigem branco-de-loja do config.js.
+const CEP_ORIGEM_LOJA = String(process.env.LOJA_CEP_ORIGEM || shopConfig.cepOrigem || '01310100').replace(/\D/g, '');
+
+/**
+ * Cotação de frete via Melhor Envio pro checkout. Mesmo princípio de "nunca
+ * confiar no que o cliente manda" das rotas de pagamento: o preço de cada
+ * opção devolvida é sempre o que a API do Melhor Envio cotou de verdade —
+ * o front só manda subtotal/produtos pra ajudar a montar a cotação (peso/
+ * valor declarado), nunca um preço de frete pronto.
+ */
+app.post('/api/frete/calcular', async (req, res) => {
+  try {
+    const cepDigitos = String(req.body?.cep || '').replace(/\D/g, '');
+    if (cepDigitos.length !== 8) {
+      return res.status(400).json({ ok: false, reason: 'CEP_INVALIDO', options: [] });
+    }
+
+    if (!(await tryConnectDb())) {
+      return res.status(503).json({ ok: false, reason: 'DB_UNAVAILABLE', options: [] });
+    }
+
+    // Frete grátis: decide isso só com o subtotal + Config, sem gastar uma
+    // chamada à API do Melhor Envio.
+    const subtotal = Number(req.body?.subtotal) || 0;
+    const cfg = await buscarConfigCompleta();
+    if (cfg.freteGratisAtivo && subtotal >= cfg.freteGratisValor) {
+      return res.json({ ok: true, freeShipping: true, options: [] });
+    }
+
+    const settings = await Settings.findOne().lean();
+    const meToken = settings?.me_token ? String(settings.me_token).trim() : '';
+    if (!meToken) {
+      return res.json({ ok: false, reason: 'NO_ME_TOKEN', options: [] });
+    }
+
+    const rawProducts = Array.isArray(req.body?.products) ? req.body.products : [];
+
+    // Dimensões/peso padrão pra produto sem cadastro dedicado — o schema de
+    // Produto hoje não tem campo de dimensão/peso, então TODO item cai nesse
+    // padrão. Não trava a cotação por falta de dado.
+    const produtosParaEnvio = (rawProducts.length ? rawProducts : [{ quantity: 1, unitary_value: subtotal }])
+      .map((p) => ({
+        id: p?.id != null ? String(p.id) : undefined,
+        width: 11,
+        height: 2,
+        length: 16,
+        weight: 0.3,
+        insurance_value: Number(p?.unitary_value) || 0,
+        quantity: Math.max(1, Number(p?.quantity) || 1)
+      }));
+
+    const meRes = await fetch('https://melhorenvio.com.br/api/v2/me/shipment/calculate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        // Exigido pela API do Melhor Envio — requisições sem User-Agent identificando
+        // a aplicação/contato costumam ser rejeitadas.
+        'User-Agent': `${shopConfig.nomeLoja} (${shopConfig.emailContato})`,
+        Authorization: `Bearer ${meToken}`
+      },
+      body: JSON.stringify({
+        from: { postal_code: CEP_ORIGEM_LOJA },
+        to: { postal_code: cepDigitos },
+        products: produtosParaEnvio
+      })
+    });
+
+    const meJson = await meRes.json().catch(() => ([]));
+
+    if (!meRes.ok) {
+      console.warn('[frete/calcular] Falha ao consultar Melhor Envio:', meJson);
+      return res.status(502).json({ ok: false, reason: 'ME_CALCULATE_FAILED', options: [] });
+    }
+
+    const lista = Array.isArray(meJson) ? meJson : [];
+    const options = lista
+      .filter((opt) => !opt?.error)
+      .map((opt) => ({
+        id: opt?.id != null ? String(opt.id) : '',
+        name: opt?.name || '',
+        company: opt?.company?.name || '',
+        price: Number(opt?.price) || 0,
+        delivery_time: Number(opt?.delivery_time ?? opt?.delivery_range?.min) || 0
+      }))
+      .sort((a, b) => a.price - b.price)
+      .slice(0, 8);
+
+    return res.json({ ok: true, options, freeShipping: false });
+  } catch (e) {
+    console.error('[frete/calcular] Erro:', e.message);
+    return res.status(500).json({ ok: false, reason: 'ERROR', options: [] });
   }
 });
 

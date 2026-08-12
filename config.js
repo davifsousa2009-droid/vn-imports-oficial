@@ -9,6 +9,10 @@ module.exports = {
   whatsappContato: '+5511999990000',
   instagramLink: 'https://instagram.com/vnimports',
   emailContato: 'oi@vnimports.com.br',
+  /** CEP de origem (remetente) para cotação de frete no Melhor Envio.
+   *  Troque pelo CEP real da loja — ou defina LOJA_CEP_ORIGEM no .env, que
+   *  tem prioridade sobre este valor sem precisar mexer no código. */
+  cepOrigem: '01310-100',
   /** Identificador do cliente para uploads/tags no Cloudinary */
   clienteTag: 'vn-imports',
   /** Chave PIX exibida quando não houver valor salvo no painel */
