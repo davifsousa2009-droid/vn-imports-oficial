@@ -59,7 +59,7 @@
 /* ─── RESET ─── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Barlow',sans-serif;background:#f8f9fa;color:#111;overflow-x:hidden}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:#111;overflow-x:hidden}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:#ece9e4}
 ::-webkit-scrollbar-thumb{background:#bbb}
@@ -266,7 +266,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   padding:0 36px;
   align-items:stretch;
   gap:0;
-  background:#f8f9fa;
+  background:var(--bg);
 }
 
 .hero-left{
@@ -793,7 +793,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 /* ─── PRODUCTS GRID ─── */
 .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;background:transparent}
-.prod-area{background:#f8f9fa;padding:24px;border-radius:16px}
+.prod-area{background:var(--bg);padding:24px;border-radius:16px}
 .prod-card-frame{background:#ffffff}
 
 /* ─── CARD DE PRODUTO ─── */
