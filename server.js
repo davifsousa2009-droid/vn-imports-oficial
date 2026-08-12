@@ -1,4 +1,4 @@
-// Local: carrega .env com dotenv. Na Vercel (VERCEL definido) NUNCA usamos dotenv —
+﻿// Local: carrega .env com dotenv. Na Vercel (VERCEL definido) NUNCA usamos dotenv —
 // JWT_SECRET e demais chaves vêm só de process.env (painel Project → Environment Variables).
 if (!process.env.VERCEL) {
   require('dotenv').config();
@@ -120,8 +120,8 @@ app.use(
         // CSP trata isso como uma diretiva separada de <script>; sem isso, todo botão
         // com onclick inline fica bloqueado silenciosamente no console do navegador.
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
         connectSrc: ["'self'"]
       }
@@ -502,6 +502,7 @@ const Banner = mongoose.models.Banner || mongoose.model('Banner', BannerSchema);
 const SettingsSchema = new mongoose.Schema(
   {
     mp_token: { type: String, default: '' },
+    mp_public_key: { type: String, default: '' },
     me_token: { type: String, default: '' },
     pix_key: { type: String, default: '' }
   },
@@ -608,7 +609,11 @@ const Config = mongoose.models.Config || mongoose.model('Config', ConfigSchema);
 
 function mergePublicSettings(doc) {
   return {
-    pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : ''
+    pix_key: doc?.pix_key != null ? String(doc.pix_key).trim() : '',
+    // mp_public_key é, por natureza, uma chave pública (usada no SDK do MP
+    // direto no navegador pra tokenizar cartão) — diferente de mp_token/
+    // me_token, que são credenciais e nunca devem sair daqui.
+    mp_public_key: doc?.mp_public_key != null ? String(doc.mp_public_key).trim() : ''
   };
 }
 
@@ -793,6 +798,26 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
+function escapeRegexEspecial(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Deixa a busca tolerante a acento (ex: "relogio" encontra "Relógio") sem
+// precisar de índice de texto ($text) nem normalizar/migrar os dados já
+// salvos no banco: expande cada letra digitada numa classe de caracteres
+// que cobre também suas variantes acentuadas.
+const MAPA_ACENTOS_BUSCA = { a: 'aàáâãä', e: 'eèéêë', i: 'iìíîï', o: 'oòóôõö', u: 'uùúûü', c: 'cç', n: 'nñ' };
+function regexBuscaSemAcento(q) {
+  const semAcento = String(q || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const escapado = escapeRegexEspecial(semAcento);
+  return escapado.replace(/[a-z]/g, (ch) => {
+    const variantes = MAPA_ACENTOS_BUSCA[ch];
+    return variantes ? `[${variantes}]` : ch;
+  });
+}
+
 // Precisa vir antes de '/api/produtos/:id' — senão o Express casa "search" como
 // se fosse o :id, e o findById("search") quebra com CastError (500).
 app.get('/api/produtos/search', async (req, res) => {
@@ -811,13 +836,16 @@ app.get('/api/produtos/search', async (req, res) => {
     }
 
     // $regex simples em vez de $text — evita depender de um índice de texto
-    // que pode não existir na collection.
+    // que pode não existir na collection. "categoria" é o campo real do
+    // schema de Produto (não existe "titulo") — buscar por categoria no
+    // texto da busca só funciona se o filtro apontar pro campo certo.
+    const termoBusca = q ? regexBuscaSemAcento(q) : '';
     const filtro = q
       ? {
           $or: [
-            { nome: { $regex: q, $options: 'i' } },
-            { titulo: { $regex: q, $options: 'i' } },
-            { descricao: { $regex: q, $options: 'i' } }
+            { nome: { $regex: termoBusca, $options: 'i' } },
+            { categoria: { $regex: termoBusca, $options: 'i' } },
+            { descricao: { $regex: termoBusca, $options: 'i' } }
           ]
         }
       : {};
@@ -1087,12 +1115,26 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
     const mp_token = req.body?.mp_token != null ? String(req.body.mp_token).trim() : '';
+    const mp_public_key = req.body?.mp_public_key != null ? String(req.body.mp_public_key).trim() : '';
     const me_token = req.body?.me_token != null ? String(req.body.me_token).trim() : '';
     const pix_key = req.body?.pix_key != null ? String(req.body.pix_key).trim() : '';
 
+    // mp_token/me_token nunca voltam pro formulário do admin (o valor salvo
+    // fica escondido por segurança) — então um valor vazio aqui é ambíguo:
+    // pode ser "sem token" ou só "não mexi nesse campo agora". Por isso só
+    // sobrescrevemos os dois quando vier algo de fato preenchido, e usamos
+    // $set (nunca um objeto de substituição direta) pra essa atualização
+    // nunca apagar campos que não fazem parte deste payload.
+    // pix_key/mp_public_key já vêm pré-preenchidos no admin (não são
+    // segredo), então um valor vazio ali é uma limpeza intencional — sempre
+    // aplicamos o que vier.
+    const dados = { pix_key, mp_public_key };
+    if (mp_token) dados.mp_token = mp_token;
+    if (me_token) dados.me_token = me_token;
+
     const updated = await Settings.findOneAndUpdate(
       {},
-      { mp_token, me_token, pix_key },
+      { $set: dados },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -1468,6 +1510,30 @@ app.post('/api/pix/copia-cola', async (req, res) => {
     return res.json({ ok: true, copiaECola, valor: amount, chave: chaveLimpa });
   } catch (e) {
     return res.status(500).json({ ok: false, reason: 'ERROR', detalhe: e.message });
+  }
+});
+
+// Consumido pelo checkout (VN_IMPORTS.html) pra decidir se mostra a opção de
+// pagamento por cartão — precisa de mp_token salvo (credencial, fica só no
+// servidor) e mp_public_key (chave pública, essa sim vai pro navegador pra
+// inicializar o SDK do Mercado Pago).
+app.get('/api/payment/config', async (req, res) => {
+  try {
+    if (!(await tryConnectDb())) {
+      return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
+    }
+
+    const doc = await Settings.findOne().lean();
+    const hasMpToken = temMpTokenSalvo(doc);
+    const publicCfg = mergePublicSettings(doc);
+
+    return res.json({
+      hasMpToken,
+      mpPublicKey: publicCfg.mp_public_key,
+      pixKeyFallback: sanitizarChavePix(publicCfg.pix_key)
+    });
+  } catch {
+    return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
   }
 });
 
