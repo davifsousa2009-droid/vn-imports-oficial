@@ -2154,12 +2154,32 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     aplicarFiltrosNaBase();
   }
 
+  // Ordem "de moda" pros tamanhos-letra — nunca alfabética (senão G vem antes
+  // de M/P). Numeração de calçado (numérica) sempre antes das letras de
+  // vestuário, e em ordem crescente entre si. Desconhecido cai no fim,
+  // alfabético entre si. Mesma lógica usada na home (converge as duas telas).
+  const ORDEM_TAMANHOS_LETRA = ['PP','P','M','G','GG','XG','XGG','EG','EGG'];
+  function compararTamanhos(a, b){
+    const na = Number(a), nb = Number(b);
+    const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
+    if(aNum && bNum) return na - nb;
+    if(aNum && !bNum) return -1;
+    if(!aNum && bNum) return 1;
+    const ia = ORDEM_TAMANHOS_LETRA.indexOf(String(a).toUpperCase());
+    const ib = ORDEM_TAMANHOS_LETRA.indexOf(String(b).toUpperCase());
+    if(ia >= 0 && ib >= 0) return ia - ib;
+    if(ia >= 0) return -1;
+    if(ib >= 0) return 1;
+    return String(a).localeCompare(String(b));
+  }
+
   function popularFiltroTamanhos(base){
     const set = new Set();
     (base||[]).forEach(p => (p.sizes||[]).forEach(s => set.add(s)));
     const box = document.getElementById('fltSizes');
     if(!set.size){ box.innerHTML = ''; return; }
-    box.innerHTML = [...set].map(s => `<button type="button" class="prod-size-chip${filtroState.tamanhos.includes(s)?' on':''}" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
+    const sizeList = [...set].sort(compararTamanhos);
+    box.innerHTML = sizeList.map(s => `<button type="button" class="prod-size-chip${filtroState.tamanhos.includes(s)?' on':''}" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
   }
   function setFiltroTamanho(s, el){
     // Multi-select: alterna só o tamanho clicado, os outros já marcados continuam.

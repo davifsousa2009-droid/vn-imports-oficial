@@ -612,94 +612,131 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   position:sticky;
   top: 110px;
 }
+/* Painel de filtros — convergido com o padrão validado em search.html
+   (mesmos valores, não só mesmos nomes de classe). Nada de hex fixo: só
+   var(--token), pra funcionar com qualquer tema de fundo escolhido no admin. */
 .filters-head{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:20px;
+  margin-bottom:22px;
 }
 .filters-title{
   font-size:11px;
-  font-weight:800;
-  letter-spacing:.14em;
+  font-weight:700;
+  letter-spacing:.18em;
   text-transform:uppercase;
   color:var(--ink);
+  line-height:1;
 }
 .filters-reset{
   border:none;
+  outline:none;
   background:transparent;
   color:var(--muted);
-  font-size:12px;
+  font-size:11px;
   font-weight:600;
+  letter-spacing:.04em;
+  line-height:1;
   cursor:pointer;
   padding:6px 8px;border-radius:8px;transition:color .18s,text-decoration .18s,background .18s;
 }
 .filters-reset:hover{color:var(--ink);text-decoration:underline;background:rgba(0,0,0,.02)}
 .filters-reset:active{transform:translateY(1px)}
+.filters-reset:focus-visible{box-shadow:0 0 0 2px var(--border2)}
 .fblk{padding:0;border-top:1px solid var(--border)}
 .fblk:last-child{border-bottom:1px solid var(--border)}
 .fblk-title{
-  font-size:13px;
+  font-size:11px;
   font-weight:600;
-  color:var(--ink);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
   padding:16px 0;
   margin-bottom:0;
   display:flex;align-items:center;justify-content:space-between;
   cursor:pointer;
   user-select:none;
+  transition:color .18s;
 }
+.fblk-title:hover{color:var(--ink)}
+.fblk.open .fblk-title{color:var(--ink)}
 .fblk-chev{transition:transform .32s cubic-bezier(.2,.9,.2,1);flex:none;color:var(--muted)}
 .fblk.open .fblk-chev{transform:rotate(180deg)}
 /* Accordion content: smooth open/close */
-.fblk-list{display:flex;flex-direction:column;gap:10px;padding-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .36s ease,opacity .28s ease,padding .28s}
+.fblk-list{display:flex;flex-direction:column;gap:2px;padding-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .36s ease,opacity .28s ease,padding .28s}
 .fblk.open .fblk-list{max-height:600px;padding-bottom:18px;opacity:1}
-.size-grid{flex-wrap:wrap;gap:8px}
-.fblk.open .size-grid{display:flex}
+.fblk.open .size-grid{display:grid}
 .fblk.open .price-wrap{display:block}
-.fblk-list{flex-direction:column;gap:10px}
-.fcat{
-  display:flex;align-items:center;gap:12px;
+
+/* Categorias — lista de texto limpa, sem checkbox nativo. Seleção/hover
+   indicados por negrito + traço lateral (mesmo tratamento da busca). */
+.fcat-item{
+  display:block;width:100%;text-align:left;
+  border:none;background:transparent;
   cursor:pointer;
-  color:var(--ink);
-  font-size:14px;
+  color:var(--muted);
+  font-size:13.5px;
   font-weight:500;
-  padding:10px 12px;border-radius:10px;transition:background .18s,transform .12s;
+  letter-spacing:.01em;
+  padding:9px 2px 9px 14px;
+  border-left:2px solid transparent;
+  transition:color .18s,border-color .18s,padding-left .18s;
 }
-.fcat:hover{background:rgba(0,0,0,.02)}
-.fcat input{accent-color:var(--ink)}
+.fcat-item:hover{color:var(--ink)}
+.fcat-item.active{color:var(--ink);font-weight:700;border-left-color:var(--ink);padding-left:18px}
 
-/* Custom checkbox visuals using :has() for modern browsers */
-.fcat{position:relative;padding-left:44px}
-.fcat::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);background:transparent;display:inline-block}
-.fcat input{position:absolute;left:12px;opacity:0;width:20px;height:20px;margin:0}
-.fcat:has(input:checked)::before{background:var(--ink);border-color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.06)}
-.fcat:has(input:checked)::after{content:'\2713';position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--bg);font-size:12px;font-weight:700}
-
-.size-grid{flex-wrap:wrap;gap:8px}
-.schip{
-  border:1.5px solid var(--border);
+/* Tamanhos — grade de botões quadrados, estilo Nike */
+.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.prod-size-chip{
+  aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);
   background:transparent;
-  padding:10px 14px;
-  font-size:13px;
-  font-weight:700;
-  border-radius:999px;
+  padding:0;
+  font-size:12.5px;
+  font-weight:500;
+  letter-spacing:.02em;
+  border-radius:2px;
   cursor:pointer;
-  transition:all .18s cubic-bezier(.2,.9,.2,1);
   color:var(--ink);
+  transition:border-color .16s,font-weight .16s;
 }
-.schip.on{
-  background:var(--ink);
-  border-color:var(--ink);
-  color:var(--bg);
-  box-shadow:0 8px 22px rgba(43,43,43,.08);
-  transform:translateY(-2px);
+.prod-size-chip:hover{border-color:var(--ink)}
+.prod-size-chip.on{
+  border:1.5px solid var(--ink);
+  font-weight:700;
 }
 
-.price-wrap{padding-top:8px;display:flex;flex-direction:column;gap:10px}
-.price-hint{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:700}
-.price-range{width:100%;appearance:none; height:6px; background:var(--border); outline:none;border-radius:999px}
-.price-range::-webkit-slider-thumb{appearance:none; width:18px; height:18px; border-radius:50%; background:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.12)}
-.price-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:none}
+/* Preço — track fino, thumbs pequenos, faixa preenchida entre os dois puxadores */
+.price-wrap{padding-top:2px;display:flex;flex-direction:column;gap:16px}
+.price-hint{font-size:14px;color:var(--ink);font-weight:700;letter-spacing:.01em}
+.price-slider{position:relative;height:16px;display:flex;align-items:center}
+.price-slider-track{position:absolute;left:0;right:0;height:2px;background:var(--border);border-radius:999px}
+.price-slider-fill{position:absolute;height:2px;background:var(--ink);border-radius:999px}
+.price-range{
+  position:absolute;left:0;right:0;top:0;margin:0;
+  width:100%;height:16px;
+  appearance:none;background:transparent;outline:none;
+  pointer-events:none;
+}
+.price-range::-webkit-slider-runnable-track{background:transparent;height:16px}
+.price-range::-moz-range-track{background:transparent;height:16px;border:none}
+.price-range::-webkit-slider-thumb{
+  appearance:none;pointer-events:auto;
+  width:13px;height:13px;border-radius:50%;
+  background:var(--white);border:1.5px solid var(--ink);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  cursor:pointer;transition:transform .15s;
+}
+.price-range::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.price-range::-moz-range-thumb{
+  pointer-events:auto;
+  width:13px;height:13px;border-radius:50%;
+  background:var(--white);border:1.5px solid var(--ink);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  cursor:pointer;
+}
 
 .filters-mobile-bar{display:none;}
 .filters-mobile-btn{
@@ -1638,8 +1675,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   /* Zonas de toque ≥44px nos controles de filtro */
   .filters-reset{min-height:44px;padding:10px 12px}
-  .fcat{min-height:44px}
-  .schip{min-height:44px;padding:10px 16px}
+  .fcat-item{min-height:44px;display:flex;align-items:center}
   .pv-grid{grid-template-columns:1fr;gap:36px}
   .pv-info{position:static}
   .contact-layout{grid-template-columns:1fr;gap:36px}
@@ -1792,22 +1828,26 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <button class="filters-reset" onclick="resetFilters()">Limpar</button>
         </div>
 
-        <div class="fblk">
+        <div class="fblk open">
           <div class="fblk-title" onclick="toggleFblk(this)">Categorias<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="fblk-list flt-target-cats" id="fltCats"></div>
         </div>
 
-        <div class="fblk">
+        <div class="fblk open">
           <div class="fblk-title" onclick="toggleFblk(this)">Tamanho<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="size-grid flt-target-sizes" id="fltSizes"></div>
         </div>
 
-        <div class="fblk">
+        <div class="fblk open">
           <div class="fblk-title" onclick="toggleFblk(this)">Preço<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="price-wrap">
             <div class="price-hint flt-target-price-hint" id="priceHint">—</div>
-            <input class="price-range flt-target-price-max" type="range" min="0" max="0" value="0" step="1" id="priceMaxRange" oninput="onPriceMax(this.value)"/>
-            <input class="price-range flt-target-price-min" type="range" min="0" max="0" value="0" step="1" id="priceMinRange" oninput="onPriceMin(this.value)"/>
+            <div class="price-slider">
+              <div class="price-slider-track"></div>
+              <div class="price-slider-fill flt-target-price-fill"></div>
+              <input class="price-range flt-target-price-min" type="range" min="0" max="0" value="0" step="1" id="priceMinRange" oninput="onPriceMin(this.value)"/>
+              <input class="price-range flt-target-price-max" type="range" min="0" max="0" value="0" step="1" id="priceMaxRange" oninput="onPriceMax(this.value)"/>
+            </div>
           </div>
         </div>
       </aside>
@@ -4422,6 +4462,25 @@ function renderCategoriasHome() {
 // desktop e, quando aberto, o clone do overlay mobile (mesmas classes
 // .flt-target-*, IDs diferentes). Usar só um ID único é frágil porque as
 // duas cópias coexistem: renderizar num só deixa a outra desatualizada.
+// Ordem "de moda" pros tamanhos-letra — nunca alfabética (senão G vem antes
+// de M/P). Numeração de calçado (numérica) sempre antes das letras de
+// vestuário, e em ordem crescente entre si. Desconhecido cai no fim,
+// alfabético entre si.
+const ORDEM_TAMANHOS_LETRA = ['PP','P','M','G','GG','XG','XGG','EG','EGG'];
+function compararTamanhos(a, b){
+  const na = Number(a), nb = Number(b);
+  const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
+  if(aNum && bNum) return na - nb;
+  if(aNum && !bNum) return -1;
+  if(!aNum && bNum) return 1;
+  const ia = ORDEM_TAMANHOS_LETRA.indexOf(String(a).toUpperCase());
+  const ib = ORDEM_TAMANHOS_LETRA.indexOf(String(b).toUpperCase());
+  if(ia >= 0 && ib >= 0) return ia - ib;
+  if(ia >= 0) return -1;
+  if(ib >= 0) return 1;
+  return String(a).localeCompare(String(b));
+}
+
 function syncFilterUI(){
   const catsEls = document.querySelectorAll('.flt-target-cats');
   const sizesEls = document.querySelectorAll('.flt-target-sizes');
@@ -4431,20 +4490,15 @@ function syncFilterUI(){
   if(catsEls.length){
     const cats = categoriasVitrine || [];
     const html = [
-      `<label class="fcat" onclick="setCat('all')">
-        <input type="checkbox" class="fcat-ck" ${selectedCats.length===0?'checked':''}/>
-        Todos
-      </label>`
-    ].concat((cats || []).map(c=>`
-      <label class="fcat" onclick="setCat('${c.slug}')">
-        <input type="checkbox" class="fcat-ck" ${selectedCats.includes(c.slug)?'checked':''}/>
-        ${c.nome}
-      </label>`)).join('');
+      `<button type="button" class="fcat-item${selectedCats.length===0?' active':''}" onclick="setCat('all')">Todos</button>`
+    ].concat((cats || []).map(c=>`<button type="button" class="fcat-item${selectedCats.includes(c.slug)?' active':''}" onclick="setCat('${c.slug}')">${escapeHtmlTexto(c.nome)}</button>`)).join('');
     catsEls.forEach(el => { el.innerHTML = html; });
   }
 
   if(sizesEls.length){
-    // Tamanhos disponíveis: união dinâmica dos tamanhos presentes nos produtos carregados
+    // Tamanhos disponíveis: união dinâmica dos tamanhos presentes nos
+    // produtos carregados, ordenados (ver compararTamanhos) em vez de ficar
+    // na ordem crua em que apareceram nos produtos.
     const selSizes = window.activeFilters.sizes || [];
 
     const pool = (Array.isArray(S.products) ? S.products : [])
@@ -4452,7 +4506,6 @@ function syncFilterUI(){
       .map(s => String(s || '').trim())
       .filter(Boolean);
 
-    // unique preservando ordem (primeira ocorrência)
     const seen = new Set();
     const sizeList = [];
     for(const s of pool){
@@ -4461,12 +4514,11 @@ function syncFilterUI(){
         sizeList.push(s);
       }
     }
+    sizeList.sort(compararTamanhos);
 
     const html = sizeList.map(s=>{
       const on = selSizes.includes(s);
-      return `
-        <button type="button" class="schip ${on?'on':''}" onclick="toggleSize('${s}')">${s}</button>
-      `;
+      return `<button type="button" class="prod-size-chip${on?' on':''}" onclick="toggleSize('${escapeHtmlTexto(s)}')">${escapeHtmlTexto(s)}</button>`;
     }).join('');
     sizesEls.forEach(el => { el.innerHTML = html; });
   }
@@ -4541,6 +4593,7 @@ function updatePriceSliders(){
   const maxRanges = document.querySelectorAll('.flt-target-price-max');
   const minRanges = document.querySelectorAll('.flt-target-price-min');
   const hints = document.querySelectorAll('.flt-target-price-hint');
+  const fills = document.querySelectorAll('.flt-target-price-fill');
 
   const vMax = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
   maxRanges.forEach(el => {
@@ -4556,8 +4609,20 @@ function updatePriceSliders(){
     el.value = String(vMin);
   });
 
+  // Faixa preenchida entre os dois puxadores — mesma conta de search.html
+  // (updatePriceFill), só que já com vMin/vMax/cap calculados aqui em cima.
+  const range = cap || 1;
+  const left = (vMin / range) * 100;
+  const right = (vMax / range) * 100;
+  fills.forEach(el => {
+    el.style.left = Math.max(0, left) + '%';
+    el.style.width = Math.max(0, right - left) + '%';
+  });
+
+  // R$() é a mesma função usada no preço dos cards (moeda em pt-BR: vírgula
+  // decimal) — antes esse texto vinha de um template cru, sem formatação.
   hints.forEach(el => {
-    el.textContent = cap ? `R$ ${vMin} — R$ ${vMax}` : '—';
+    el.textContent = cap ? `${R$(vMin)} — ${R$(vMax)}` : '—';
   });
 }
 
