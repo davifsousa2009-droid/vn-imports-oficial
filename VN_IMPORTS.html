@@ -1794,20 +1794,20 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
         <div class="fblk">
           <div class="fblk-title" onclick="toggleFblk(this)">Categorias<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-          <div class="fblk-list" id="fltCats"></div>
+          <div class="fblk-list flt-target-cats" id="fltCats"></div>
         </div>
 
         <div class="fblk">
           <div class="fblk-title" onclick="toggleFblk(this)">Tamanho<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-          <div class="size-grid" id="fltSizes"></div>
+          <div class="size-grid flt-target-sizes" id="fltSizes"></div>
         </div>
 
         <div class="fblk">
           <div class="fblk-title" onclick="toggleFblk(this)">Preço<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
           <div class="price-wrap">
-            <div class="price-hint" id="priceHint">—</div>
-            <input class="price-range" type="range" min="0" max="0" value="0" step="1" id="priceMaxRange" oninput="onPriceMax(this.value)"/>
-            <input class="price-range" type="range" min="0" max="0" value="0" step="1" id="priceMinRange" oninput="onPriceMin(this.value)"/>
+            <div class="price-hint flt-target-price-hint" id="priceHint">—</div>
+            <input class="price-range flt-target-price-max" type="range" min="0" max="0" value="0" step="1" id="priceMaxRange" oninput="onPriceMax(this.value)"/>
+            <input class="price-range flt-target-price-min" type="range" min="0" max="0" value="0" step="1" id="priceMinRange" oninput="onPriceMin(this.value)"/>
           </div>
         </div>
       </aside>
@@ -2321,7 +2321,45 @@ function persistCart(){
 
 let wl = [];
 let curProd = null;
+// categoriasVitrine: lista plana (raízes + filhas, sem indentação — mesmo
+// formato de antes) usada pelo mega menu antigo e pelos cards "Explore por
+// Categoria". categoriasVitrineTree guarda a árvore crua (com children),
+// usada só pelo matching do filtro (ver expandirSlugsComFilhos).
 let categoriasVitrine = [];
+let categoriasVitrineTree = [];
+
+function flattenCategoryTree(tree) {
+  const out = [];
+  (tree || []).forEach((raiz) => {
+    if (raiz && raiz.slug && raiz.nome) out.push(raiz);
+    (raiz?.children || []).forEach((filha) => {
+      if (filha && filha.slug && filha.nome) out.push(filha);
+    });
+  });
+  return out;
+}
+
+// Dado o conjunto de slugs marcados no filtro, devolve o conjunto de slugs
+// que efetivamente contam como "match" — marcar uma categoria-pai também
+// inclui os produtos das filhas dela (consistente com o mega menu, que usa
+// a mesma árvore). Hoje o schema de Category não tem parent/children
+// preenchido (todo mundo é raiz sem filhos), então isso ainda não muda nada
+// na prática — mas fica correto pro dia em que existir.
+function expandirSlugsComFilhos(tree, slugsSelecionados) {
+  const selecionados = new Set(slugsSelecionados);
+  const resultado = new Set();
+  (tree || []).forEach((raiz) => {
+    const filhas = raiz?.children || [];
+    if (selecionados.has(raiz.slug)) {
+      resultado.add(raiz.slug);
+      filhas.forEach((f) => resultado.add(f.slug));
+    }
+    filhas.forEach((f) => {
+      if (selecionados.has(f.slug)) resultado.add(f.slug);
+    });
+  });
+  return resultado;
+}
 
 // ─── FILTROS — Lógica unificada (reativa) ───
 // Estado centralizado (o segredo): sempre fonte de verdade
@@ -4379,27 +4417,33 @@ function renderCategoriasHome() {
   }).join('');
 }
 
-function syncFilterUI(isClear=false){
-  const catsEl = document.getElementById('fltCats');
-  const sizesEl = document.getElementById('fltSizes');
+// Renderiza em TODAS as cópias do painel que existirem no DOM no momento
+// (querySelectorAll, não getElementById) — a home tem duas: o sidebar
+// desktop e, quando aberto, o clone do overlay mobile (mesmas classes
+// .flt-target-*, IDs diferentes). Usar só um ID único é frágil porque as
+// duas cópias coexistem: renderizar num só deixa a outra desatualizada.
+function syncFilterUI(){
+  const catsEls = document.querySelectorAll('.flt-target-cats');
+  const sizesEls = document.querySelectorAll('.flt-target-sizes');
 
-  const selectedCat = (window.activeFilters.categories && window.activeFilters.categories[0]) || null;
+  const selectedCats = window.activeFilters.categories || [];
 
-  if(catsEl){
+  if(catsEls.length){
     const cats = categoriasVitrine || [];
-    catsEl.innerHTML = [
+    const html = [
       `<label class="fcat" onclick="setCat('all')">
-        <input type="checkbox" class="fcat-ck" ${!selectedCat?'checked':''}/>
+        <input type="checkbox" class="fcat-ck" ${selectedCats.length===0?'checked':''}/>
         Todos
       </label>`
     ].concat((cats || []).map(c=>`
       <label class="fcat" onclick="setCat('${c.slug}')">
-        <input type="checkbox" class="fcat-ck" ${selectedCat===c.slug?'checked':''}/>
+        <input type="checkbox" class="fcat-ck" ${selectedCats.includes(c.slug)?'checked':''}/>
         ${c.nome}
       </label>`)).join('');
+    catsEls.forEach(el => { el.innerHTML = html; });
   }
 
-  if(sizesEl){
+  if(sizesEls.length){
     // Tamanhos disponíveis: união dinâmica dos tamanhos presentes nos produtos carregados
     const selSizes = window.activeFilters.sizes || [];
 
@@ -4418,12 +4462,13 @@ function syncFilterUI(isClear=false){
       }
     }
 
-    sizesEl.innerHTML = sizeList.map(s=>{
+    const html = sizeList.map(s=>{
       const on = selSizes.includes(s);
       return `
         <button type="button" class="schip ${on?'on':''}" onclick="toggleSize('${s}')">${s}</button>
       `;
     }).join('');
+    sizesEls.forEach(el => { el.innerHTML = html; });
   }
 
 
@@ -4436,10 +4481,17 @@ function renderFilterSidebar(){
 
 
 function setCat(slug){
-
-  // checkbox de categoria é do tipo single-select por categoria (via activeFilters.categories)
+  // Multi-select: marcar/desmarcar só alterna a categoria clicada nas outras
+  // já marcadas continuam. "Todos" (slug null) sempre limpa tudo.
   const val = slug && slug !== 'all' ? String(slug) : null;
-  window.activeFilters.categories = val ? [val] : [];
+  if(!val){
+    window.activeFilters.categories = [];
+  }else{
+    const arr = window.activeFilters.categories;
+    const idx = arr.indexOf(val);
+    if(idx >= 0) arr.splice(idx,1);
+    else arr.push(val);
+  }
   syncFilterUI();
   applyFilters();
 }
@@ -4484,28 +4536,29 @@ function updatePriceSliders(){
   filterRuntime.priceCap = cap;
   window.activeFilters.maxPrice = Infinity; // reset lógico; real aplicado via runtime
 
-  const maxRange = document.getElementById('priceMaxRange');
-  const minRange = document.getElementById('priceMinRange');
-  const hint = document.getElementById('priceHint');
+  // Mesma lógica de multi-target de syncFilterUI: pode haver o slider desktop
+  // e o clone mobile ao mesmo tempo no DOM.
+  const maxRanges = document.querySelectorAll('.flt-target-price-max');
+  const minRanges = document.querySelectorAll('.flt-target-price-min');
+  const hints = document.querySelectorAll('.flt-target-price-hint');
 
-  if(maxRange){
-    maxRange.min = 0;
-    maxRange.max = String(cap);
-    const v = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
-    maxRange.value = String(v);
-  }
-  if(minRange){
-    minRange.min = 0;
-    minRange.max = String(cap);
-    const v = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
-    minRange.value = String(v);
-  }
+  const vMax = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
+  maxRanges.forEach(el => {
+    el.min = 0;
+    el.max = String(cap);
+    el.value = String(vMax);
+  });
 
-  const minV = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
-  const maxV = filterRuntime.priceMax==null ? cap : Number(filterRuntime.priceMax);
-  if(hint){
-    hint.textContent = cap? `R$ ${minV} — R$ ${maxV}` : '—';
-  }
+  const vMin = filterRuntime.priceMin==null ? 0 : Number(filterRuntime.priceMin);
+  minRanges.forEach(el => {
+    el.min = 0;
+    el.max = String(cap);
+    el.value = String(vMin);
+  });
+
+  hints.forEach(el => {
+    el.textContent = cap ? `R$ ${vMin} — R$ ${vMax}` : '—';
+  });
 }
 
 function onPriceMin(v){
@@ -4540,11 +4593,12 @@ function applyFilters(forceRenderEmpty=false){
   // fonte de verdade (dataset original completo)
   const original = Array.isArray(S.products) ? S.products : [];
 
-  // categoria
+  // categoria — marcar uma categoria-pai também inclui as filhas dela
+  // (mesma árvore que o mega menu usa; ver expandirSlugsComFilhos)
   let list = original;
   const cats = window.activeFilters.categories || [];
   if(cats.length){
-    const setCats = new Set(cats);
+    const setCats = expandirSlugsComFilhos(categoriasVitrineTree, cats);
     list = list.filter(p => setCats.has(p.cat));
   }
 
@@ -4631,19 +4685,22 @@ function showMobileFiltersOverlay(){
     renderFilterSidebar();
     applyFilters();
   },0);
-
-  // quando filtrar, fechamos o overlay para UX (igual Nike)
-  overlay.querySelector('.filters-reset')?.addEventListener('click',()=>overlay.classList.remove('on'));
 }
 
 
 async function carregarCategoriasDoServidor() {
+  // /api/categories/tree — mesma fonte que o mega menu do topo consome.
+  // categoriasVitrine (lista plana) continua alimentando o mega menu antigo
+  // (renderFilterBar) e os cards "Explore por Categoria" (renderCategoriasHome)
+  // sem mudança nenhuma de formato pra eles.
   try {
-    const r = await fetch(`${API_URL}/categories`);
+    const r = await fetch(`${API_URL}/categories/tree`);
     if (!r.ok) throw new Error('Erro categorias');
     const dados = await r.json();
-    categoriasVitrine = Array.isArray(dados) ? dados.filter(c => c && c.slug && c.nome) : [];
+    categoriasVitrineTree = Array.isArray(dados) ? dados.filter(c => c && c.slug && c.nome) : [];
+    categoriasVitrine = flattenCategoryTree(categoriasVitrineTree);
   } catch {
+    categoriasVitrineTree = [];
     categoriasVitrine = [];
   }
   renderFilterSidebar();

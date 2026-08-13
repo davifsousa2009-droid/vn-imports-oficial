@@ -2087,24 +2087,70 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   });
 
   // ─── FILTROS DA BUSCA ───────────────────────────────────────────
-  let filtroState = { categoria: '', tamanho: '', precoMin: 0, precoMax: Infinity };
+  // categorias/tamanhos são arrays — multi-select nos dois, igual a home.
+  let filtroState = { categorias: [], tamanhos: [], precoMin: 0, precoMax: Infinity };
+
+  // Árvore crua de categorias (com children) — usada só pro matching
+  // hierárquico (expandirSlugsComFilhos). A lista renderizada nos botões
+  // continua plana (flattenCategoryTree), sem indentação nem mudança visual.
+  let categoriasTree = [];
+
+  function flattenCategoryTree(tree){
+    const out = [];
+    (tree || []).forEach((raiz) => {
+      if (raiz && raiz.slug && raiz.nome) out.push(raiz);
+      (raiz?.children || []).forEach((filha) => {
+        if (filha && filha.slug && filha.nome) out.push(filha);
+      });
+    });
+    return out;
+  }
+
+  // Marcar uma categoria-pai também inclui as filhas dela — mesma árvore que
+  // o mega menu do topo consome (/api/categories/tree). Hoje o schema de
+  // Category não tem parent/children preenchido (toda categoria é raiz sem
+  // filhos), então isso ainda não muda nada na prática — mas fica correto
+  // pro dia em que existir.
+  function expandirSlugsComFilhos(tree, slugsSelecionados){
+    const selecionados = new Set(slugsSelecionados);
+    const resultado = new Set();
+    (tree || []).forEach((raiz) => {
+      const filhas = raiz?.children || [];
+      if (selecionados.has(raiz.slug)) {
+        resultado.add(raiz.slug);
+        filhas.forEach((f) => resultado.add(f.slug));
+      }
+      filhas.forEach((f) => {
+        if (selecionados.has(f.slug)) resultado.add(f.slug);
+      });
+    });
+    return resultado;
+  }
 
   async function popularFiltroCategorias(){
     const box = document.getElementById('fltCats');
     try{
-      const res = await fetch(API_URL + '/categories');
+      // /api/categories/tree — mesma fonte que o mega menu do topo consome
+      // (antes esta função usava /api/categories isolado, só pro sidebar).
+      const res = await fetch(API_URL + '/categories/tree');
       const dados = await res.json();
-      const lista = Array.isArray(dados) ? dados.filter(c=>c && c.slug && c.nome) : [];
+      categoriasTree = Array.isArray(dados) ? dados.filter(c=>c && c.slug && c.nome) : [];
+      const lista = flattenCategoryTree(categoriasTree);
       if(!lista.length){ box.innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhuma categoria</div>'; return; }
-      box.innerHTML = lista.map(c => `<button type="button" class="fcat-item" data-slug="${escapeHtmlTexto(c.slug)}" onclick="setFiltroCategoria('${escapeHtmlTexto(c.slug)}',this)">${escapeHtmlTexto(c.nome)}</button>`).join('');
+      box.innerHTML = lista.map(c => `<button type="button" class="fcat-item${filtroState.categorias.includes(c.slug)?' active':''}" data-slug="${escapeHtmlTexto(c.slug)}" onclick="setFiltroCategoria('${escapeHtmlTexto(c.slug)}',this)">${escapeHtmlTexto(c.nome)}</button>`).join('');
     }catch(e){ box.innerHTML = '<div style="font-size:12px;color:var(--red)">Erro ao carregar</div>'; }
   }
 
   function setFiltroCategoria(slug, el){
-    const jaAtiva = filtroState.categoria === slug;
-    document.querySelectorAll('#fltCats .fcat-item').forEach(b=>b.classList.remove('active'));
-    filtroState.categoria = jaAtiva ? '' : slug;
-    if(!jaAtiva && el) el.classList.add('active');
+    // Multi-select: alterna só a categoria clicada, as outras já marcadas continuam.
+    const idx = filtroState.categorias.indexOf(slug);
+    if(idx >= 0){
+      filtroState.categorias.splice(idx,1);
+      if(el) el.classList.remove('active');
+    }else{
+      filtroState.categorias.push(slug);
+      if(el) el.classList.add('active');
+    }
     aplicarFiltrosNaBase();
   }
 
@@ -2113,13 +2159,18 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     (base||[]).forEach(p => (p.sizes||[]).forEach(s => set.add(s)));
     const box = document.getElementById('fltSizes');
     if(!set.size){ box.innerHTML = ''; return; }
-    box.innerHTML = [...set].map(s => `<button type="button" class="prod-size-chip" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
+    box.innerHTML = [...set].map(s => `<button type="button" class="prod-size-chip${filtroState.tamanhos.includes(s)?' on':''}" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
   }
   function setFiltroTamanho(s, el){
-    const jaAtivo = filtroState.tamanho === s;
-    document.querySelectorAll('#fltSizes .prod-size-chip').forEach(b=>b.classList.remove('on'));
-    filtroState.tamanho = jaAtivo ? '' : s;
-    if(!jaAtivo && el) el.classList.add('on');
+    // Multi-select: alterna só o tamanho clicado, os outros já marcados continuam.
+    const idx = filtroState.tamanhos.indexOf(s);
+    if(idx >= 0){
+      filtroState.tamanhos.splice(idx,1);
+      if(el) el.classList.remove('on');
+    }else{
+      filtroState.tamanhos.push(s);
+      if(el) el.classList.add('on');
+    }
     aplicarFiltrosNaBase();
   }
 
@@ -2153,7 +2204,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   }
 
   function resetSearchFilters(){
-    filtroState = { categoria: '', tamanho: '', precoMin: 0, precoMax: Infinity };
+    filtroState = { categorias: [], tamanhos: [], precoMin: 0, precoMax: Infinity };
     document.querySelectorAll('#fltCats .fcat-item').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('#fltSizes .prod-size-chip').forEach(b=>b.classList.remove('on'));
     const maxEl = document.getElementById('priceMaxRange');
@@ -2165,9 +2216,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   function aplicarFiltrosNaBase(){
     const base = window._searchBase || [];
+    const catsSelecionadas = expandirSlugsComFilhos(categoriasTree, filtroState.categorias);
     const filtrado = base.filter(p => {
-      if(filtroState.categoria && p.cat !== filtroState.categoria) return false;
-      if(filtroState.tamanho && !(p.sizes||[]).includes(filtroState.tamanho)) return false;
+      if(filtroState.categorias.length && !catsSelecionadas.has(p.cat)) return false;
+      if(filtroState.tamanhos.length && !(p.sizes||[]).some(sz => filtroState.tamanhos.includes(sz))) return false;
       if(p.price < filtroState.precoMin || p.price > filtroState.precoMax) return false;
       return true;
     });
@@ -2230,7 +2282,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     document.getElementById('qtitle').textContent = categoria ? `Categoria: "${categoria}"` : (q ? `Resultados para "${q}"` : 'Todos os produtos');
     document.getElementById('pageSearchInp').value = q;
     if(categoria){
-      document.querySelectorAll('#fltCats .fcat-item').forEach(b=>{ if(b.dataset.slug===categoria){ b.classList.add('active'); filtroState.categoria = categoria; } });
+      // Só define o estado aqui — popularFiltroCategorias() (chamada junto,
+      // em paralelo) já renderiza os botões lendo filtroState.categorias,
+      // então não depende de o DOM dos botões já existir nesse momento.
+      filtroState.categorias = [categoria];
     }
     document.getElementById('qcount').textContent = 'Carregando…';
     document.getElementById('prodGrid').innerHTML = '<div class="search-loading">Carregando produtos…</div>';
