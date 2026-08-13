@@ -16,7 +16,7 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const configPadrao = require('./config');
+const shopConfig = require('./config');
 const Review = require('./models/Review');
 
 /** Normaliza valor de JWT vindo do painel (.trim(), BOM, aspas externas opcionais). */
@@ -419,12 +419,12 @@ app.post('/api/upload', verificarJWT, (req, res) => {
     if (!req.file?.buffer) return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
 
     try {
-      let tenantTag = slugifyTenantTag(configPadrao.clienteTag || configPadrao.nomeLoja);
+      let tenantTag = slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja);
       try {
         if (await tryConnectDb()) {
           const cfg = await Config.findOne().lean();
           tenantTag = slugifyTenantTag(
-            cfg?.clienteTag || cfg?.nomeLoja || configPadrao.clienteTag || configPadrao.nomeLoja
+            cfg?.clienteTag || cfg?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja
           );
         }
       } catch (e) {
@@ -504,11 +504,7 @@ const SettingsSchema = new mongoose.Schema(
     mp_token: { type: String, default: '' },
     mp_public_key: { type: String, default: '' },
     me_token: { type: String, default: '' },
-    pix_key: { type: String, default: '' },
-    // Segredo do webhook (Mercado Pago → Sua integração → Webhooks). Usado só
-    // pra validar o header x-signature em /api/pix/webhook — nunca devolvido
-    // ao front (mesmo padrão de mp_token/me_token, ver mergePublicSettings).
-    mp_webhook_secret: { type: String, default: '' }
+    pix_key: { type: String, default: '' }
   },
   { timestamps: true }
 );
@@ -521,15 +517,7 @@ const OrderSchema = new mongoose.Schema(
           name: { type: String, required: true },
           qty: { type: Number, required: true, min: 1 },
           price: { type: Number, required: true },
-          tamanhoSelecionado: { type: String, default: '' },
-          // productId + estoqueDecrementado guardam, por item, se aquela linha
-          // de fato debitou estoque real na criação do pedido (produto com
-          // controle de estoque ativo) — é o que permite devolver estoque
-          // corretamente depois (ver devolverEstoqueDoPedido), sem depender do
-          // estado atual do Produto (que pode ter mudado entre a compra e a
-          // devolução).
-          productId: { type: String, default: '' },
-          estoqueDecrementado: { type: Boolean, default: false }
+          tamanhoSelecionado: { type: String, default: '' }
         }
       ],
       default: []
@@ -544,11 +532,7 @@ const OrderSchema = new mongoose.Schema(
     status: { type: String, default: 'Pendente' },
     // ID do pagamento no Mercado Pago, salvo quando o QR Pix é gerado.
     // Usado pelo webhook (/api/pix/webhook) para confirmar o pagamento e atualizar o status.
-    mpPaymentId: { type: String, default: '' },
-    // Trava de idempotência: true assim que o estoque deste pedido já foi
-    // devolvido (abandono via cron ou cancelamento manual pelo admin). Nunca
-    // devolvido duas vezes — ver devolverEstoqueDoPedido.
-    estoqueRevertido: { type: Boolean, default: false }
+    mpPaymentId: { type: String, default: '' }
   },
   { timestamps: true }
 );
@@ -574,25 +558,19 @@ const TEMAS_FUNDO = {
 };
 
 const ConfigSchema = new mongoose.Schema({
-  nomeLoja: { type: String, default: configPadrao.nomeLoja },
+  nomeLoja: { type: String, default: shopConfig.nomeLoja },
   chavePix: { type: String, default: '' },
-  corPrimaria: { type: String, default: configPadrao.corPrimaria },
-  corSecundaria: { type: String, default: configPadrao.corSecundaria },
+  corPrimaria: { type: String, default: shopConfig.corPrimaria },
+  corSecundaria: { type: String, default: shopConfig.corSecundaria },
   // Chave de um tema pré-calibrado em TEMAS_FUNDO — nunca um hex livre (ver
   // comentário acima do catálogo).
   temaFundo: { type: String, default: 'creme' },
-  whatsappContato: { type: String, default: configPadrao.whatsappContato },
-  instagramLink: { type: String, default: configPadrao.instagramLink },
-  emailContato: { type: String, default: configPadrao.emailContato },
-  clienteTag: { type: String, default: slugifyTenantTag(configPadrao.clienteTag || configPadrao.nomeLoja) },
+  whatsappContato: { type: String, default: shopConfig.whatsappContato },
+  instagramLink: { type: String, default: shopConfig.instagramLink },
+  emailContato: { type: String, default: shopConfig.emailContato },
+  clienteTag: { type: String, default: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja) },
   // Cidade do lojista — exigida pelo padrão do Pix (BR Code) no Copia e Cola.
   cidadeLoja: { type: String, default: 'SAO PAULO' },
-  // CEP de origem (remetente) usado nas cotações do Melhor Envio. Vazio =
-  // painel nunca foi usado pra isso — nesse caso o valor efetivo (calculado
-  // em mergePublicConfig) cai pra LOJA_CEP_ORIGEM (.env) ou cepOrigem do
-  // config.js. Assim que o admin salva algo aqui, esse valor manda, sempre —
-  // ver comentário em mergePublicConfig sobre a precedência.
-  cepOrigem: { type: String, default: '' },
 
   // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
   // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
@@ -667,17 +645,13 @@ function mergePublicSettings(doc) {
 function mergePublicConfig(doc) {
   const nomeDb = doc?.nomeLoja?.trim();
   const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
-  const corPrimaria = String(doc?.corPrimaria || configPadrao.corPrimaria || '').trim();
-  const corSecundaria = String(doc?.corSecundaria || configPadrao.corSecundaria || '').trim();
-  const cepOrigemSalvo = doc?.cepOrigem ? String(doc.cepOrigem).replace(/\D/g, '') : '';
-  const cepOrigemEfetivo =
-    cepOrigemSalvo ||
-    String(process.env.LOJA_CEP_ORIGEM || configPadrao.cepOrigem || '01310100').replace(/\D/g, '');
+  const corPrimaria = String(doc?.corPrimaria || shopConfig.corPrimaria || '').trim();
+  const corSecundaria = String(doc?.corSecundaria || shopConfig.corSecundaria || '').trim();
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
   const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
   const colorsMerged = {
-    ...(configPadrao.colors || {}),
+    ...(shopConfig.colors || {}),
     bg: temaFundo.bg,
     bg2: temaFundo.bg2,
     border: temaFundo.border,
@@ -691,28 +665,18 @@ function mergePublicConfig(doc) {
   };
 
   return {
-    nomeLoja: nomeDb || configPadrao.nomeLoja,
-    chavePix: pixDb || (configPadrao.chavePix || '').trim(),
+    nomeLoja: nomeDb || shopConfig.nomeLoja,
+    chavePix: pixDb || (shopConfig.chavePix || '').trim(),
     corPrimaria,
     corSecundaria,
     temaFundo: temaFundoKey,
-    whatsappContato: String(doc?.whatsappContato || configPadrao.whatsappContato || '').trim(),
-    instagramLink: String(doc?.instagramLink || configPadrao.instagramLink || '').trim(),
-    emailContato: String(doc?.emailContato || configPadrao.emailContato || '').trim(),
-    clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || configPadrao.clienteTag || configPadrao.nomeLoja),
+    whatsappContato: String(doc?.whatsappContato || shopConfig.whatsappContato || '').trim(),
+    instagramLink: String(doc?.instagramLink || shopConfig.instagramLink || '').trim(),
+    emailContato: String(doc?.emailContato || shopConfig.emailContato || '').trim(),
+    clienteTag: slugifyTenantTag(doc?.clienteTag || doc?.nomeLoja || shopConfig.clienteTag || shopConfig.nomeLoja),
     cidadeLoja: String(doc?.cidadeLoja || '').trim().toUpperCase() || 'SAO PAULO',
-    // cepOrigem: valor cru salvo pelo painel (vazio = nunca configurado por lá).
-    // cepOrigemEfetivo: o que de fato é usado pra cotar frete agora, seguindo a
-    // ordem painel > LOJA_CEP_ORIGEM (.env) > cepOrigem do config.js > fallback
-    // fixo. Precedência intencional: uma vez que o admin salva um CEP aqui,
-    // esse valor manda para sempre — o .env só serve pra inicializar uma loja
-    // nova antes do primeiro save, nunca mais depois disso. Os dois campos
-    // juntos permitem o painel avisar o lojista quando o valor em uso não é
-    // o que está (ou não está) salvo ali, em vez de uma divergência muda.
-    cepOrigem: cepOrigemSalvo,
-    cepOrigemEfetivo,
     colors: colorsMerged,
-    pageTitleSuffix: configPadrao.pageTitleSuffix || 'Moda Premium',
+    pageTitleSuffix: shopConfig.pageTitleSuffix || 'Moda Premium',
 
     // Textos do hero — vazio de propósito quando não configurado no admin,
     // pra o front saber que deve preservar o texto padrão já no HTML.
@@ -964,67 +928,12 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
 app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco, imagem, imagens, descricao, categoria, estoque, sizes } = req.body;
-
-    // nome/preco são obrigatórios no schema, mas findByIdAndUpdate não roda
-    // validators do Mongoose por padrão (só runValidators:true abaixo cobre o
-    // resto) — sem checar isso explicitamente aqui, um nome/preço vazio no
-    // corpo passaria direto e corrompia o produto sem erro nenhum.
-    if (nome !== undefined && !String(nome).trim()) {
-      return res.status(400).json({ erro: 'Nome é obrigatório' });
-    }
-    if (preco !== undefined && (preco === '' || preco == null || isNaN(preco))) {
-      return res.status(400).json({ erro: 'Preço inválido' });
-    }
-    // estoque:'' e estoque:null são valores válidos (viram "sem controle de
-    // estoque" abaixo) — só rejeita algo que não é número e também não é um
-    // desses dois jeitos de dizer "sem controle". Sem isso, um chamador da API
-    // fora do form (que sempre manda número ou null) podia mandar estoque:"abc"
-    // e o Number(...) mais abaixo silenciosamente viraria NaN salvo no banco.
-    if (estoque !== undefined && estoque !== '' && estoque !== null && isNaN(estoque)) {
-      return res.status(400).json({ erro: 'Estoque inválido' });
-    }
-
-    // Allowlist explícita: só estes campos podem ser alterados por aqui — o
-    // corpo da requisição nunca é repassado cru pro $set (era isso que deixava
-    // QUALQUER chave arbitrária, incluindo campos que o formulário não conhecia,
-    // sobrescrever o documento sem filtro nenhum).
-    const dados = {};
-    if (nome !== undefined) dados.nome = String(nome).trim();
-    if (preco !== undefined) dados.preco = Number(preco);
-    if (imagem !== undefined) dados.imagem = String(imagem || '').trim();
-    if (descricao !== undefined) dados.descricao = String(descricao || '').trim();
-    if (categoria !== undefined) dados.categoria = String(categoria || '').trim() || 'geral';
-    // estoque:null é um valor válido e proposital (controle de estoque
-    // desativado) — não tem ambiguidade aqui, então aplica direto.
-    if (estoque !== undefined) dados.estoque = estoque === '' || estoque == null ? null : Number(estoque);
-
-    // sizes/imagens: um array vazio aqui é ambíguo entre "quero apagar tudo" e
-    // "quem mandou esse corpo nem sabia que este campo existe" — foi
-    // exatamente essa ambiguidade que apagou os tamanhos de produtos editados
-    // pelo painel (o formulário de edição não tinha campo de tamanho nenhum,
-    // então sempre mandava sizes: []). Por segurança, um array vazio nunca
-    // sobrescreve o que já está salvo — só um array com conteúdo de fato
-    // substitui. Não existe hoje uma forma de esvaziar esses campos por esta
-    // rota; se isso vier a ser necessário, use um sinal explícito e
-    // inequívoco (não um array vazio) pra pedir a limpeza.
-    if (Array.isArray(sizes) && sizes.length) {
-      dados.sizes = sizes.map((s) => String(s).trim()).filter(Boolean);
-    }
-    if (Array.isArray(imagens) && imagens.length) {
-      dados.imagens = imagens.map((s) => String(s).trim()).filter(Boolean);
-    }
-
-    const atualizado = await Produto.findByIdAndUpdate(req.params.id, { $set: dados }, {
-      new: true,
-      runValidators: true
-    });
+    // $set evita substituição total do documento — sem isso, editar só o preço
+    // apagaria a galeria de fotos (ou qualquer campo fora do corpo da requisição).
+    const atualizado = await Produto.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     if (!atualizado) return res.status(404).json({ erro: 'Produto não encontrado' });
     res.json({ mensagem: 'Produto atualizado!', produto: atualizado });
   } catch (err) {
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ erro: 'Dados inválidos', detalhe: err.message });
-    }
     res.status(500).json({ erro: 'Erro ao atualizar', detalhe: err.message });
   }
 });
@@ -1241,12 +1150,11 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
     const mp_public_key = req.body?.mp_public_key != null ? String(req.body.mp_public_key).trim() : '';
     const me_token = req.body?.me_token != null ? String(req.body.me_token).trim() : '';
     const pix_key = req.body?.pix_key != null ? String(req.body.pix_key).trim() : '';
-    const mp_webhook_secret = req.body?.mp_webhook_secret != null ? String(req.body.mp_webhook_secret).trim() : '';
 
-    // mp_token/me_token/mp_webhook_secret nunca voltam pro formulário do admin
-    // (o valor salvo fica escondido por segurança) — então um valor vazio aqui
-    // é ambíguo: pode ser "sem token" ou só "não mexi nesse campo agora". Por
-    // isso só sobrescrevemos quando vier algo de fato preenchido, e usamos
+    // mp_token/me_token nunca voltam pro formulário do admin (o valor salvo
+    // fica escondido por segurança) — então um valor vazio aqui é ambíguo:
+    // pode ser "sem token" ou só "não mexi nesse campo agora". Por isso só
+    // sobrescrevemos os dois quando vier algo de fato preenchido, e usamos
     // $set (nunca um objeto de substituição direta) pra essa atualização
     // nunca apagar campos que não fazem parte deste payload.
     // pix_key/mp_public_key já vêm pré-preenchidos no admin (não são
@@ -1255,7 +1163,6 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
     const dados = { pix_key, mp_public_key };
     if (mp_token) dados.mp_token = mp_token;
     if (me_token) dados.me_token = me_token;
-    if (mp_webhook_secret) dados.mp_webhook_secret = mp_webhook_secret;
 
     const updated = await Settings.findOneAndUpdate(
       {},
@@ -1281,43 +1188,6 @@ async function rollbackStock(decrementedList) {
       console.error('[orders] Falha ao reverter estoque de', productId, '-', e.message);
     }
   }
-}
-
-/**
- * Devolve ao estoque os itens de um pedido que nunca foi pago — abandono
- * detectado pelo cron (ver /api/cron/liberar-estoque-pendente) ou cancelamento
- * manual do admin (ver PUT /api/orders/:id). Sem isso, todo pedido 'Pendente'
- * que o cliente desiste (aba fechada, Pix expirado, cartão recusado) prende o
- * estoque decrementado na criação pra sempre — ver rollbackStock acima, que só
- * cobre falha DENTRO da própria criação do pedido, não abandono depois dela.
- *
- * Idempotente e seguro contra corrida: o findOneAndUpdate abaixo só "ganha" o
- * direito de devolver quem conseguir marcar estoqueRevertido false->true
- * primeiro — atômico por documento no Mongo, então mesmo que essa função seja
- * chamada duas vezes pro mesmo pedido (cron sobreposto, clique duplo do admin)
- * apenas uma delas de fato incrementa o estoque.
- *
- * Só incrementa itens com estoqueDecrementado:true (gravado na criação do
- * pedido) — produtos com controle de estoque desativado (estoque:null) nunca
- * foram decrementados, então nunca são tocados aqui.
- */
-async function devolverEstoqueDoPedido(orderId, novoStatus) {
-  const order = await Order.findOneAndUpdate(
-    { _id: orderId, estoqueRevertido: { $ne: true } },
-    { $set: { estoqueRevertido: true, status: novoStatus } },
-    { new: false }
-  );
-  if (!order) return false; // já tinha sido revertido, ou pedido não existe
-
-  for (const item of order.items || []) {
-    if (!item.estoqueDecrementado || !item.productId) continue;
-    try {
-      await Produto.findByIdAndUpdate(item.productId, { $inc: { estoque: item.qty } });
-    } catch (e) {
-      console.error('[orders] Falha ao devolver estoque de', item.productId, '-', e.message);
-    }
-  }
-  return true;
 }
 
 // Orders
@@ -1399,12 +1269,7 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
         name: String(prod.nome || it?.name || '').trim(),
         qty,
         price: precoReal,
-        tamanhoSelecionado: it?.tamanhoSelecionado ? String(it.tamanhoSelecionado) : '',
-        productId,
-        // true só quando este item de fato debitou estoque real (branch do
-        // withStockControl acima) — produto com controle de estoque desativado
-        // (estoque=null) nunca deve ser incrementado na devolução.
-        estoqueDecrementado: !!withStockControl
+        tamanhoSelecionado: it?.tamanhoSelecionado ? String(it.tamanhoSelecionado) : ''
       });
     }
 
@@ -1443,7 +1308,7 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
       let cepForaDeArea = false;
       if (meTokenPedido && cepDigitosPedido.length === 8) {
         const produtosParaCotar = itemsForOrder.map((it) => ({ quantity: it.qty, unitary_value: it.price }));
-        const resultadoFrete = await cotarFreteMelhorEnvio(meTokenPedido, cfgFrete.cepOrigemEfetivo, cepDigitosPedido, produtosParaCotar, totalNum);
+        const resultadoFrete = await cotarFreteMelhorEnvio(meTokenPedido, cepDigitosPedido, produtosParaCotar, totalNum);
         if (resultadoFrete.ok) {
           opcoes = resultadoFrete.options;
           // Melhor Envio respondeu (ok:true) mas nenhuma opção sobrou depois do
@@ -1516,27 +1381,7 @@ app.put('/api/orders/:id', verificarJWT, async (req, res) => {
     if (!statusPermitido.includes(status)) {
       return res.status(400).json({ erro: 'Status inválido. Use: ' + statusPermitido.join(', ') });
     }
-
-    let order;
-    if (status === 'Cancelado') {
-      const atual = await Order.findById(req.params.id).select('status').lean();
-      if (!atual) return res.status(404).json({ erro: 'Pedido não encontrado' });
-      if (atual.status === 'Pendente') {
-        // Cancelar um pedido ainda Pendente é o mesmo "nunca foi pago, nunca vai
-        // ser" que o cron detecta por timeout (ver /api/cron/liberar-estoque-pendente)
-        // — devolve o estoque pela mesma rotina idempotente. Pago->Cancelado (ex:
-        // reembolso depois do envio) não passa por aqui: só troca o status, sem
-        // mexer em estoque, porque não há como saber neste ponto se o item já
-        // foi despachado.
-        await devolverEstoqueDoPedido(req.params.id, 'Cancelado');
-        order = await Order.findById(req.params.id);
-      } else {
-        order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-      }
-    } else {
-      order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-    }
-
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
     if (!order) return res.status(404).json({ erro: 'Pedido não encontrado' });
     res.json({ mensagem: 'Status atualizado!', order });
   } catch (err) {
@@ -1548,67 +1393,11 @@ app.put('/api/orders/:id', verificarJWT, async (req, res) => {
 app.delete('/api/orders/:id', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const existente = await Order.findById(req.params.id).select('status estoqueRevertido').lean();
-    if (!existente) return res.status(404).json({ erro: 'Pedido não encontrado' });
-
-    if (existente.status === 'Pendente' && !existente.estoqueRevertido) {
-      // Hoje este é o único jeito pelo qual o admin "encerra" um pedido Pendente
-      // pela UI (não há botão de Cancelar) — excluir um pedido ainda Pendente é
-      // abandono na prática, então devolve o estoque pela mesma rotina do
-      // cron/cancelamento, o que também protege contra corrida caso o cron
-      // esteja processando esse mesmo pedido ao mesmo tempo.
-      await devolverEstoqueDoPedido(req.params.id, 'Cancelado');
-    }
-
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) return res.status(404).json({ erro: 'Pedido não encontrado' });
     res.json({ mensagem: 'Pedido excluído!' });
   } catch (err) {
     res.status(500).json({ erro: 'Erro ao excluir pedido', detalhe: err.message });
-  }
-});
-
-// Prazo pra considerar um pedido 'Pendente' abandonado. Ajustável: só precisa
-// ser longo o bastante pra não cancelar um pagamento genuinamente em andamento
-// (Pix ainda não expirou, cliente ainda na tela de cartão).
-const HORAS_LIMITE_PEDIDO_PENDENTE = 24;
-
-/**
- * Cron da Vercel (ver vercel.json) — reclama o estoque de pedidos 'Pendente'
- * abandonados há mais de HORAS_LIMITE_PEDIDO_PENDENTE horas (cliente desistiu,
- * fechou a aba, Pix expirou, cartão recusado — nenhum desses casos tem hoje
- * nenhuma rotina de devolução, ver devolverEstoqueDoPedido). Roda sem processo
- * de longa duração porque a Vercel invoca esta rota por agendamento, não um
- * setInterval dentro da função serverless.
- *
- * Protegida por CRON_SECRET: sem isso, seria um endpoint público capaz de
- * mexer em estoque sem autenticação. Falha fechada — sem a env var configurada,
- * ninguém consegue chamar esta rota, nem com o header certo.
- */
-app.get('/api/cron/liberar-estoque-pendente', async (req, res) => {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
-    return res.status(401).json({ ok: false, reason: 'UNAUTHORIZED' });
-  }
-  if (!(await ensureDbConnected(res))) return;
-  try {
-    const limite = new Date(Date.now() - HORAS_LIMITE_PEDIDO_PENDENTE * 60 * 60 * 1000);
-    const pedidosExpirados = await Order.find({
-      status: 'Pendente',
-      estoqueRevertido: { $ne: true },
-      createdAt: { $lt: limite }
-    }).select('_id').lean();
-
-    let liberados = 0;
-    for (const p of pedidosExpirados) {
-      const revertido = await devolverEstoqueDoPedido(p._id, 'Cancelado');
-      if (revertido) liberados++;
-    }
-
-    res.json({ ok: true, verificados: pedidosExpirados.length, liberados });
-  } catch (err) {
-    console.error('[cron/liberar-estoque-pendente] Erro:', err.message);
-    res.status(500).json({ ok: false, erro: err.message });
   }
 });
 
@@ -1621,14 +1410,14 @@ async function buscarConfigCompleta() {
       doc = await Config.findOne().lean();
       if (!doc) {
         doc = await Config.create({
-          nomeLoja: configPadrao.nomeLoja,
-          chavePix: configPadrao.chavePix || '',
-          corPrimaria: configPadrao.corPrimaria,
-          corSecundaria: configPadrao.corSecundaria,
-          whatsappContato: configPadrao.whatsappContato,
-          instagramLink: configPadrao.instagramLink,
-          emailContato: configPadrao.emailContato,
-          clienteTag: slugifyTenantTag(configPadrao.clienteTag || configPadrao.nomeLoja)
+          nomeLoja: shopConfig.nomeLoja,
+          chavePix: shopConfig.chavePix || '',
+          corPrimaria: shopConfig.corPrimaria,
+          corSecundaria: shopConfig.corSecundaria,
+          whatsappContato: shopConfig.whatsappContato,
+          instagramLink: shopConfig.instagramLink,
+          emailContato: shopConfig.emailContato,
+          clienteTag: slugifyTenantTag(shopConfig.clienteTag || shopConfig.nomeLoja)
         });
         doc = doc?.toObject ? doc.toObject() : doc;
       }
@@ -1672,7 +1461,6 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       emailContato,
       clienteTag,
       cidadeLoja,
-      cepOrigem,
 
       // ✅ NOVO: hero do split
       heroImagem,
@@ -1718,7 +1506,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       promoCtaTexto
     } = req.body;
 
-    const dados = { nomeLoja: nomeLoja?.trim() || configPadrao.nomeLoja };
+    const dados = { nomeLoja: nomeLoja?.trim() || shopConfig.nomeLoja };
     if (chavePix !== undefined) dados.chavePix = String(chavePix).trim();
     if (corPrimaria !== undefined) dados.corPrimaria = String(corPrimaria).trim();
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
@@ -1730,17 +1518,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
     if (clienteTag !== undefined) dados.clienteTag = slugifyTenantTag(clienteTag);
     if (cidadeLoja !== undefined) dados.cidadeLoja = String(cidadeLoja).trim().toUpperCase().slice(0, 15);
-    if (cepOrigem !== undefined) {
-      // Mesmo critério de CEP usado em /api/frete/calcular e /api/orders:
-      // 8 dígitos ou nada. Vazio é válido de propósito — é como o lojista
-      // "desfaz" o valor salvo aqui e volta a depender do .env/config.js.
-      const cepOrigemDigitos = String(cepOrigem).replace(/\D/g, '');
-      if (cepOrigemDigitos && cepOrigemDigitos.length !== 8) {
-        return res.status(400).json({ erro: 'CEP de origem inválido — use 8 dígitos ou deixe em branco.' });
-      }
-      dados.cepOrigem = cepOrigemDigitos;
-    }
-    if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || configPadrao.nomeLoja);
+    if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || shopConfig.nomeLoja);
 
     // ✅ NOVO: hero do split
     if (heroImagem !== undefined) dados.heroImagem = String(heroImagem).trim();
@@ -1836,7 +1614,7 @@ app.post('/api/pix/copia-cola', async (req, res) => {
 
     const chaveLimpa = sanitizarChavePix(chave);
 
-    const nome = configDoc?.nomeLoja || configPadrao.nomeLoja || 'LOJA';
+    const nome = configDoc?.nomeLoja || shopConfig.nomeLoja || 'LOJA';
     const cidade = configDoc?.cidadeLoja || 'SAO PAULO';
     const txid = String(order._id);
 
@@ -1873,29 +1651,6 @@ app.get('/api/payment/config', async (req, res) => {
     return res.json({ hasMpToken: false, mpPublicKey: '', pixKeyFallback: '' });
   }
 });
-
-/**
- * O Mercado Pago exige payer.first_name e payer.last_name pra criar um
- * pagamento (cartão ou Pix) — sem os dois, a criação é recusada. O checkout
- * só coleta um campo de nome completo, então quem separa em nome/sobrenome é
- * o servidor, uma vez só, reaproveitado pelas duas rotas que criam pagamento
- * — em vez de cada front-end tentar adivinhar a mesma lógica sozinho.
- * Sem sobrenome informado, repete o primeiro nome nos dois campos: pior que
- * um sobrenome duplicado é a criação do pagamento ser recusada de novo.
- */
-function dividirNomePagador(nomeCompleto) {
-  const partes = String(nomeCompleto || '').trim().split(/\s+/).filter(Boolean);
-  if (!partes.length) return { first_name: 'Cliente', last_name: 'Cliente' };
-  if (partes.length === 1) return { first_name: partes[0], last_name: partes[0] };
-  return { first_name: partes[0], last_name: partes.slice(1).join(' ') };
-}
-
-// Formato simples, não é validação exaustiva de RFC 5322 — só o suficiente
-// pra recusar antes de gastar uma chamada ao MP (que rejeitaria mesmo assim,
-// só que sem essa mensagem clara e sem essa rejeição ser rápida).
-function emailPagadorValido(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
-}
 
 /**
  * Cria o pagamento no Mercado Pago (cartão ou Pix via MP) para um pedido já
@@ -1943,19 +1698,9 @@ app.post('/api/payment/create', async (req, res) => {
     }
 
     const payerEmail = req.body?.payerEmail ? String(req.body.payerEmail).trim() : '';
-    // E-mail nunca teve um fallback seguro pro MP — 'test@test.com' passava na
-    // validação do formulário (que nem barrava e-mail vazio de verdade) mas é
-    // recusado pelo MP em produção. Exige um e-mail plausível antes de gastar
-    // a chamada.
-    if (!emailPagadorValido(payerEmail)) {
-      return res.status(400).json({ ok: false, reason: 'INVALID_PAYER_EMAIL' });
-    }
     const payerCpf = req.body?.payerCpf ? String(req.body.payerCpf).replace(/\D/g, '') : '';
-    const { first_name, last_name } = dividirNomePagador(req.body?.payerName);
     const payer = {
-      email: payerEmail,
-      first_name,
-      last_name,
+      email: payerEmail || 'test@test.com',
       identification: { type: 'CPF', number: payerCpf }
     };
 
@@ -1968,7 +1713,6 @@ app.post('/api/payment/create', async (req, res) => {
       payload = {
         transaction_amount: amount,
         token,
-        description: `Pedido ${orderId} — ${configPadrao.nomeLoja}`,
         installments: Number(req.body?.installments) || 1,
         payment_method_id: req.body?.payment_method_id ? String(req.body.payment_method_id) : '',
         payer
@@ -1976,32 +1720,16 @@ app.post('/api/payment/create', async (req, res) => {
     } else {
       payload = {
         transaction_amount: amount,
-        description: `Pedido ${orderId} — ${configPadrao.nomeLoja}`,
         payment_method_id: 'pix',
         payer
       };
     }
 
-    // X-Idempotency-Key evita cobrança duplicada se a mesma requisição for
-    // reenviada (retry de rede, dois cliques antes do botão desabilitar).
-    // Cartão inclui o token no derivado: cada tokenização é única mesmo numa
-    // nova tentativa com o mesmo cartão, então uma tentativa de verdade
-    // sempre ganha uma chave nova — só uma requisição IDÊNTICA reenviada
-    // (mesmo token) reaproveita a mesma chave e é deduplicada pelo MP, sem
-    // travar um retry legítimo após recusa. Pix não tem token por tentativa,
-    // mas a criação de um pagamento Pix bem formado praticamente nunca
-    // "recusa" pedindo retry com dado diferente (recusa real é payload
-    // inválido, que esta correção já resolve) — chavear só por pedido é seguro.
-    const idempotencyKey = method === 'card'
-      ? `payment-create-card-${orderId}-${payload.token}`
-      : `payment-create-pix-${orderId}`;
-
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${mpToken}`,
-        'X-Idempotency-Key': idempotencyKey
+        Authorization: `Bearer ${mpToken}`
       },
       body: JSON.stringify(payload)
     });
@@ -2009,7 +1737,6 @@ app.post('/api/payment/create', async (req, res) => {
     const mpJson = await mpRes.json().catch(() => ({}));
 
     if (!mpRes.ok) {
-      console.error('[payment/create] Mercado Pago recusou a criação do pagamento:', JSON.stringify(mpJson));
       return res.status(502).json({ ok: false, reason: 'MP_PAYMENT_CREATE_FAILED', mpError: mpJson });
     }
 
@@ -2113,24 +1840,22 @@ app.get('/api/payment/status/:orderId', async (req, res) => {
   }
 });
 
+// CEP de origem (remetente) usado na cotação do Melhor Envio. LOJA_CEP_ORIGEM
+// no .env tem prioridade; sem ele, cai no cepOrigem branco-de-loja do config.js.
+const CEP_ORIGEM_LOJA = String(process.env.LOJA_CEP_ORIGEM || shopConfig.cepOrigem || '01310100').replace(/\D/g, '');
+
 /**
  * Consulta o Melhor Envio de verdade e devolve as opções de frete disponíveis
  * pro CEP/produtos informados. Compartilhada entre /api/frete/calcular
  * (cotação exibida no checkout) e POST /api/orders (revalidação do frete
  * escolhido antes de fechar o pedido — ver comentário lá).
  *
- * cepOrigem é passado pelo chamador (não lido daqui) — cada chamador já busca
- * a Config completa pra outra coisa (frete grátis) e usa cfg.cepOrigemEfetivo
- * de lá, que resolve painel > .env > config.js > fallback fixo (ver
- * mergePublicConfig). Resolver aqui de novo seria uma segunda fonte de
- * verdade pro mesmo valor.
- *
  * NUNCA lança exceção — qualquer falha (rede, timeout, resposta inesperada)
  * volta como { ok:false }. Isso é proposital: quem chama em /api/orders já
  * decrementou estoque antes de chegar aqui, então um erro não tratado aqui
  * não pode derrubar a criação do pedido inteira.
  */
-async function cotarFreteMelhorEnvio(meToken, cepOrigem, cepDigitos, rawProducts, subtotalFallback) {
+async function cotarFreteMelhorEnvio(meToken, cepDigitos, rawProducts, subtotalFallback) {
   // Dimensões/peso padrão pra produto sem cadastro dedicado — o schema de
   // Produto hoje não tem campo de dimensão/peso, então TODO item cai nesse
   // padrão. Não trava a cotação por falta de dado.
@@ -2153,11 +1878,11 @@ async function cotarFreteMelhorEnvio(meToken, cepOrigem, cepDigitos, rawProducts
         Accept: 'application/json',
         // Exigido pela API do Melhor Envio — requisições sem User-Agent identificando
         // a aplicação/contato costumam ser rejeitadas.
-        'User-Agent': `${configPadrao.nomeLoja} (${configPadrao.emailContato})`,
+        'User-Agent': `${shopConfig.nomeLoja} (${shopConfig.emailContato})`,
         Authorization: `Bearer ${meToken}`
       },
       body: JSON.stringify({
-        from: { postal_code: cepOrigem },
+        from: { postal_code: CEP_ORIGEM_LOJA },
         to: { postal_code: cepDigitos },
         products: produtosParaEnvio
       }),
@@ -2222,7 +1947,7 @@ app.post('/api/frete/calcular', async (req, res) => {
     }
 
     const rawProducts = Array.isArray(req.body?.products) ? req.body.products : [];
-    const resultado = await cotarFreteMelhorEnvio(meToken, cfg.cepOrigemEfetivo, cepDigitos, rawProducts, subtotal);
+    const resultado = await cotarFreteMelhorEnvio(meToken, cepDigitos, rawProducts, subtotal);
 
     if (!resultado.ok) {
       console.warn('[frete/calcular] Falha ao consultar Melhor Envio:', resultado.reason, resultado.detalhe || '');
@@ -2292,34 +2017,20 @@ app.post('/api/pix/qr-mp', async (req, res) => {
 
     const mpToken = String(doc.mp_token).trim();
 
-    const payerEmail = req.body?.payerEmail ? String(req.body.payerEmail).trim() : '';
-    if (!emailPagadorValido(payerEmail)) {
-      return res.status(400).json({ ok: false, reason: 'INVALID_PAYER_EMAIL', pixKeyFallback });
-    }
-    const { first_name, last_name } = dividirNomePagador(req.body?.payerName);
-
     const payload = {
       transaction_amount: amount,
-      description: `Compra em ${configPadrao.nomeLoja}`,
+      description: 'Compra na VN Imports',
       payment_method_id: 'pix',
       payer: {
-        email: payerEmail,
-        first_name,
-        last_name
+        email: req.body?.payerEmail || 'test@test.com'
       }
     };
-
-    // Mesmo raciocínio de /api/payment/create: chave derivada do pedido evita
-    // cobrança duplicada num retry de rede/duplo clique. Pix aqui não tem
-    // token por tentativa, mas ver comentário lá sobre por que isso é seguro.
-    const idempotencyKey = `pix-qrmp-${orderId}`;
 
     const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${mpToken}`,
-        'X-Idempotency-Key': idempotencyKey
+        Authorization: `Bearer ${mpToken}`
       },
       body: JSON.stringify(payload)
     });
@@ -2327,7 +2038,6 @@ app.post('/api/pix/qr-mp', async (req, res) => {
     const mpJson = await mpRes.json().catch(() => ({}));
 
     if (!mpRes.ok) {
-      console.error('[pix/qr-mp] Mercado Pago recusou a criação do pagamento:', JSON.stringify(mpJson));
       return res.status(502).json({
         ok: false,
         reason: 'MP_PAYMENT_CREATE_FAILED',
@@ -2381,48 +2091,6 @@ app.post('/api/pix/qr-mp', async (req, res) => {
 });
 
 /**
- * Valida o header x-signature que o MP assina em cada notificação de webhook,
- * usando o segredo configurado em Sua integração → Webhooks (Settings.mp_webhook_secret).
- * Fórmula documentada pelo MP: HMAC-SHA256 de "id:{data.id};request-id:{x-request-id};ts:{ts};"
- * — data.id sempre vem da query string (nunca do body), minúsculo.
- *
- * Só se aplica ao formato novo de notificação (query ?data.id=...), o único
- * que o MP documenta assinatura pra ele — o formato legado (?id=&topic=payment)
- * não tem x-signature nenhum pra validar. Por isso devolve null (em vez de
- * false) quando data.id não está na query: significa "sem como avaliar", não
- * "inválido". Essa distinção importa porque uma notificação legítima em
- * formato legado, se tratada como "inválida", pararia de confirmar pagamento
- * sozinha e silenciosamente — bem pior que o abuso que essa validação existe
- * pra mitigar.
- */
-function validarAssinaturaWebhookMp(req, secret) {
-  const dataId = req.query?.['data.id'];
-  if (!dataId) return null; // formato legado — nada pra validar aqui
-
-  const xSignature = req.headers['x-signature'];
-  const xRequestId = req.headers['x-request-id'];
-  if (!xSignature || !xRequestId) return false;
-
-  const partes = {};
-  for (const par of String(xSignature).split(',')) {
-    const [k, v] = par.split('=');
-    if (k && v) partes[k.trim()] = v.trim();
-  }
-  const ts = partes.ts;
-  const v1 = partes.v1;
-  if (!ts || !v1) return false;
-
-  const manifest = `id:${String(dataId).toLowerCase()};request-id:${xRequestId};ts:${ts};`;
-  const hashEsperado = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-
-  try {
-    return crypto.timingSafeEqual(Buffer.from(hashEsperado, 'hex'), Buffer.from(v1, 'hex'));
-  } catch {
-    return false; // v1 com formato/tamanho inesperado
-  }
-}
-
-/**
  * Webhook do Mercado Pago. Configure esta URL (https://SEU_DOMINIO/api/pix/webhook)
  * no painel do Mercado Pago em: Sua integração → Webhooks → Configurar notificações.
  * O MP chama essa rota quando o status de um pagamento muda (ex: Pix aprovado).
@@ -2450,22 +2118,6 @@ app.post('/api/pix/webhook', async (req, res) => {
     if (!paymentId || (topic && topic !== 'payment')) return;
 
     const settings = await Settings.findOne().lean();
-
-    if (settings?.mp_webhook_secret) {
-      const assinaturaValida = validarAssinaturaWebhookMp(req, settings.mp_webhook_secret);
-      // false = avaliamos e não bateu (rejeita, sem consultar o MP nem tocar
-      // no banco — é isso que protege contra bombardeio de IDs arbitrários).
-      // null = formato legado, sem assinatura pra avaliar — segue normalmente.
-      if (assinaturaValida === false) {
-        console.warn('[pix/webhook] x-signature inválido para paymentId', paymentId, '— notificação ignorada.');
-        return;
-      }
-    }
-    // Sem mp_webhook_secret configurado: segue sem validar, de propósito — ver
-    // comentário em validarAssinaturaWebhookMp sobre o risco de rejeitar por
-    // engano. A rota continua segura mesmo assim porque nunca confia no corpo
-    // da notificação: o status só vem da resposta do MP consultada abaixo.
-
     if (!temMpTokenSalvo(settings)) {
       console.warn('[pix/webhook] Sem mp_token configurado, não é possível confirmar pagamento.');
       return;
@@ -2489,20 +2141,6 @@ app.post('/api/pix/webhook', async (req, res) => {
       );
       if (order) {
         console.log('[pix/webhook] Pedido', order._id.toString(), 'confirmado como Pago.');
-      } else {
-        // Aprovado no MP mas não achou um pedido 'Pendente' com esse mpPaymentId:
-        // provavelmente o pedido já foi cancelado por abandono (estoque já
-        // devolvido, ver /api/cron/liberar-estoque-pendente) antes do pagamento
-        // ser confirmado. De propósito NÃO reabre o pedido nem mexe em estoque
-        // sozinho aqui — só loga pra revisão manual do admin (dinheiro entrou,
-        // mas o estoque pode já ter sido vendido a outra pessoa).
-        const pedidoTardio = await Order.findOne({ mpPaymentId: String(paymentId) }).select('_id status').lean();
-        if (pedidoTardio && pedidoTardio.status !== 'Pago') {
-          console.warn(
-            '[pix/webhook] Pagamento aprovado para pedido', pedidoTardio._id.toString(),
-            'que já estava', pedidoTardio.status, '— revisão manual necessária.'
-          );
-        }
       }
     }
     // outros status (rejected, cancelled, etc.) podem ser tratados aqui se necessário —

@@ -582,10 +582,6 @@ tr:hover td{background:#FAFAF8}
               <label class="fl">me_token (Melhor Envio)</label>
               <input class="fi" id="set-meToken" placeholder="Cole seu me_token" type="text" autocomplete="off">
             </div>
-            <div class="fg fw">
-              <label class="fl">mp_webhook_secret (Mercado Pago — assinatura do Webhook)</label>
-              <input class="fi" id="set-mpWebhookSecret" placeholder="Sua integração → Webhooks → Chave secreta" type="text" autocomplete="off">
-            </div>
           </div>
           <div class="fg">
             <label class="fl">pix_key</label>
@@ -645,19 +641,6 @@ tr:hover td{background:#FAFAF8}
             <div class="fg fw">
               <label class="fl">E-mail de Contato</label>
               <input class="fi" id="cfg-emailContato" placeholder="contato@sualoja.com" type="email">
-            </div>
-          </div>
-
-          <div class="fg2" style="margin-top:18px;padding-top:18px;border-top:1px solid #eee">
-            <div class="fg">
-              <label class="fl">Cidade da Loja</label>
-              <input class="fi" id="cfg-cidadeLoja" placeholder="SAO PAULO" type="text" maxlength="15" autocomplete="off">
-              <p style="font-size:11px;color:#999;margin-top:6px">Exigida pelo Pix (Copia e Cola) — aparece no app do banco de quem paga.</p>
-            </div>
-            <div class="fg">
-              <label class="fl">CEP de Origem (Frete)</label>
-              <input class="fi" id="cfg-cepOrigem" placeholder="00000-000" type="text" maxlength="9" autocomplete="off" oninput="atualizarHintCepOrigem()">
-              <p style="font-size:11px;color:#999;margin-top:6px" id="cfg-cepOrigemHint">De onde o Melhor Envio calcula o frete. Deixe em branco pra usar o padrão do sistema.</p>
             </div>
           </div>
 
@@ -780,28 +763,6 @@ tr:hover td{background:#FAFAF8}
         </div>
         <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="edesc"></textarea></div>
         <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
-
-        <div class="fg fw">
-          <label class="fl">Tamanhos Disponíveis</label>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-            <label class="size-chip" role="button" tabindex="0">
-              <input type="checkbox" id="e-tam-P" value="P"> P
-            </label>
-            <label class="size-chip" role="button" tabindex="0">
-              <input type="checkbox" id="e-tam-M" value="M"> M
-            </label>
-            <label class="size-chip" role="button" tabindex="0">
-              <input type="checkbox" id="e-tam-G" value="G"> G
-            </label>
-            <label class="size-chip" role="button" tabindex="0">
-              <input type="checkbox" id="e-tam-GG" value="GG"> GG
-            </label>
-          </div>
-          <div style="margin-top:10px">
-            <label class="fl" style="color:#888">Outros Tamanhos</label>
-            <input class="fi" id="e-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
-          </div>
-        </div>
       </div>
       <div class="form-btns">
         <button class="btn btn-p" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar alterações</button>
@@ -1575,7 +1536,6 @@ async function editar(id) {
   document.getElementById('e-galeria-prev').innerHTML = '';
   document.getElementById('edesc').value  = p.descricao || '';
 document.getElementById('eest').value = p.estoque != null ? p.estoque : '';
-  popularTamanhosNoUI('e', p.sizes);
 
   if (p.imagem) {
     document.getElementById('eprev-img').src = mediaUrl(p.imagem);
@@ -1742,34 +1702,6 @@ function getTamanhosFromUI(prefix) {
   return sizes.filter((v, i) => sizes.indexOf(v) === i);
 }
 
-// Inverso de getTamanhosFromUI: recebe o array salvo no produto (ex: ['P','G','38'])
-// e preenche os chips/checkbox + o campo de texto livre. P/M/G/GG viram chip
-// marcado; qualquer outro valor cai no campo "Outros Tamanhos", igual
-// getTamanhosFromUI espera ao ler de volta.
-function popularTamanhosNoUI(prefix, sizesArray) {
-  const padrao = ['P', 'M', 'G', 'GG'];
-  const outros = [];
-
-  for (const tam of padrao) {
-    const cb = document.getElementById(prefix + '-tam-' + tam);
-    if (cb) cb.checked = false;
-  }
-
-  for (const raw of Array.isArray(sizesArray) ? sizesArray : []) {
-    const tam = String(raw).trim();
-    if (!tam) continue;
-    if (padrao.includes(tam)) {
-      const cb = document.getElementById(prefix + '-tam-' + tam);
-      if (cb) cb.checked = true;
-    } else {
-      outros.push(tam);
-    }
-  }
-
-  const outrosEl = document.getElementById(prefix + '-tam-outros');
-  if (outrosEl) outrosEl.value = outros.join(', ');
-}
-
 function showMsg(el, txt, cls) {
   el.textContent = txt;
   el.className = 'fmsg ' + cls;
@@ -1800,10 +1732,9 @@ async function loadSettings() {
     const pkEl = document.getElementById('set-mpPublicKey');
     if (pkEl) pkEl.value = d?.mp_public_key != null ? String(d.mp_public_key) : '';
 
-    // mp_token/me_token/mp_webhook_secret não são expostos publicamente
+    // mp_token/me_token não são expostos publicamente
     document.getElementById('set-mpToken').value = '';
     document.getElementById('set-meToken').value = '';
-    document.getElementById('set-mpWebhookSecret').value = '';
 
     // Também carregamos o conteúdo dinâmico salvo em /api/config (sobre, benefícios e agora hero)
     try {
@@ -1849,7 +1780,6 @@ async function salvarSettings() {
   const mp_token = document.getElementById('set-mpToken').value.trim();
   const mp_public_key = document.getElementById('set-mpPublicKey')?.value.trim() || '';
   const me_token = document.getElementById('set-meToken').value.trim();
-  const mp_webhook_secret = document.getElementById('set-mpWebhookSecret').value.trim();
   const pix_key = document.getElementById('set-pixKey').value.trim();
 
   // Conteúdo dinâmico (collection Config via /api/config)
@@ -1882,7 +1812,7 @@ async function salvarSettings() {
 
   // Permite salvar conteúdo mesmo sem tokens preenchidos.
   // Se tudo vazio em tokens e conteúdo também vazio, dá erro.
-  const anyTokens = !!(mp_token || mp_public_key || me_token || mp_webhook_secret || pix_key);
+  const anyTokens = !!(mp_token || mp_public_key || me_token || pix_key);
   const anyConteudo = !!(String(sobreTitulo).trim() || String(sobreTexto).trim() ||
     String(benef1Titulo).trim() || String(benef1Texto).trim() || String(benef1Ico).trim() ||
     String(benef2Titulo).trim() || String(benef2Texto).trim() || String(benef2Ico).trim() ||
@@ -1900,7 +1830,7 @@ async function salvarSettings() {
       const r = await fetch(API + '/settings', {
         method: 'POST',
         headers: headersComJwt({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ mp_token, mp_public_key, me_token, mp_webhook_secret, pix_key })
+        body: JSON.stringify({ mp_token, mp_public_key, me_token, pix_key })
       });
 
       const d = await r.json().catch(() => ({}));
@@ -2084,48 +2014,6 @@ const TEMAS_FUNDO = {
   neblina: { nome: 'Azul Névoa', bg: '#F2F5F8', bg2: '#E5EBF0', border: '#CFD9E1' }
 };
 let temaFundoSelecionado = 'creme';
-let cepOrigemSalvoAtual = '';
-let cepOrigemEfetivoAtual = '';
-
-function formatarCep(digitos) {
-  const d = String(digitos || '').replace(/\D/g, '');
-  return d.length === 8 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
-}
-
-// Explica de onde vem o CEP de origem em uso, porque o painel não é a única
-// fonte possível (ver server.js/mergePublicConfig): LOJA_CEP_ORIGEM no .env ou
-// o config.js branco-de-loja continuam valendo até o lojista salvar algo aqui
-// — sem essa dica, "salvei um CEP e o frete continua vindo de outro lugar"
-// seria um mistério sem pista nenhuma pra investigar.
-function atualizarHintCepOrigem() {
-  const hint = document.getElementById('cfg-cepOrigemHint');
-  if (!hint) return;
-  const digitos = document.getElementById('cfg-cepOrigem').value.replace(/\D/g, '');
-
-  if (digitos && digitos.length !== 8) {
-    hint.textContent = 'CEP precisa ter 8 dígitos.';
-    hint.style.color = '#a0391e';
-    return;
-  }
-  hint.style.color = '#999';
-
-  if (digitos) {
-    hint.textContent = digitos === cepOrigemSalvoAtual
-      ? 'Este é o CEP em uso agora.'
-      : 'Será usado assim que você salvar.';
-    return;
-  }
-
-  // Campo vazio: ou nunca foi salvo nada aqui (efetivo vem do .env/config.js),
-  // ou salvar agora vai apagar o que já estava salvo.
-  if (cepOrigemSalvoAtual) {
-    hint.textContent = `Deixar em branco e salvar apaga o CEP salvo (${formatarCep(cepOrigemSalvoAtual)}) e volta a usar o padrão do sistema.`;
-  } else if (cepOrigemEfetivoAtual) {
-    hint.textContent = `Nenhum CEP salvo aqui ainda — o frete está sendo calculado a partir de ${formatarCep(cepOrigemEfetivoAtual)} (padrão do sistema ou variável de ambiente). Salve um CEP pra este painel assumir o controle.`;
-  } else {
-    hint.textContent = 'De onde o Melhor Envio calcula o frete. Deixe em branco pra usar o padrão do sistema.';
-  }
-}
 
 function renderTemaFundoGrid() {
   const grid = document.getElementById('temaFundoGrid');
@@ -2163,11 +2051,6 @@ async function loadConfig() {
     document.getElementById('cfg-whatsappContato').value = d.whatsappContato || '';
     document.getElementById('cfg-instagramLink').value = d.instagramLink || '';
     document.getElementById('cfg-emailContato').value = d.emailContato || '';
-    document.getElementById('cfg-cidadeLoja').value = d.cidadeLoja || '';
-    document.getElementById('cfg-cepOrigem').value = d.cepOrigem || '';
-    cepOrigemSalvoAtual = d.cepOrigem || '';
-    cepOrigemEfetivoAtual = d.cepOrigemEfetivo || '';
-    atualizarHintCepOrigem();
 
     document.getElementById('cfg-freteGratisAtivo').checked = !!d.freteGratisAtivo;
     document.getElementById('cfg-freteGratisValor').value = d.freteGratisValor || '';
@@ -2203,11 +2086,6 @@ async function loadConfig() {
     document.getElementById('cfg-whatsappContato').value = '';
     document.getElementById('cfg-instagramLink').value = '';
     document.getElementById('cfg-emailContato').value = '';
-    document.getElementById('cfg-cidadeLoja').value = '';
-    document.getElementById('cfg-cepOrigem').value = '';
-    cepOrigemSalvoAtual = '';
-    cepOrigemEfetivoAtual = '';
-    atualizarHintCepOrigem();
   }
 }
 
@@ -2219,8 +2097,6 @@ async function salvarConfig() {
   const whatsappContato = document.getElementById('cfg-whatsappContato').value.trim();
   const instagramLink = document.getElementById('cfg-instagramLink').value.trim();
   const emailContato = document.getElementById('cfg-emailContato').value.trim();
-  const cidadeLoja = document.getElementById('cfg-cidadeLoja').value.trim();
-  const cepOrigem = document.getElementById('cfg-cepOrigem').value.trim();
 
   const freteGratisAtivo = !!document.getElementById('cfg-freteGratisAtivo')?.checked;
   const freteGratisValor = Number(document.getElementById('cfg-freteGratisValor')?.value) || 0;
@@ -2252,12 +2128,6 @@ async function salvarConfig() {
 
   if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
 
-  const cepOrigemDigitos = cepOrigem.replace(/\D/g, '');
-  if (cepOrigemDigitos && cepOrigemDigitos.length !== 8) {
-    showMsg(msg, 'CEP de origem precisa ter 8 dígitos (ou fique em branco).', 'er');
-    return;
-  }
-
   // Só inclui heroImagem/heroImagemUrl no payload quando há um valor novo de verdade.
   // Sem isso, salvar qualquer outro campo (ex: só a cor) apagava a imagem do hero,
   // porque o input de arquivo nunca vem pré-preenchido com a imagem já salva.
@@ -2270,8 +2140,6 @@ async function salvarConfig() {
     whatsappContato,
     instagramLink,
     emailContato,
-    cidadeLoja,
-    cepOrigem: cepOrigemDigitos,
     freteGratisAtivo,
     freteGratisValor,
     parcelamentoAtivo,
@@ -2299,9 +2167,6 @@ async function salvarConfig() {
       toast('Configuração da loja atualizada');
       const logo = document.querySelector('.sb-logo');
       if (logo) logo.childNodes[0].textContent = nomeLoja;
-      cepOrigemSalvoAtual = d.config?.cepOrigem || '';
-      cepOrigemEfetivoAtual = d.config?.cepOrigemEfetivo || '';
-      atualizarHintCepOrigem();
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');

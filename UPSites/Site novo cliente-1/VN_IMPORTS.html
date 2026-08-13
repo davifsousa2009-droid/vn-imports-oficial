@@ -3272,10 +3272,6 @@ async function checkout() {
     const freteValor = Number(freteSelecionado.price) || 0;
     const totalEstimado = Math.round((subtotal + freteValor) * 100) / 100;
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail)) {
-      if (errEl) { errEl.textContent = 'Informe um e-mail válido.'; errEl.style.display = 'block'; }
-      return;
-    }
     if (payerCpf.length !== 11) {
       if (errEl) { errEl.textContent = 'Informe um CPF válido.'; errEl.style.display = 'block'; }
       return;
@@ -3380,7 +3376,6 @@ async function checkout() {
         });
         const payD = await payR.json().catch(() => ({}));
         if (!payR.ok || !payD.ok) {
-          console.error('[checkout] Pagamento com cartão recusado pelo Mercado Pago:', payD);
           throw new Error(payD?.mpError?.message || payD?.reason || 'Pagamento com cartão recusado.');
         }
         if (payD.approved || payD.status === 'approved') {
@@ -3403,6 +3398,8 @@ async function checkout() {
           payerEmail,
           payerName,
           payerCpf,
+          first_name: payerName.split(/\s+/)[0] || payerName,
+          cpf: payerCpf,
           total: orderTotal
         })
       });
@@ -3416,7 +3413,6 @@ async function checkout() {
         });
         return;
       }
-      console.error('[checkout] Pix via Mercado Pago falhou — caindo para fallback manual.', payD);
       await fallbackPixSemMp(orderId, orderTotal, payConfig.pixKeyFallback);
     } catch (e) {
       if (errEl) {
