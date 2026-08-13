@@ -1,5 +1,0 @@
-- [x] Encontrar e corrigir no `admin.html` a autenticação do upload: `uploadArquivo()` passou de `x-admin-password: obterSenha()` para `headersComJwt()` (evita 401 em `/api/upload`).
-- [x] Remover `prompt()` de `function obterSenha()` substituindo o corpo inteiro por apenas leitura do `localStorage`.
-- [x] **ETAPA 2:** Remover completamente `obterSenha()`, `localStorage.setItem('vni_pass', ...)`, `localStorage.removeItem('vni_pass')` e todas as referências a `vni_pass` no `admin.html` — senha não é mais armazenada no navegador.
-- [x] **ETAPA 3:** Substituir `helmet({ contentSecurityPolicy: false })` por CSP completa com liberação dos domínios usados (Google Fonts, Cloudinary, Unsplash, etc.)
-- [x] **ETAPA 4:** Adicionar rate limit nas rotas públicas de escrita: `ordersLimiter` (30/15min) em `POST /api/orders` e `reviewsLimiter` (10/15min) em `POST /api/reviews`
