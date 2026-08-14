@@ -936,7 +936,11 @@ app.get('/api/status', async (req, res) => {
 app.get('/api/produtos', async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const filtro = req.query.categoria ? { categoria: req.query.categoria } : {};
+    // String(...) é essencial: sem isso, uma query string tipo
+    // ?categoria[$ne]=null chega aqui como OBJETO ({$ne:'null'}), não texto —
+    // um operador Mongo injetado direto no filtro (achado de auditoria).
+    const categoriaQuery = req.query.categoria != null ? String(req.query.categoria) : '';
+    const filtro = categoriaQuery ? { categoria: categoriaQuery } : {};
     const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
     res.json(produtos);
   } catch (err) {
@@ -1399,10 +1403,31 @@ async function devolverEstoqueDoPedido(orderId, novoStatus) {
 }
 
 // Orders
+/**
+ * customerName vem do checkout sem autenticação nenhuma — era o único campo
+ * de pedido renderizado no admin sem escape (achado de auditoria: permitia
+ * XSS armazenado só de completar um pedido, sem nem precisar pagar). A defesa
+ * real contra XSS é escapar na exibição (corrigido em admin.html), não aqui —
+ * mas cortar caracteres sem uso legítimo num nome de pessoa (controle, < e >)
+ * e limitar o tamanho reduz o que qualquer consumidor futuro desse dado
+ * (relatório, exportação, e-mail automático) precisa se preocupar em escapar,
+ * sem arriscar corromper nomes reais: acentos, apóstrofo e hífen (comuns em
+ * nomes de verdade) continuam intactos.
+ */
+function sanitizarNomeCliente(nome) {
+  const semControleNemAngulo = Array.from(String(nome || ''))
+    .filter((ch) => {
+      const code = ch.codePointAt(0);
+      return code > 31 && code !== 127 && ch !== '<' && ch !== '>';
+    })
+    .join('');
+  return semControleNemAngulo.trim().slice(0, 120);
+}
+
 app.post('/api/orders', ordersLimiter, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const customerName = req.body?.customerName != null ? String(req.body.customerName).trim() : '';
+    const customerName = sanitizarNomeCliente(req.body?.customerName);
     const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
     const cep = req.body?.cep != null ? String(req.body.cep).trim() : '';
     const email = req.body?.payerEmail != null ? String(req.body.payerEmail).trim() : '';

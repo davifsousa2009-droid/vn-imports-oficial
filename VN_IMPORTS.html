@@ -2504,12 +2504,12 @@ function renderHome(){
   if (hc) {
     hc.innerHTML = S.products.slice(0,2).map(p=>`
     <div class="hero-feat-card" onclick="openProd(${p.id})">
-      <div class="hfc-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
+      <div class="hfc-img">${p.img?`<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}">`:`<span class="prod-img-empty">Sem imagem</span>`}</div>
       <div class="hfc-body">
         <div>
           <div class="hfc-tag">${p.badge==='new'?'Novo':p.badge==='hot'?'Destaque':'Importado'}</div>
-          <div class="hfc-name">${p.name}</div>
-          <div class="hfc-desc">${p.desc.substring(0,55)}…</div>
+          <div class="hfc-name">${escHtml(p.name)}</div>
+          <div class="hfc-desc">${escHtml(p.desc.substring(0,55))}…</div>
         </div>
         <div class="hfc-foot">
           <span class="hfc-price">${R$(p.price)}</span>
@@ -2601,7 +2601,7 @@ function renderGrid(list){
           <div class="prod-card-media${esgotado?' esgotado':''}">
             ${esgotado ? '<span class="prod-badge-esgotado">Esgotado</span>' : ''}
             ${p.img
-              ? `<img src="${p.img}" alt="${p.name}" loading="lazy" />`
+              ? `<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}" loading="lazy" />`
               : `<div class="prod-card-empty">Sem imagem</div>`
             }
 
@@ -2614,8 +2614,8 @@ function renderGrid(list){
           </div>
 
           <div class="prod-card-body">
-            <div class="prod-card-sub">${subTxt}</div>
-            <div class="prod-card-name">${p.name}</div>
+            <div class="prod-card-sub">${escHtml(subTxt)}</div>
+            <div class="prod-card-name">${escHtml(p.name)}</div>
 
             <div class="prod-card-price-row">
               ${p.old ? `<span class="prod-old-price">${R$(p.old)}</span>` : ''}
@@ -2676,7 +2676,7 @@ function openProd(id){
 
   const gal = document.getElementById('pvGallery');
   gal.innerHTML = galeria.length
-    ? galeria.map((src,i) => `<div class="pv-gallery-img${galeria.length===1?' only':''}" onclick="openLightbox(${i})"><img src="${src}" alt="${p.name}"></div>`).join('')
+    ? galeria.map((src,i) => `<div class="pv-gallery-img${galeria.length===1?' only':''}" onclick="openLightbox(${i})"><img src="${escHtml(src)}" alt="${escHtml(p.name)}"></div>`).join('')
     : `<div class="pv-gallery-img only"><span class="prod-img-empty">Sem imagem</span></div>`;
 
   // guarda a galeria atual pro lightbox conseguir navegar entre as fotos
@@ -2888,15 +2888,15 @@ function renderWL(){
   g.innerHTML=wl.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
-        ${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span class="prod-img-empty">Sem imagem</span>`}
+        ${p.img?`<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-hover-btns">
           <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
           <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()"><i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Remover</button>
         </div>
       </div>
       <div class="prod-info">
-        <div class="prod-brand">${p.brand}</div>
-        <div class="prod-name">${p.name}</div>
+        <div class="prod-brand">${escHtml(p.brand)}</div>
+        <div class="prod-name">${escHtml(p.name)}</div>
         <div class="prod-foot"><span class="prod-price">${R$(p.price)}</span></div>
       </div>
     </div>`).join('');
@@ -3938,9 +3938,9 @@ document.addEventListener('click', (e) => {
 function escHtml(s){
   return String(s ?? '')
     .replace(/&/g,'&amp;')
-    .replace(/</g,'<')
-    .replace(/>/g,'>')
-    .replace(/"/g,'"')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
     .replace(/'/g,'&#039;');
 }
 

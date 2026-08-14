@@ -917,7 +917,12 @@ let todosProdutos = [];
 let adminCategorias = [];
 
 function escHtml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ── JWT ───────────────────────────────────────────────
@@ -1540,7 +1545,7 @@ function renderTable(list) {
             <td>${p.imagem
               ? `<img class="td-img" src="${escHtml(mediaUrl(p.imagem))}" onerror="this.style.display='none'">`
               : '<span style="color:#bbb">—</span>'}</td>
-            <td class="td-name">${p.nome}</td>
+            <td class="td-name">${escHtml(p.nome)}</td>
             <td class="td-price">${fmt(p.preco)}</td>
             <td><span class="td-cat">${escHtml(getCatNome(p.categoria))}</span></td>
             <td>${p.estoque ?? '—'}</td>
@@ -2065,7 +2070,7 @@ async function loadOrders() {
         <tbody>
           ${safe.map(o => {
             const id = escHtml(o._id || '');
-            const customer = o.customerName ? String(o.customerName) : '—';
+            const customer = o.customerName ? escHtml(String(o.customerName)) : '—';
             const items = Array.isArray(o.items) ? o.items : [];
             const itemsTxt = items.length
               ? items.map(i => `${escHtml(i.name || 'Item')} (${i.qty ?? 1})`).join(' • ')
