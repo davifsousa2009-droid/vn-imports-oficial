@@ -536,6 +536,20 @@ const OrderSchema = new mongoose.Schema(
     },
     total: { type: Number, required: true },
     cep: { type: String, default: '' },
+    // Endereço de entrega + contato do cliente. Número e complemento nunca
+    // vêm do CEP (ViaCEP não devolve isso) — sempre digitados no checkout.
+    // Todos obrigatórios e validados em POST /api/orders antes de qualquer
+    // decremento de estoque; pedidos criados antes desta mudança não têm
+    // esses campos (default '' cobre a leitura, não quebra o admin).
+    rua: { type: String, default: '' },
+    numero: { type: String, default: '' },
+    complemento: { type: String, default: '' },
+    bairro: { type: String, default: '' },
+    cidade: { type: String, default: '' },
+    estado: { type: String, default: '' },
+    email: { type: String, default: '' },
+    telefone: { type: String, default: '' },
+    cpf: { type: String, default: '' },
     // Frete escolhido no checkout — valor sempre revalidado no servidor
     // (ver /api/orders), nunca aceito cru do que o cliente mandou.
     frete: { type: Number, default: 0 },
@@ -1327,6 +1341,15 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
     const customerName = req.body?.customerName != null ? String(req.body.customerName).trim() : '';
     const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
     const cep = req.body?.cep != null ? String(req.body.cep).trim() : '';
+    const email = req.body?.payerEmail != null ? String(req.body.payerEmail).trim() : '';
+    const telefone = req.body?.payerTelefone != null ? String(req.body.payerTelefone).replace(/\D/g, '') : '';
+    const cpf = req.body?.payerCpf != null ? String(req.body.payerCpf).replace(/\D/g, '') : '';
+    const rua = req.body?.rua != null ? String(req.body.rua).trim() : '';
+    const numero = req.body?.numero != null ? String(req.body.numero).trim() : '';
+    const complemento = req.body?.complemento != null ? String(req.body.complemento).trim() : '';
+    const bairro = req.body?.bairro != null ? String(req.body.bairro).trim() : '';
+    const cidade = req.body?.cidade != null ? String(req.body.cidade).trim() : '';
+    const estado = req.body?.estado != null ? String(req.body.estado).trim().toUpperCase() : '';
 
     if (!rawItems.length) return res.status(400).json({ erro: 'items vazios' });
 
@@ -1337,6 +1360,27 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
     const cepDigitosValidacao = cep.replace(/\D/g, '');
     if (cepDigitosValidacao.length !== 8) {
       return res.status(400).json({ erro: 'CEP inválido' });
+    }
+
+    // Dados de entrega e contato: sem eles o pedido é pago mas não dá pra
+    // despachar nem falar com o cliente. O checkout já valida isso no HTML,
+    // mas validação de cliente não protege a rota (mesmo motivo do CEP acima)
+    // — e como o catch externo desta rota não chama rollbackStock, tudo isso
+    // precisa ser checado aqui, antes de qualquer decremento de estoque, não
+    // depois. emailPagadorValido é a mesma função usada em /api/payment/create.
+    if (!emailPagadorValido(email)) {
+      return res.status(400).json({ erro: 'E-mail inválido' });
+    }
+    if (telefone.length < 10 || telefone.length > 11) {
+      return res.status(400).json({ erro: 'Telefone inválido' });
+    }
+    if (cpf.length !== 11) {
+      return res.status(400).json({ erro: 'CPF inválido' });
+    }
+    // Número e complemento nunca vêm do CEP — sempre digitados pelo cliente,
+    // por isso são checados aqui e não deduzidos de nada.
+    if (!rua || !numero || !bairro || !cidade || estado.length !== 2) {
+      return res.status(400).json({ erro: 'Endereço de entrega incompleto — informe rua, número, bairro, cidade e UF.' });
     }
 
     // IMPORTANTE: preço e total NUNCA vêm do cliente — sempre recalculados a partir
@@ -1484,6 +1528,15 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
       items: itemsForOrder,
       total: totalComFrete,
       cep,
+      rua,
+      numero,
+      complemento,
+      bairro,
+      cidade,
+      estado,
+      email,
+      telefone,
+      cpf,
       frete: freteNum,
       freteNome,
       freteEmpresa,

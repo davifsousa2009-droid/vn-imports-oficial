@@ -3098,6 +3098,9 @@ async function checkout() {
         <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">E-mail</label>
         <input id="vnCkEmail" type="email" required autocomplete="email" placeholder="voce@email.com" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
+        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Telefone</label>
+        <input id="vnCkTelefone" required inputmode="numeric" autocomplete="tel" placeholder="(00) 00000-0000" maxlength="15" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+
         <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CPF</label>
         <input id="vnCkCpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
@@ -3107,6 +3110,35 @@ async function checkout() {
           <button type="button" id="vnCkFreteBtn" class="btn-fill" style="white-space:nowrap;padding:12px 14px">Calcular frete</button>
         </div>
         <div id="vnCkFreteOpts" style="margin-bottom:14px;font-size:13px;color:rgba(247,244,240,.55)">Informe o CEP para cotar o frete.</div>
+
+        <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(247,244,240,.45);margin-bottom:10px">Endereço de entrega</div>
+        <div id="vnCkEnderecoHint" style="display:none;margin-bottom:10px;font-size:12px;color:rgba(247,244,240,.45)">Endereço preenchido pelo CEP — confira e corrija se precisar.</div>
+        <div class="vn-ck-pair" style="margin-bottom:12px">
+          <div style="flex:2">
+            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Rua / Avenida</label>
+            <input id="vnCkRua" required autocomplete="address-line1" placeholder="Rua, avenida..." style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+          </div>
+          <div style="flex:1">
+            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número</label>
+            <input id="vnCkNumero" required inputmode="numeric" placeholder="Nº" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+          </div>
+        </div>
+        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Complemento (opcional)</label>
+        <input id="vnCkComplemento" autocomplete="address-line2" placeholder="Apto, bloco, ponto de referência..." style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+        <div class="vn-ck-pair" style="margin-bottom:14px">
+          <div style="flex:2">
+            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Bairro</label>
+            <input id="vnCkBairro" required autocomplete="address-level3" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+          </div>
+          <div style="flex:2">
+            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Cidade</label>
+            <input id="vnCkCidade" required autocomplete="address-level2" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
+          </div>
+          <div style="flex:0 0 64px">
+            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">UF</label>
+            <input id="vnCkEstado" required autocomplete="address-level1" maxlength="2" placeholder="SP" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0;text-transform:uppercase">
+          </div>
+        </div>
 
         <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(247,244,240,.45);margin-bottom:10px">Forma de pagamento</div>
         <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
@@ -3158,6 +3190,14 @@ async function checkout() {
   document.getElementById('vnCkClose')?.addEventListener('click', () => closeVnPayOverlay());
   darkOverlay.addEventListener('click', (e) => { if (e.target === darkOverlay) closeVnPayOverlay(); });
 
+  document.getElementById('vnCkTelefone')?.addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    e.target.value = v;
+  });
+
   document.getElementById('vnCkCpf')?.addEventListener('input', (e) => {
     let v = e.target.value.replace(/\D/g, '').slice(0, 11);
     if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
@@ -3166,10 +3206,39 @@ async function checkout() {
     e.target.value = v;
   });
 
+  document.getElementById('vnCkEstado')?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+  });
+
+  // Preenche o endereço a partir do CEP (ViaCEP) — o cliente sempre pode
+  // corrigir depois, e número/complemento nunca vêm do CEP de jeito nenhum,
+  // então continuam sempre manuais.
+  let vnCkEnderecoBuscadoPara = '';
+  async function preencherEnderecoPorCep(cepDigitos) {
+    if (cepDigitos.length !== 8 || cepDigitos === vnCkEnderecoBuscadoPara) return;
+    vnCkEnderecoBuscadoPara = cepDigitos;
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`);
+      const d = await r.json().catch(() => ({}));
+      if (!d || d.erro) return;
+      const rua = document.getElementById('vnCkRua');
+      const bairro = document.getElementById('vnCkBairro');
+      const cidade = document.getElementById('vnCkCidade');
+      const estado = document.getElementById('vnCkEstado');
+      if (rua && d.logradouro) rua.value = d.logradouro;
+      if (bairro && d.bairro) bairro.value = d.bairro;
+      if (cidade && d.localidade) cidade.value = d.localidade;
+      if (estado && d.uf) estado.value = d.uf;
+      const hint = document.getElementById('vnCkEnderecoHint');
+      if (hint && (d.logradouro || d.bairro || d.localidade)) hint.style.display = 'block';
+    } catch { /* ViaCEP fora do ar — cliente preenche o endereço na mão */ }
+  }
+
   document.getElementById('vnCkCep')?.addEventListener('input', (e) => {
     let v = e.target.value.replace(/\D/g, '').slice(0, 8);
     if (v.length > 5) v = v.replace(/(\d{5})(\d{0,3})/, '$1-$2');
     e.target.value = v;
+    if (v.replace(/\D/g, '').length === 8) preencherEnderecoPorCep(v.replace(/\D/g, ''));
   });
 
   const renderFreteOptions = () => {
@@ -3221,6 +3290,7 @@ async function checkout() {
     const btn = document.getElementById('vnCkFreteBtn');
     if (box) box.textContent = 'Calculando frete…';
     if (btn) btn.disabled = true;
+    preencherEnderecoPorCep(cep.replace(/\D/g, ''));
 
     // Frete grátis por regra da loja
     if (freteGratisAtivo && freteGratisValor > 0 && subtotal >= freteGratisValor) {
@@ -3266,8 +3336,15 @@ async function checkout() {
 
     const payerName = (document.getElementById('vnCkName')?.value || '').trim();
     const payerEmail = (document.getElementById('vnCkEmail')?.value || '').trim();
+    const payerTelefone = (document.getElementById('vnCkTelefone')?.value || '').replace(/\D/g, '');
     const payerCpf = (document.getElementById('vnCkCpf')?.value || '').replace(/\D/g, '');
     const cep = (document.getElementById('vnCkCep')?.value || '').replace(/\D/g, '');
+    const rua = (document.getElementById('vnCkRua')?.value || '').trim();
+    const numero = (document.getElementById('vnCkNumero')?.value || '').trim();
+    const complemento = (document.getElementById('vnCkComplemento')?.value || '').trim();
+    const bairro = (document.getElementById('vnCkBairro')?.value || '').trim();
+    const cidade = (document.getElementById('vnCkCidade')?.value || '').trim();
+    const estado = (document.getElementById('vnCkEstado')?.value || '').trim().toUpperCase();
     const method = (document.querySelector('input[name="vnPayMethod"]:checked') || {}).value || 'pix';
     const freteValor = Number(freteSelecionado.price) || 0;
     const totalEstimado = Math.round((subtotal + freteValor) * 100) / 100;
@@ -3276,12 +3353,20 @@ async function checkout() {
       if (errEl) { errEl.textContent = 'Informe um e-mail válido.'; errEl.style.display = 'block'; }
       return;
     }
+    if (payerTelefone.length < 10) {
+      if (errEl) { errEl.textContent = 'Informe um telefone válido.'; errEl.style.display = 'block'; }
+      return;
+    }
     if (payerCpf.length !== 11) {
       if (errEl) { errEl.textContent = 'Informe um CPF válido.'; errEl.style.display = 'block'; }
       return;
     }
     if (cep.length !== 8) {
       if (errEl) { errEl.textContent = 'Informe um CEP válido para o frete.'; errEl.style.display = 'block'; }
+      return;
+    }
+    if (!rua || !numero || !bairro || !cidade || estado.length !== 2) {
+      if (errEl) { errEl.textContent = 'Preencha o endereço completo de entrega (rua, número, bairro, cidade e UF).'; errEl.style.display = 'block'; }
       return;
     }
 
@@ -3297,7 +3382,16 @@ async function checkout() {
           tamanhoSelecionado: (it.tamanhoSelecionado || '').trim(),
           productId: it._id || it.productId || undefined
         })),
+        payerEmail,
+        payerTelefone,
+        payerCpf,
         cep,
+        rua,
+        numero,
+        complemento,
+        bairro,
+        cidade,
+        estado,
         frete: freteValor,
         freteNome: freteSelecionado.name || '',
         freteEmpresa: freteSelecionado.company || '',

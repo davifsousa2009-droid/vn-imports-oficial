@@ -1970,6 +1970,47 @@ async function salvarSettings() {
 }
 
 // ── GESTÃO DE PEDIDOS (orders) ─────────────────────────
+// Endereço/contato só existem em pedidos criados depois da correção que
+// passou a coletar e salvar esses dados — pedidos antigos não têm nenhum
+// desses campos no banco (nem como string vazia, o campo nem existe no
+// documento), então tudo aqui precisa tratar ausência sem quebrar a tabela.
+function formatarEnderecoPedido(o) {
+  const rua = o.rua ? String(o.rua).trim() : '';
+  const numero = o.numero ? String(o.numero).trim() : '';
+  const complemento = o.complemento ? String(o.complemento).trim() : '';
+  const bairro = o.bairro ? String(o.bairro).trim() : '';
+  const cidade = o.cidade ? String(o.cidade).trim() : '';
+  const estado = o.estado ? String(o.estado).trim() : '';
+  const cep = o.cep ? String(o.cep).trim() : '';
+
+  if (!rua && !bairro && !cidade) return '<span style="color:#999">Pedido antigo — sem endereço salvo</span>';
+
+  const linha1 = [rua, numero].filter(Boolean).join(', ') + (complemento ? ` - ${complemento}` : '');
+  const linha2 = [bairro, [cidade, estado].filter(Boolean).join('/')].filter(Boolean).join(' - ');
+  const linha3 = cep ? `CEP ${cep}` : '';
+  return [linha1, linha2, linha3].filter(Boolean).map(escHtml).join('<br>');
+}
+
+function formatarTelefonePedido(telefone) {
+  const d = String(telefone || '').replace(/\D/g, '');
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return d;
+}
+
+function formatarCpfPedido(cpf) {
+  const d = String(cpf || '').replace(/\D/g, '');
+  return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : d;
+}
+
+function formatarContatoPedido(o) {
+  const linhas = [];
+  if (o.telefone) linhas.push('📞 ' + escHtml(formatarTelefonePedido(o.telefone)));
+  if (o.email) linhas.push(escHtml(o.email));
+  if (o.cpf) linhas.push('CPF ' + escHtml(formatarCpfPedido(o.cpf)));
+  return linhas.length ? linhas.join('<br>') : '<span style="color:#999">—</span>';
+}
+
 async function loadOrders() {
   const body = document.getElementById('ordersBody');
   if (!body) return;
@@ -2003,6 +2044,8 @@ async function loadOrders() {
           <tr>
             <th>Nome do Cliente</th>
             <th>Itens</th>
+            <th>Endereço de Entrega</th>
+            <th>Contato</th>
             <th>Valor Total</th>
             <th>Status</th>
             <th>Ações</th>
@@ -2016,6 +2059,8 @@ async function loadOrders() {
             const itemsTxt = items.length
               ? items.map(i => `${escHtml(i.name || 'Item')} (${i.qty ?? 1})`).join(' • ')
               : '—';
+            const enderecoTxt = formatarEnderecoPedido(o);
+            const contatoTxt = formatarContatoPedido(o);
             const total = Number(o.total);
             const totalTxt = Number.isFinite(total) ? fmt(total) : '—';
             const status = o.status ? escHtml(o.status) : '—';
@@ -2024,6 +2069,8 @@ async function loadOrders() {
               <tr>
                 <td class="td-name">${customer}</td>
                 <td>${itemsTxt}</td>
+                <td style="font-size:12px;line-height:1.5;min-width:180px">${enderecoTxt}</td>
+                <td style="font-size:12px;line-height:1.5;white-space:nowrap">${contatoTxt}</td>
                 <td class="td-price">${totalTxt}</td>
                 <td>${status}</td>
                 <td style="white-space:nowrap">
