@@ -36,6 +36,10 @@
     {
       "source": "/index.html",
       "destination": "/server.js"
+    },
+    {
+      "source": "/favicon.svg",
+      "destination": "/server.js"
     }
   ]
 }

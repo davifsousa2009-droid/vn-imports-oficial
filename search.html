@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Busca — VN IMPORTS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
@@ -214,7 +215,13 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   .nav-hamburger{display:flex}
   .nav-links{
     display:flex;flex-direction:column;gap:2px;
-    position:fixed;top:0;left:0;bottom:0;z-index:1500;
+    /* height:100dvh em vez de bottom:0 — mesmo padrão do .cart-drawer. bottom:0
+       depende de qual ancestral é o containing block (normalmente a viewport,
+       mas basta um filter/backdrop-filter/transform em algum ancestral virar
+       esse containing block, como quase aconteceu aqui com o blur da nav, ver
+       nav:has(.nav-links.open) acima) — dvh não depende de containing block
+       nenhum, sempre resolve contra a viewport de verdade. */
+    position:fixed;top:0;left:0;height:100dvh;z-index:1500;
     width:min(320px,84vw);
     background:var(--bg);
     align-items:stretch;
@@ -464,6 +471,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   border-radius:8px;box-shadow:0 4px 16px rgba(17,17,17,.15);
 }
 .btn-fill:hover{background:var(--ink2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(17,17,17,.22)}
+.btn-fill:disabled{opacity:.5;cursor:not-allowed;background:var(--muted);border-color:var(--muted);box-shadow:none}
+.btn-fill:disabled:hover{background:var(--muted);transform:none;box-shadow:none}
 .btn-line{
   background:transparent;color:var(--ink);
   border:1.5px solid var(--border);padding:13px 28px;
@@ -556,7 +565,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .sec-eye::before{content:'';display:block;width:24px;height:1px;background:var(--border2)}
 .sec-title{font-family:var(--serif);font-size:clamp(28px,3.5vw,46px);font-weight:400;line-height:1.08}
 .sec-title em{font-style:italic}
-.sec-more{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s}
+.sec-more{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s;padding:14px 6px;margin:-14px -6px}
 .sec-more:hover{color:var(--ink)}
 
 /* ─── FILTER (legado) ─── */
@@ -816,9 +825,21 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-card-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;will-change:transform}
 .prod-card:hover .prod-card-media img{transform:scale(1.05)}
 .prod-card-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:12px}
+.prod-badge-esgotado{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:rgba(17,17,17,.86);color:#fff;
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;pointer-events:none;
+}
+.prod-card-media.esgotado img{opacity:.5}
+.prod-add-btn:disabled{opacity:.5;cursor:not-allowed;background:var(--muted)}
+.prod-add-btn:disabled:hover{background:var(--muted);box-shadow:none}
 
 .prod-wish-btn{
-  position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:999px;
+  /* 44px de área de toque (recomendação de acessibilidade) sem aumentar o
+     ícone — o svg dentro tem width/height fixos em 16px, então crescer o
+     botão só adiciona respiro ao redor do mesmo ícone visual. */
+  position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:999px;
   border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:#111;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:0 8px 18px rgba(17,17,17,.10);
@@ -1188,7 +1209,8 @@ footer{background:var(--ink);color:var(--bg)}
 .foot-desc{font-size:13px;color:rgba(247,244,240,.4);line-height:1.7;max-width:270px;margin-bottom:24px;font-weight:300}
 .foot-socials{display:flex;gap:8px}
 .fsoc{
-  width:36px;height:36px;border:1px solid rgba(247,244,240,.1);
+  /* 44px de área de toque sem aumentar o ícone — font-size continua 14px. */
+  width:44px;height:44px;border:1px solid rgba(247,244,240,.1);
   display:flex;align-items:center;justify-content:center;
   font-size:14px;color:rgba(247,244,240,.4);transition:all .2s;
 }
@@ -1197,8 +1219,8 @@ footer{background:var(--ink);color:var(--bg)}
   font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:rgba(247,244,240,.35);margin-bottom:18px;
 }
-.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
-.foot-col a{font-size:13px;color:rgba(247,244,240,.4);transition:color .2s;font-weight:300}
+.foot-col ul{list-style:none;display:flex;flex-direction:column}
+.foot-col a{font-size:13px;color:rgba(247,244,240,.4);transition:color .2s;font-weight:300;display:block;padding:10px 0}
 .foot-col a:hover{color:var(--bg)}
 .foot-bottom{
   max-width:1240px;margin:0 auto;
@@ -1217,7 +1239,8 @@ footer{background:var(--ink);color:var(--bg)}
 .pv-back{
   display:inline-flex;align-items:center;gap:8px;
   font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);border:none;background:transparent;margin-bottom:40px;
+  color:var(--muted);border:none;background:transparent;
+  padding:10px 8px;margin:-10px -8px 30px -8px;
   transition:color .2s;
 }
 .pv-back:hover{color:var(--ink)}
@@ -1654,7 +1677,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .prod-name{font-size:14px;margin-bottom:2px}
   .prod-price{font-size:14px}
   .prod-old{font-size:10px}
-  .prod-wish-btn{width:36px;height:36px}
   .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
 
   /* Zonas de toque ≥44px nos controles de filtro */
@@ -1941,7 +1963,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
       desc: p.descricao || p.nome,
       sizes: normalizedSizes,
-      badge: null
+      badge: null,
+      // null = controle de estoque desativado (nunca esgotado); um número é a
+      // quantidade real — só 0 significa esgotado de verdade.
+      stock: p.estoque != null ? Number(p.estoque) : null
     };
   }
 
@@ -1982,6 +2007,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function quickAddFromGrid(_id){
     const base = window._searchBase || [];
     const p = base.find(x=>x._id===_id);
+    // Checagem client-side só de UX (evita o cliente chegar até o checkout pra
+    // descobrir ali) — quem trava de verdade é o decremento atômico no servidor.
+    if (p && p.stock === 0) {
+      showToast('Produto esgotado.');
+      return;
+    }
     const item = p ? { _id: p._id, name: p.name, price: p.price, img: p.img, tamanhoSelecionado: '', qty: 1 } : { _id: _id, name: 'Produto', price:0, img:'', qty:1 };
     let cart = [];
     try { cart = JSON.parse(localStorage.getItem('vn_cart')||'[]'); } catch(e) { cart = []; }
@@ -2268,10 +2299,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     container.innerHTML = list.map((p,i)=>{
       const subTxt = (p.cat && String(p.cat).trim() && p.cat !== 'geral') ? String(p.cat) : (p.brand || 'Produto');
       const inWish = isInWishlist(p._id) ? ' on' : '';
+      // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
+      const esgotado = p.stock === 0;
       return `
         <div class="prod-card" data-pid="${p._id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
           <div class="prod-card-frame" onclick="window.location.href='/produto.html?id=${encodeURIComponent(p._id)}'">
-            <div class="prod-card-media">
+            <div class="prod-card-media${esgotado?' esgotado':''}">
+              ${esgotado ? '<span class="prod-badge-esgotado">Esgotado</span>' : ''}
               ${p.img ? `<img src="${p.img}" alt="${escapeHtmlTexto(p.name)}" loading="lazy" />` : `<div class="prod-card-empty">Sem imagem</div>`}
               <button class="prod-wish-btn${inWish}" onclick="event.stopPropagation();toggleWishlist('${p._id}', this)"><i class="fa-regular fa-heart"></i></button>
             </div>
@@ -2282,7 +2316,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
                 ${p.old?`<span class="prod-old-price">${R$(p.old)}</span>`:''}
                 <span class="prod-price">${R$(p.price)}</span>
               </div>
-              <button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddFromGrid('${p._id}')">Adicionar</button>
+              ${esgotado
+                ? '<button class="btn-fill prod-add-btn" disabled aria-disabled="true">Esgotado</button>'
+                : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddFromGrid('${p._id}')">Adicionar</button>`
+              }
             </div>
           </div>
         </div>`;

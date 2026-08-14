@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>VN IMPORTS — Moda Premium</title>
 <meta name="description" content="VN IMPORTS: moda premium importada, curadoria exclusiva e qualidade real. Garanta seu estilo com atendimento e entrega rápida." />
 <meta name="keywords" content="moda premium, importados, roupas femininas, estilo exclusivo, VN IMPORTS" />
@@ -238,7 +239,13 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   .nav-hamburger{display:flex}
   .nav-links{
     display:flex;flex-direction:column;gap:2px;
-    position:fixed;top:0;left:0;bottom:0;z-index:1500;
+    /* height:100dvh em vez de bottom:0 — mesmo padrão do .cart-drawer. bottom:0
+       depende de qual ancestral é o containing block (normalmente a viewport,
+       mas basta um filter/backdrop-filter/transform em algum ancestral virar
+       esse containing block, como quase aconteceu aqui com o blur da nav, ver
+       nav:has(.nav-links.open) acima) — dvh não depende de containing block
+       nenhum, sempre resolve contra a viewport de verdade. */
+    position:fixed;top:0;left:0;height:100dvh;z-index:1500;
     width:min(320px,84vw);
     background:var(--bg);
     align-items:stretch;
@@ -496,6 +503,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   border-radius:8px;box-shadow:0 4px 16px rgba(17,17,17,.15);
 }
 .btn-fill:hover{background:var(--ink2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(17,17,17,.22)}
+.btn-fill:disabled{opacity:.5;cursor:not-allowed;background:var(--muted);border-color:var(--muted);box-shadow:none}
+.btn-fill:disabled:hover{background:var(--muted);transform:none;box-shadow:none}
 .btn-line{
   background:transparent;color:var(--ink);
   border:1.5px solid var(--border);padding:13px 28px;
@@ -588,7 +597,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .sec-eye::before{content:'';display:block;width:24px;height:1px;background:var(--border2)}
 .sec-title{font-family:var(--serif);font-size:clamp(28px,3.5vw,46px);font-weight:400;line-height:1.08}
 .sec-title em{font-style:italic}
-.sec-more{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s}
+.sec-more{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s;padding:14px 6px;margin:-14px -6px}
 .sec-more:hover{color:var(--ink)}
 
 /* ─── FILTER (legado) ─── */
@@ -827,9 +836,21 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-card-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;will-change:transform}
 .prod-card:hover .prod-card-media img{transform:scale(1.05)}
 .prod-card-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:12px}
+.prod-badge-esgotado{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:rgba(17,17,17,.86);color:#fff;
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;pointer-events:none;
+}
+.prod-card-media.esgotado img{opacity:.5}
+.prod-add-btn:disabled{opacity:.5;cursor:not-allowed;background:var(--muted)}
+.prod-add-btn:disabled:hover{background:var(--muted);box-shadow:none}
 
 .prod-wish-btn{
-  position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:999px;
+  /* 44px de área de toque (recomendação de acessibilidade) sem aumentar o
+     ícone — o svg dentro tem width/height fixos em 16px, então crescer o
+     botão só adiciona respiro ao redor do mesmo ícone visual. */
+  position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:999px;
   border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:#111;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:0 8px 18px rgba(17,17,17,.10);
@@ -1199,7 +1220,8 @@ footer{background:var(--ink);color:var(--bg)}
 .foot-desc{font-size:13px;color:rgba(247,244,240,.4);line-height:1.7;max-width:270px;margin-bottom:24px;font-weight:300}
 .foot-socials{display:flex;gap:8px}
 .fsoc{
-  width:36px;height:36px;border:1px solid rgba(247,244,240,.1);
+  /* 44px de área de toque sem aumentar o ícone — font-size continua 14px. */
+  width:44px;height:44px;border:1px solid rgba(247,244,240,.1);
   display:flex;align-items:center;justify-content:center;
   font-size:14px;color:rgba(247,244,240,.4);transition:all .2s;
 }
@@ -1208,8 +1230,8 @@ footer{background:var(--ink);color:var(--bg)}
   font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   color:rgba(247,244,240,.35);margin-bottom:18px;
 }
-.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
-.foot-col a{font-size:13px;color:rgba(247,244,240,.4);transition:color .2s;font-weight:300}
+.foot-col ul{list-style:none;display:flex;flex-direction:column}
+.foot-col a{font-size:13px;color:rgba(247,244,240,.4);transition:color .2s;font-weight:300;display:block;padding:10px 0}
 .foot-col a:hover{color:var(--bg)}
 .foot-bottom{
   max-width:1240px;margin:0 auto;
@@ -1228,7 +1250,11 @@ footer{background:var(--ink);color:var(--bg)}
 .pv-back{
   display:inline-flex;align-items:center;gap:8px;
   font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);border:none;background:transparent;margin-bottom:40px;
+  color:var(--muted);border:none;background:transparent;
+  /* padding aumenta a área de toque; margin negativa nos outros lados
+     compensa, mantendo a posição visual igual (só o espaço abaixo, 40px,
+     é preservado de propósito). */
+  padding:10px 8px;margin:-10px -8px 30px -8px;
   transition:color .2s;
 }
 .pv-back:hover{color:var(--ink)}
@@ -1670,7 +1696,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .prod-name{font-size:14px;margin-bottom:2px}
   .prod-price{font-size:14px}
   .prod-old{font-size:10px}
-  .prod-wish-btn{width:36px;height:36px}
   .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
 
   /* Zonas de toque ≥44px nos controles de filtro */
@@ -1713,6 +1738,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 .vn-ck-pair{display:flex;gap:10px}
 @media(max-width:380px){
   .vn-ck-pair{flex-direction:column}
+}
+/* Marca visual de campo preenchido automaticamente pelo CEP (ViaCEP) — some
+   assim que o cliente edita o campo, ver limparAutofillEndereco(). */
+.vn-ck-autofill{
+  border-color:rgba(196,165,90,.9) !important;
+  background:rgba(196,165,90,.1) !important;
 }
 </style>
 </head>
@@ -2174,7 +2205,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <div class="pv-info">
         <div class="pv-brand" id="pvBrand"></div>
-        <h1 class="pv-name" id="pvName"></h1>
+        <h1 class="pv-name" id="pvName">Carregando produto…</h1>
         <div class="pv-price" id="pvPrice"></div>
         <div class="pv-inst" id="pvInst"></div>
         <hr class="pv-div">
@@ -2275,13 +2306,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div>
         <form class="cform" onsubmit="submitForm(event)">
           <div class="frow">
-            <div class="fgroup"><label class="flabel">Nome</label><input type="text" class="finput" placeholder="Seu nome" required></div>
-            <div class="fgroup"><label class="flabel">Sobrenome</label><input type="text" class="finput" placeholder="Sobrenome" required></div>
+            <div class="fgroup"><label class="flabel" for="ctNome">Nome</label><input type="text" id="ctNome" class="finput" placeholder="Seu nome" required></div>
+            <div class="fgroup"><label class="flabel" for="ctSobrenome">Sobrenome</label><input type="text" id="ctSobrenome" class="finput" placeholder="Sobrenome" required></div>
           </div>
-          <div class="fgroup"><label class="flabel">E-mail</label><input type="email" class="finput" placeholder="seu@email.com" required></div>
+          <div class="fgroup"><label class="flabel" for="ctEmail">E-mail</label><input type="email" id="ctEmail" class="finput" placeholder="seu@email.com" required></div>
           <div class="fgroup">
-            <label class="flabel">Assunto</label>
-            <select class="fselect finput">
+            <label class="flabel" for="ctAssunto">Assunto</label>
+            <select class="fselect finput" id="ctAssunto">
               <option value="">Selecione</option>
               <option>Dúvida sobre pedido</option>
               <option>Troca ou devolução</option>
@@ -2289,7 +2320,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
               <option>Outros</option>
             </select>
           </div>
-          <div class="fgroup"><label class="flabel">Mensagem</label><textarea class="ftextarea" placeholder="Descreva sua dúvida…" required></textarea></div>
+          <div class="fgroup"><label class="flabel" for="ctMensagem">Mensagem</label><textarea id="ctMensagem" class="ftextarea" placeholder="Descreva sua dúvida…" required></textarea></div>
           <button type="submit" class="btn-fill btn-full">Enviar Mensagem <i class="fa-solid fa-arrow-right ui-ico" aria-hidden="true"></i></button>
           <div class="fsuccess" id="formOk"><i class="fa-solid fa-check ui-ico" aria-hidden="true"></i>Mensagem enviada! Respondemos em até 24h.</div>
         </form>
@@ -2548,11 +2579,15 @@ function renderGrid(list){
       ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>'
       : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>';
 
+    // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
+    const esgotado = p.stock === 0;
+
     return `
       <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
         <div class="prod-card-frame">
 
-          <div class="prod-card-media">
+          <div class="prod-card-media${esgotado?' esgotado':''}">
+            ${esgotado ? '<span class="prod-badge-esgotado">Esgotado</span>' : ''}
             ${p.img
               ? `<img src="${p.img}" alt="${p.name}" loading="lazy" />`
               : `<div class="prod-card-empty">Sem imagem</div>`
@@ -2576,7 +2611,10 @@ function renderGrid(list){
               ${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}
             </div>
 
-            <button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>
+            ${esgotado
+              ? '<button class="btn-fill prod-add-btn" disabled aria-disabled="true">Esgotado</button>'
+              : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>`
+            }
           </div>
         </div>
       </div>`;
@@ -2678,18 +2716,25 @@ function openProd(id){
       ? '<i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Nos Favoritos'
       : '<i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos';
   };
-  document.getElementById('pvAddBtn').onclick = ()=>{
-    const sel = (window.__vn_selectedSize || '').trim();
-    if(!sel){
-      const box = document.getElementById('pvSizes');
-      if(box){
-        box.insertAdjacentHTML('afterend', '<div class="pv-alert-tam" style="margin-top:-12px;margin-bottom:18px;font-size:12px;color:#fff;background:#A0391E;border:1px solid rgba(160,57,30,.75);padding:10px 12px;border-radius:12px;">Selecione um tamanho para adicionar ao carrinho.</div>');
+  // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
+  const esgotado = p.stock === 0;
+  const addBtn = document.getElementById('pvAddBtn');
+  if (addBtn) {
+    addBtn.disabled = esgotado;
+    addBtn.textContent = esgotado ? 'Esgotado' : 'Adicionar ao Carrinho';
+    addBtn.onclick = esgotado ? null : ()=>{
+      const sel = (window.__vn_selectedSize || '').trim();
+      if(!sel){
+        const box = document.getElementById('pvSizes');
+        if(box){
+          box.insertAdjacentHTML('afterend', '<div class="pv-alert-tam" style="margin-top:-12px;margin-bottom:18px;font-size:12px;color:#fff;background:#A0391E;border:1px solid rgba(160,57,30,.75);padding:10px 12px;border-radius:12px;">Selecione um tamanho para adicionar ao carrinho.</div>');
+        }
+        box?.scrollIntoView({behavior:'smooth',block:'center'});
+        return;
       }
-      box?.scrollIntoView({behavior:'smooth',block:'center'});
-      return;
-    }
-    addCart(p);
-  };
+      addCart(p);
+    };
+  }
 
 
   goView('view-product');
@@ -2731,6 +2776,7 @@ function renderLightboxImg(){
   const nextBtn = document.querySelector('.pv-lightbox-next');
   if (!galeria.length) return;
   img.src = galeria[__lbIndex];
+  img.alt = curProd?.name ? `${curProd.name} — foto ${__lbIndex + 1} de ${galeria.length}` : '';
   if (count) count.textContent = galeria.length > 1 ? `${__lbIndex+1} / ${galeria.length}` : '';
   const mostraNav = galeria.length > 1;
   if (prevBtn) prevBtn.style.display = mostraNav ? '' : 'none';
@@ -2846,6 +2892,12 @@ function renderWL(){
 
 /* ─── CART ─── */
 function addCart(p){
+  // Checagem client-side só de UX (evita o cliente chegar até o checkout pra
+  // descobrir ali) — quem trava de verdade é o decremento atômico no servidor.
+  if (p.stock === 0) {
+    showToast('warn','Produto esgotado.');
+    return;
+  }
   const sel = (window.__vn_selectedSize || '').trim();
   if(!sel){
     showToast('warn','Selecione um tamanho.');
@@ -3092,19 +3144,19 @@ async function checkout() {
         <div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,244,240,.7);margin-bottom:6px"><span>Frete</span><span id="vnCkFreteVal">${formatBRL(0)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:18px;color:#C4A55A;font-weight:700;margin-bottom:16px"><span>Total</span><span id="vnCkTotal">${formatBRL(subtotal)}</span></div>
 
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Nome completo</label>
+        <label for="vnCkName" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Nome completo</label>
         <input id="vnCkName" required autocomplete="name" placeholder="Seu nome" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">E-mail</label>
+        <label for="vnCkEmail" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">E-mail</label>
         <input id="vnCkEmail" type="email" required autocomplete="email" placeholder="voce@email.com" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Telefone</label>
+        <label for="vnCkTelefone" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Telefone</label>
         <input id="vnCkTelefone" required inputmode="numeric" autocomplete="tel" placeholder="(00) 00000-0000" maxlength="15" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CPF</label>
+        <label for="vnCkCpf" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CPF</label>
         <input id="vnCkCpf" required inputmode="numeric" placeholder="000.000.000-00" maxlength="14" style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
 
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CEP (Melhor Envio)</label>
+        <label for="vnCkCep" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CEP (Melhor Envio)</label>
         <div class="vn-ck-pair" style="margin-bottom:10px">
           <input id="vnCkCep" required inputmode="numeric" placeholder="00000-000" maxlength="9" style="flex:1;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           <button type="button" id="vnCkFreteBtn" class="btn-fill" style="white-space:nowrap;padding:12px 14px">Calcular frete</button>
@@ -3115,28 +3167,28 @@ async function checkout() {
         <div id="vnCkEnderecoHint" style="display:none;margin-bottom:10px;font-size:12px;color:rgba(247,244,240,.45)">Endereço preenchido pelo CEP — confira e corrija se precisar.</div>
         <div class="vn-ck-pair" style="margin-bottom:12px">
           <div style="flex:2">
-            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Rua / Avenida</label>
+            <label for="vnCkRua" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Rua / Avenida</label>
             <input id="vnCkRua" required autocomplete="address-line1" placeholder="Rua, avenida..." style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           </div>
           <div style="flex:1">
-            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número</label>
+            <label for="vnCkNumero" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número</label>
             <input id="vnCkNumero" required inputmode="numeric" placeholder="Nº" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           </div>
         </div>
-        <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Complemento (opcional)</label>
+        <label for="vnCkComplemento" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Complemento (opcional)</label>
         <input id="vnCkComplemento" autocomplete="address-line2" placeholder="Apto, bloco, ponto de referência..." style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
         <div class="vn-ck-pair" style="margin-bottom:14px">
           <div style="flex:2">
-            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Bairro</label>
+            <label for="vnCkBairro" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Bairro</label>
             <input id="vnCkBairro" required autocomplete="address-level3" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           </div>
           <div style="flex:2">
-            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Cidade</label>
+            <label for="vnCkCidade" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Cidade</label>
             <input id="vnCkCidade" required autocomplete="address-level2" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           </div>
           <div style="flex:0 0 64px">
-            <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">UF</label>
-            <input id="vnCkEstado" required autocomplete="address-level1" maxlength="2" placeholder="SP" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0;text-transform:uppercase">
+            <label for="vnCkEstado" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">UF</label>
+            <input id="vnCkEstado" required autocomplete="address-level1" maxlength="2" placeholder="UF" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0;text-transform:uppercase">
           </div>
         </div>
 
@@ -3152,21 +3204,21 @@ async function checkout() {
         ${canCard ? '' : '<div style="font-size:12px;color:rgba(247,244,240,.45);margin:-8px 0 14px">Cartão disponível após cadastrar a <em>mp_public_key</em> no Admin.</div>'}
 
         <div id="vnCardFields" style="display:none;margin-bottom:14px">
-          <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número do cartão</label>
+          <label for="vnCardNumber" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Número do cartão</label>
           <input id="vnCardNumber" autocomplete="cc-number" placeholder="•••• •••• •••• ••••" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
           <div class="vn-ck-pair">
             <div style="flex:1">
-              <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Validade</label>
+              <label for="vnCardExp" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Validade</label>
               <input id="vnCardExp" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
             </div>
             <div style="flex:1">
-              <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CVV</label>
+              <label for="vnCardCvv" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">CVV</label>
               <input id="vnCardCvv" autocomplete="cc-csc" placeholder="•••" maxlength="4" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
             </div>
           </div>
-          <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin:10px 0 6px">Nome no cartão</label>
+          <label for="vnCardName" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin:10px 0 6px">Nome no cartão</label>
           <input id="vnCardName" autocomplete="cc-name" placeholder="Como impresso no cartão" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:rgba(255,255,255,.04);color:#F7F4F0">
-          <label style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Parcelas</label>
+          <label for="vnCardInstallments" style="display:block;font-size:11px;color:rgba(247,244,240,.55);margin-bottom:6px">Parcelas</label>
           <select id="vnCardInstallments" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(196,165,90,.25);background:#1a1a1a;color:#F7F4F0">
             <option value="1">1x sem juros</option>
           </select>
@@ -3214,24 +3266,51 @@ async function checkout() {
   // corrigir depois, e número/complemento nunca vêm do CEP de jeito nenhum,
   // então continuam sempre manuais.
   let vnCkEnderecoBuscadoPara = '';
+  // Remove a marca visual de "preenchido pelo CEP" assim que o cliente edita
+  // o campo na mão — depois disso é um valor dele, não mais um autofill.
+  function limparAutofillEndereco(el) {
+    el?.classList.remove('vn-ck-autofill');
+  }
+  ['vnCkRua', 'vnCkBairro', 'vnCkCidade', 'vnCkEstado'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', (e) => limparAutofillEndereco(e.target));
+  });
+
   async function preencherEnderecoPorCep(cepDigitos) {
     if (cepDigitos.length !== 8 || cepDigitos === vnCkEnderecoBuscadoPara) return;
     vnCkEnderecoBuscadoPara = cepDigitos;
+
+    const rua = document.getElementById('vnCkRua');
+    const bairro = document.getElementById('vnCkBairro');
+    const cidade = document.getElementById('vnCkCidade');
+    const estado = document.getElementById('vnCkEstado');
+    const hint = document.getElementById('vnCkEnderecoHint');
+    // Esconde de novo a cada tentativa nova — se um CEP anterior tinha
+    // preenchido e esse aqui falhar, o aviso não pode ficar preso mostrando
+    // "preenchido pelo CEP" pra um endereço que não veio de lugar nenhum.
+    if (hint) hint.style.display = 'none';
+
     try {
       const r = await fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`);
+      if (!r.ok) {
+        console.warn('[checkout] ViaCEP respondeu', r.status, '— endereço não preenchido automaticamente.');
+        return;
+      }
       const d = await r.json().catch(() => ({}));
-      if (!d || d.erro) return;
-      const rua = document.getElementById('vnCkRua');
-      const bairro = document.getElementById('vnCkBairro');
-      const cidade = document.getElementById('vnCkCidade');
-      const estado = document.getElementById('vnCkEstado');
-      if (rua && d.logradouro) rua.value = d.logradouro;
-      if (bairro && d.bairro) bairro.value = d.bairro;
-      if (cidade && d.localidade) cidade.value = d.localidade;
-      if (estado && d.uf) estado.value = d.uf;
-      const hint = document.getElementById('vnCkEnderecoHint');
+      if (!d || d.erro) {
+        console.warn('[checkout] ViaCEP não encontrou o CEP', cepDigitos, '— cliente preenche o endereço na mão.');
+        return;
+      }
+      if (rua && d.logradouro) { rua.value = d.logradouro; rua.classList.add('vn-ck-autofill'); }
+      if (bairro && d.bairro) { bairro.value = d.bairro; bairro.classList.add('vn-ck-autofill'); }
+      if (cidade && d.localidade) { cidade.value = d.localidade; cidade.classList.add('vn-ck-autofill'); }
+      if (estado && d.uf) { estado.value = d.uf; estado.classList.add('vn-ck-autofill'); }
       if (hint && (d.logradouro || d.bairro || d.localidade)) hint.style.display = 'block';
-    } catch { /* ViaCEP fora do ar — cliente preenche o endereço na mão */ }
+    } catch (e) {
+      // Antes engolido em silêncio — inclusive bloqueios de CSP (connect-src)
+      // caem aqui como falha de rede, sem erro nenhum visível. Logar é o que
+      // torna esse tipo de falha diagnosticável da próxima vez.
+      console.error('[checkout] Falha ao consultar ViaCEP para preencher o endereço:', e);
+    }
   }
 
   document.getElementById('vnCkCep')?.addEventListener('input', (e) => {
@@ -4518,7 +4597,10 @@ function converterProduto(p, index) {
     imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
     desc: p.descricao || p.nome,
     sizes: normalizedSizes,
-    badge: null
+    badge: null,
+    // null = controle de estoque desativado (nunca esgotado); um número é a
+    // quantidade real — só 0 significa esgotado de verdade.
+    stock: p.estoque != null ? Number(p.estoque) : null
   };
 }
 
@@ -4939,6 +5021,13 @@ async function carregarProdutosDoServidor(categoria) {
 
     console.log('renderGrid: lista carregada', { total: lista.length, categoria, first: lista[0] });
     renderGrid(lista);
+
+    // Repopula a sidebar de filtros (chips de tamanho, teto do slider de preço)
+    // agora que S.products tem dados de verdade. renderHome() já chama isso no
+    // DOMContentLoaded, mas antes de carregarProdutosDoServidor() resolver —
+    // S.products ainda está vazio nesse ponto, então a sidebar nascia sem
+    // tamanho nenhum e com o slider preso em max=0, e nunca era repopulada.
+    renderFilterSidebar();
 
     // Recarrega as imagens dos cards de categoria agora que os produtos chegaram
     // (só na carga inicial sem filtro — filtrado, S.products teria só 1 categoria).

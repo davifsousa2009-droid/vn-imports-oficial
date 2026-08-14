@@ -123,7 +123,11 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
-        connectSrc: ["'self'"]
+        // viacep.com.br: o autofill de endereço no checkout chama isso direto do
+        // navegador (fetch), diferente da cotação de frete, que passa pelo
+        // servidor (/api/frete/calcular, same-origin) — sem essa liberação o CSP
+        // bloqueia a chamada silenciosamente, sem erro nenhum visível pro usuário.
+        connectSrc: ["'self'", 'https://viacep.com.br']
       }
     }
   })
@@ -2600,11 +2604,35 @@ function escapeParaCss(v) {
  * aquele "flash" da cor/imagem antiga por uma fração de segundo a cada F5).
  * Se o banco estiver indisponível, devolve o template original sem quebrar a página.
  */
-async function renderLojaHtmlComConfig() {
+async function renderLojaHtmlComConfig(req) {
   let html = getLojaHtmlTemplate();
   try {
     const cfg = await buscarConfigCompleta();
     const nome = escapeParaAtributo(cfg?.nomeLoja);
+
+    // URL real do deploy, sempre calculada do request — nunca um domínio
+    // fixo escrito no arquivo. Projeto é white-label: o próximo cliente roda
+    // num domínio diferente, e um domínio hardcoded nas meta tags (og:url,
+    // canonical) quebraria de novo pra ele, do mesmo jeito que quebrou aqui
+    // (apontava pra vnimports.com.br enquanto o site roda em
+    // vn-imports-oficial.vercel.app). Mesmo padrão de req.headers.host já
+    // usado pro self-origin do CORS acima.
+    const baseUrl = req?.headers?.host ? `https://${req.headers.host}` : '';
+    if (baseUrl) {
+      const baseUrlEsc = escapeParaAtributo(baseUrl + '/');
+      html = html.replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${baseUrlEsc}$2`);
+      html = html.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${baseUrlEsc}$2`);
+    }
+
+    // Imagem de preview (WhatsApp/Instagram/etc.): reaproveita a hero image já
+    // configurada — sempre uma URL absoluta de verdade (Cloudinary ou o
+    // padrão), diferente do og-image.jpg fixo no arquivo, que nunca existiu
+    // como arquivo real (por isso o preview sempre veio sem imagem).
+    const ogImg = escapeParaAtributo(cfg?.heroImagem);
+    if (ogImg) {
+      html = html.replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${ogImg}$2`);
+      html = html.replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${ogImg}$2`);
+    }
 
     // Cores: só gold/gold2 podem realmente divergir do padrão já escrito no arquivo
     // (os outros tokens de cor sempre vêm do mesmo config.js embutido no HTML).
@@ -2640,10 +2668,33 @@ async function renderLojaHtmlComConfig() {
     if (nome) {
       html = html.replace(/<title>[^<]*<\/title>/, `<title>${nome}${suf ? ' — ' + suf : ''}</title>`);
     }
+
   } catch (e) {
     console.warn('renderLojaHtmlComConfig:', e.message);
   }
   return html;
+}
+
+/**
+ * Monograma SVG (inicial do nome da loja + cor dourada já configurada) usado
+ * como favicon. Servido como rota própria (/favicon.svg), referenciada por um
+ * <link> estático (caminho relativo, sem domínio nenhum) nos 4 HTMLs — inclusive
+ * search.html e produto.html, que são servidos crus/em cache, sem templating
+ * por request. Uma rota dedicada resolve os quatro de uma vez só, em vez de
+ * estender templating pra páginas que hoje não têm. Branco-de-loja de
+ * propósito: nunca uma letra ou cor fixa de um cliente específico.
+ */
+function construirFaviconSvg(cfg) {
+  const nomeRaw = String(cfg?.nomeLoja || 'Loja').trim();
+  const inicial = (nomeRaw.match(/[\p{L}\p{N}]/u) || ['L'])[0].toUpperCase();
+  const corRaw = String(cfg?.colors?.gold || '#9A7A3A').trim();
+  const cor = /^#[0-9a-fA-F]{3,8}$/.test(corRaw) ? corRaw : '#9A7A3A';
+  return (
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>` +
+    `<rect width='64' height='64' rx='14' fill='${cor}'/>` +
+    `<text x='32' y='45' font-family='Georgia,serif' font-size='34' font-weight='700' fill='#ffffff' text-anchor='middle'>${inicial}</text>` +
+    `</svg>`
+  );
 }
 
 const adminHtml = path.join(__dirname, 'admin.html');
@@ -2689,13 +2740,28 @@ function semCacheHtml(res) {
   res.set('Expires', '0');
 }
 
+// Cache curto (não no-store): o favicon é pedido a cada carregamento de
+// página, por todo visitante — recalcular do banco a cada vez seria uma
+// carga desnecessária pra algo que muda raramente (nome/cor da loja).
+app.get('/favicon.svg', async (req, res) => {
+  let cfg = {};
+  try {
+    cfg = await buscarConfigCompleta();
+  } catch (e) {
+    console.warn('favicon.svg:', e.message);
+  }
+  res.set('Content-Type', 'image/svg+xml');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.send(construirFaviconSvg(cfg));
+});
+
 app.get('/', async (req, res) => {
   semCacheHtml(res);
-  res.send(await renderLojaHtmlComConfig());
+  res.send(await renderLojaHtmlComConfig(req));
 });
 app.get('/index.html', async (req, res) => {
   semCacheHtml(res);
-  res.send(await renderLojaHtmlComConfig());
+  res.send(await renderLojaHtmlComConfig(req));
 });
 app.get('/admin.html', async (req, res) => {
   semCacheHtml(res);
@@ -2703,13 +2769,13 @@ app.get('/admin.html', async (req, res) => {
 });
 app.get('/VN_IMPORTS.html', async (req, res) => {
   semCacheHtml(res);
-  res.send(await renderLojaHtmlComConfig());
+  res.send(await renderLojaHtmlComConfig(req));
 });
 
 // serve também a raiz do app estático (garante consistência)
 app.get('/VN_IMPORTS', async (req, res) => {
   semCacheHtml(res);
-  res.send(await renderLojaHtmlComConfig());
+  res.send(await renderLojaHtmlComConfig(req));
 });
 
 // search.html e produto.html não têm dados injetados pelo servidor (tudo é
