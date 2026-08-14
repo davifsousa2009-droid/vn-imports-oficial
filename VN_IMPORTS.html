@@ -2452,6 +2452,19 @@ const save  = ()=>localStorage.setItem('vn_data', JSON.stringify(S));
 const saveC = ()=>localStorage.setItem('vn_cart', JSON.stringify(cart));
 const R$    = v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
+// Só chamar quando o pedido é um compromisso real do cliente: pagamento
+// confirmado (cartão/Pix via Mercado Pago) ou Pix manual mostrado ao cliente
+// (sem confirmação automática possível nesse caso). Nunca antes disso — uma
+// recusa de cartão não pode deixar o cliente com o carrinho vazio e sem
+// como tentar de novo.
+function limparCarrinhoPosPedido(){
+  S.cart = [];
+  cart = [];
+  saveC();
+  renderCart();
+  syncDots();
+}
+
 /* ─── VIEWS ─── */
 function goView(id){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -2981,6 +2994,7 @@ function formatBRL(n) {
 
 function showPaymentConfirmation(orderId, total) {
   closeVnPayOverlay();
+  limparCarrinhoPosPedido();
   const darkOverlay = document.createElement('div');
   darkOverlay.id = 'pixModalOverlayVn';
   darkOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);z-index:2000;display:flex;align-items:center;justify-content:center';
@@ -3061,7 +3075,11 @@ async function cotarFreteMelhorEnvio(cep, subtotal) {
 }
 
 async function fallbackPixSemMp(orderId, orderTotal, pixKeyFallback) {
+  // Chegar aqui já implica pedido criado — diferente do Pix via Mercado
+  // Pago, esse caminho manual não tem confirmação automática pra travar a
+  // limpeza (sem token do MP não há como consultar status de pagamento).
   if (orderId) {
+    limparCarrinhoPosPedido();
     try {
       const ccR = await fetch(API_URL + '/pix/copia-cola', {
         method: 'POST',
@@ -3110,6 +3128,23 @@ async function checkout() {
 
   let freteSelecionado = { price: 0, name: 'A calcular', id: '', company: '' };
   let freteOptions = [];
+
+  // Pedido já criado nesta sessão de checkout (POST /api/orders), ainda sem
+  // pagamento confirmado. Uma recusa de cartão não invalida o pedido — só o
+  // pagamento —, então uma nova tentativa deve reaproveitar esse mesmo pedido
+  // em vez de criar outro (o primeiro já decrementou estoque; criar um segundo
+  // deixaria o primeiro órfão até o cron de liberação rodar).
+  let pedidoAtualId = '';
+  let pedidoAtualTotal = 0;
+
+  // Troca o frete escolhido e, se já existir um pedido pendente (retentativa
+  // após recusa), invalida o reaproveitamento — o pedido antigo foi criado
+  // com o frete anterior, então precisa nascer um novo pedido pra refletir o
+  // valor certo, em vez de cobrar o frete desatualizado no reaproveitado.
+  const definirFrete = (novo) => {
+    freteSelecionado = novo;
+    if (pedidoAtualId) { pedidoAtualId = ''; pedidoAtualTotal = 0; }
+  };
 
   const darkOverlay = document.createElement('div');
   darkOverlay.id = 'pixModalOverlayVn';
@@ -3334,11 +3369,11 @@ async function checkout() {
         </span>
         <strong style="color:#C4A55A">${formatBRL(opt.price)}</strong>
       </label>`).join('');
-    freteSelecionado = freteOptions[0];
+    definirFrete(freteOptions[0]);
     box.querySelectorAll('input[name="vnFreteOpt"]').forEach((el) => {
       el.addEventListener('change', () => {
         const i = Number(el.value);
-        freteSelecionado = freteOptions[i] || freteOptions[0];
+        definirFrete(freteOptions[i] || freteOptions[0]);
         renderTotais();
         updateParcelas();
       });
@@ -3373,7 +3408,7 @@ async function checkout() {
     // Frete grátis por regra da loja
     if (freteGratisAtivo && freteGratisValor > 0 && subtotal >= freteGratisValor) {
       freteOptions = [{ id: 'gratis', name: 'Frete Grátis', company: 'Loja', price: 0, delivery_time: null }];
-      freteSelecionado = freteOptions[0];
+      definirFrete(freteOptions[0]);
       renderFreteOptions();
       if (btn) btn.disabled = false;
       return;
@@ -3399,7 +3434,7 @@ async function checkout() {
           ? 'CEP inválido. Use 8 dígitos.'
           : 'Não foi possível cotar agora. Você pode seguir com frete a combinar (R$ 0) ou tentar de novo.';
       }
-      freteSelecionado = { price: 0, name: 'A combinar', id: '', company: '' };
+      definirFrete({ price: 0, name: 'A combinar', id: '', company: '' });
       renderTotais();
       return;
     }
@@ -3477,23 +3512,34 @@ async function checkout() {
         totalEstimado
       };
 
-      const r = await fetch(API_URL + '/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d?.erro || d?.message || 'Falha ao criar pedido.');
+      let orderId = pedidoAtualId;
+      let orderTotal = pedidoAtualTotal;
 
-      const orderId = d?.order?._id ? String(d.order._id) : '';
-      const orderTotal = d?.order?.total != null ? Number(d.order.total) : totalEstimado;
-      if (!orderId) throw new Error('Pedido criado sem ID.');
+      if (!orderId) {
+        // Só cria um pedido novo se não há um pendente desta mesma sessão de
+        // checkout — uma recusa de cartão não invalida o pedido, só o
+        // pagamento, então uma nova tentativa reaproveita o pedido acima em
+        // vez de gerar outro (evita órfão consumindo estoque, ver comentário
+        // na declaração de pedidoAtualId).
+        const r = await fetch(API_URL + '/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.erro || d?.message || 'Falha ao criar pedido.');
 
-      S.cart = [];
-      cart = [];
-      saveC();
-      renderCart();
-      syncDots();
+        orderId = d?.order?._id ? String(d.order._id) : '';
+        orderTotal = d?.order?.total != null ? Number(d.order.total) : totalEstimado;
+        if (!orderId) throw new Error('Pedido criado sem ID.');
+        pedidoAtualId = orderId;
+        pedidoAtualTotal = orderTotal;
+      }
+
+      // O carrinho só é esvaziado quando o pagamento é de fato confirmado
+      // (showPaymentConfirmation) — não aqui. Uma recusa de cartão (saldo,
+      // CVV, antifraude) é comum, e o cliente precisa poder tentar de novo
+      // com o carrinho intacto, sem "items vazios" numa nova tentativa.
 
       if (!payConfig.hasMpToken) {
         await fallbackPixSemMp(orderId, orderTotal, payConfig.pixKeyFallback);
@@ -3560,7 +3606,10 @@ async function checkout() {
         } else {
           showToast('warning', 'Pagamento em análise: ' + (payD.status || 'pendente'));
           startPaymentPolling(orderId, orderTotal);
-          closeVnPayOverlay();
+          // Não usar closeVnPayOverlay() aqui: ele chama stopPaymentPolling()
+          // internamente e mataria o polling que acabou de começar — só
+          // remove o modal do formulário, a checagem de status continua.
+          document.getElementById('pixModalOverlayVn')?.remove();
         }
         return;
       }
