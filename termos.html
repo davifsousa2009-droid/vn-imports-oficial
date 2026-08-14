@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Termos de Uso — Minha Loja</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F7F4F0;--bg2:#EDE9E3;--ink:#111111;--ink2:#1E1E1E;--mid:#444;--muted:#888;
+      --border:#D9D4CC;--white:#FFFFFF;--gold:#9A7A3A;--gold2:#C4A55A;--red:#A0391E;
+      --serif:'Libre Baskerville',serif;--sans:'Barlow',sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7}
+    a{color:var(--gold);text-decoration:none}
+    a:hover{text-decoration:underline}
+    header{background:var(--white);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .brand{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink)}
+    .voltar{font-size:13px;font-weight:600;letter-spacing:.04em}
+    .disclaimer{
+      max-width:760px;margin:24px auto 0;padding:14px 18px;background:#fff8e6;
+      border:1px solid #e6c869;border-radius:10px;font-size:13px;color:#6b5400;line-height:1.6;
+    }
+    main{max-width:760px;margin:0 auto;padding:32px 24px 64px}
+    h1{font-family:var(--serif);font-size:32px;font-weight:400;margin:0 0 6px}
+    .atualizado{font-size:12px;color:var(--muted);margin-bottom:32px}
+    h2{font-family:var(--serif);font-size:21px;font-weight:400;margin:36px 0 12px;color:var(--ink2)}
+    p,li{font-size:15px;color:var(--mid)}
+    ul{padding-left:20px}
+    li{margin-bottom:6px}
+    .aviso-cnpj{display:none;font-size:12px;color:var(--red);margin-top:4px}
+    .empresa{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+    footer{background:var(--ink);color:rgba(247,244,240,.6);text-align:center;padding:24px;font-size:12px}
+    footer a{color:rgba(247,244,240,.85)}
+    footer .links{margin-bottom:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="brand" data-loja="nome">Minha Loja</span>
+  <a class="voltar" href="/">← Voltar à loja</a>
+</header>
+
+<div class="disclaimer">
+  <strong>Este documento é um modelo genérico</strong>, incluído no template da loja pra deixar a base de configuração pronta. Ele não substitui orientação jurídica — revise com um advogado antes de publicar ou usar comercialmente, ajustando às regras reais do negócio.
+</div>
+
+<main>
+  <h1>Termos de Uso</h1>
+  <p class="atualizado">Última atualização: <span id="dataAtual"></span></p>
+
+  <h2>Aceitação dos termos</h2>
+  <p>
+    Ao acessar e usar o site de <span data-loja="nome">Minha Loja</span>, você concorda com estes Termos de Uso. Se não concordar com algum ponto, recomendamos não utilizar o site.
+  </p>
+
+  <h2>Sobre a loja</h2>
+  <p>
+    Este site é uma loja virtual operada por <span data-loja="nome">Minha Loja</span>, CNPJ <span data-loja="cnpj">CNPJ não informado</span><span id="cnpjAvisoInline"></span>, através da qual são comercializados os produtos exibidos no catálogo.
+  </p>
+
+  <h2>Cadastro e informações do pedido</h2>
+  <p>
+    Ao finalizar uma compra, você se compromete a fornecer informações verdadeiras, completas e atualizadas (nome, e-mail, telefone, CPF e endereço de entrega). Pedidos com dados incorretos podem ser cancelados ou atrasados.
+  </p>
+
+  <h2>Preços e pagamento</h2>
+  <p>
+    Os preços exibidos estão em reais (R$) e podem ser alterados sem aviso prévio, valendo o preço vigente no momento da confirmação do pedido. O pagamento é processado via Mercado Pago (Pix ou cartão).
+  </p>
+
+  <h2>Frete e entrega</h2>
+  <p>
+    O valor e o prazo de frete são calculados no checkout a partir do CEP informado. Prazos de entrega são estimativas fornecidas pela transportadora e podem variar por fatores fora do nosso controle.
+  </p>
+
+  <h2>Devolução</h2>
+  <p>
+    As condições de devolução, incluindo o direito de arrependimento previsto em lei, estão descritas na nossa <a href="/devolucao.html">Política de Devolução</a>. <span data-loja="nome">Minha Loja</span> não oferece troca do produto por outro tamanho, cor ou modelo.
+  </p>
+
+  <h2>Propriedade intelectual</h2>
+  <p>
+    Textos, imagens, logotipo e demais conteúdos deste site pertencem a <span data-loja="nome">Minha Loja</span> ou são utilizados sob licença, sendo proibida sua reprodução sem autorização.
+  </p>
+
+  <h2>Limitação de responsabilidade</h2>
+  <p>
+    Fazemos o possível para manter as informações do site precisas e atualizadas, mas não garantimos ausência total de erros. Eventuais indisponibilidades do site por motivos técnicos podem ocorrer.
+  </p>
+
+  <h2>Alterações destes termos</h2>
+  <p>
+    Estes Termos de Uso podem ser atualizados a qualquer momento, passando a valer a partir da publicação da nova versão nesta página.
+  </p>
+
+  <h2>Lei aplicável e foro</h2>
+  <p>
+    Estes termos são regidos pela legislação brasileira. Fica eleito o foro da comarca de <span data-loja="cidade">não configurada</span> para dirimir eventuais controvérsias, com renúncia a qualquer outro, por mais privilegiado que seja, ressalvado o direito do consumidor de optar pelo foro do seu domicílio.
+  </p>
+
+  <h2>Contato</h2>
+  <ul>
+    <li>E-mail: <span data-loja="email">e-mail não configurado</span></li>
+  </ul>
+
+  <div class="empresa">
+    <span data-loja="nome">Minha Loja</span><br>
+    CNPJ: <span data-loja="cnpj">CNPJ não informado</span>
+    <div class="aviso-cnpj" id="cnpjAviso">CNPJ ainda não cadastrado no painel administrativo.</div>
+  </div>
+</main>
+
+<footer>
+  <div class="links">
+    <a href="/">Loja</a>
+    <a href="/privacidade.html">Política de Privacidade</a>
+    <a href="/termos.html">Termos de Uso</a>
+    <a href="/devolucao.html">Devolução</a>
+  </div>
+  <span>© <span id="anoAtual"></span> <span data-loja="nome">Minha Loja</span>. Todos os direitos reservados.</span>
+</footer>
+
+<script>
+  const API_URL = '/api';
+
+  function aplicarDadosLegal(d){
+    const nome = (d && d.nomeLoja && String(d.nomeLoja).trim()) || 'Minha Loja';
+    document.querySelectorAll('[data-loja="nome"]').forEach(el => { el.textContent = nome; });
+    document.title = document.title.replace('Minha Loja', nome);
+
+    const email = (d && d.emailContato && String(d.emailContato).trim()) || '';
+    document.querySelectorAll('[data-loja="email"]').forEach(el => {
+      el.textContent = email || 'e-mail não configurado';
+    });
+
+    const cidade = (d && d.cidadeLoja && String(d.cidadeLoja).trim()) || '';
+    document.querySelectorAll('[data-loja="cidade"]').forEach(el => {
+      el.textContent = cidade || 'não configurada';
+    });
+
+    const cnpjDigitos = (d && d.cnpj && String(d.cnpj).replace(/\D/g, '')) || '';
+    const cnpjFmt = cnpjDigitos.length === 14
+      ? cnpjDigitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+      : '';
+    document.querySelectorAll('[data-loja="cnpj"]').forEach(el => {
+      el.textContent = cnpjFmt || 'CNPJ não informado';
+    });
+    const cnpjAviso = document.getElementById('cnpjAviso');
+    if (cnpjAviso) cnpjAviso.style.display = cnpjFmt ? 'none' : 'block';
+    const cnpjAvisoInline = document.getElementById('cnpjAvisoInline');
+    if (cnpjAvisoInline) cnpjAvisoInline.textContent = cnpjFmt ? '' : ' (a completar)';
+
+    if (d && d.colors) {
+      const root = document.documentElement.style;
+      Object.entries(d.colors).forEach(([k, v]) => { if (v) root.setProperty('--' + k, v); });
+    }
+  }
+
+  async function carregarDadosLegal(){
+    try{
+      const r = await fetch(API_URL + '/config');
+      if(!r.ok) throw new Error('config http ' + r.status);
+      const d = await r.json();
+      aplicarDadosLegal(d);
+    }catch(e){
+      aplicarDadosLegal(null);
+    }
+  }
+  carregarDadosLegal();
+
+  const hoje = new Date();
+  const dataFmt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const dataEl = document.getElementById('dataAtual');
+  if (dataEl) dataEl.textContent = dataFmt;
+  const anoEl = document.getElementById('anoAtual');
+  if (anoEl) anoEl.textContent = String(hoje.getFullYear());
+</script>
+</body>
+</html>

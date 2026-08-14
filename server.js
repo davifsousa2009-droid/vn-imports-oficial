@@ -115,7 +115,12 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        // sdk.mercadopago.com: o SDK do cartão (tokenização) é carregado via
+        // <script src> criado em runtime — sem liberar aqui, o script nem
+        // carrega, e pagamento com cartão fica quebrado sem nenhum erro
+        // visível pro cliente (achado ao auditar quais serviços externos o
+        // front chama, mesma classe de bug do ViaCEP abaixo).
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://sdk.mercadopago.com'],
         // O site usa dezenas de onclick="" inline no HTML (VN_IMPORTS.html e admin.html).
         // CSP trata isso como uma diretiva separada de <script>; sem isso, todo botão
         // com onclick inline fica bloqueado silenciosamente no console do navegador.
@@ -127,7 +132,10 @@ app.use(
         // navegador (fetch), diferente da cotação de frete, que passa pelo
         // servidor (/api/frete/calcular, same-origin) — sem essa liberação o CSP
         // bloqueia a chamada silenciosamente, sem erro nenhum visível pro usuário.
-        connectSrc: ["'self'", 'https://viacep.com.br']
+        // api.mercadopago.com: o SDK de cartão chama isso direto do navegador
+        // pra gerar o token do cartão (createCardToken) — mesmo raciocínio do
+        // viacep.com.br, sem isso a tokenização falha silenciosamente.
+        connectSrc: ["'self'", 'https://viacep.com.br', 'https://api.mercadopago.com']
       }
     }
   })
@@ -611,6 +619,17 @@ const ConfigSchema = new mongoose.Schema({
   // config.js. Assim que o admin salva algo aqui, esse valor manda, sempre —
   // ver comentário em mergePublicConfig sobre a precedência.
   cepOrigem: { type: String, default: '' },
+  // Sufixo do <title> (ex: "Nome da Loja — Loja Oficial"), usado em SEO.
+  // Vazio = painel nunca foi usado pra isso — mesmo padrão do cepOrigem
+  // acima: o valor efetivo cai pro pageTitleSuffix do config.js, e se
+  // também estiver vazio, num fallback fixo neutro.
+  pageTitleSuffix: { type: String, default: '' },
+  // CNPJ da loja — exigido nas páginas legais (Política de Privacidade,
+  // Termos de Uso, Devolução). Não existe fallback nenhum pra isso
+  // (config.js não tem CNPJ de propósito — branco-de-loja não pode chumbar
+  // documento de empresa): vazio aqui é vazio nas páginas, com aviso pro
+  // lojista completar, não um número inventado.
+  cnpj: { type: String, default: '' },
 
   // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
   // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
@@ -652,11 +671,13 @@ const ConfigSchema = new mongoose.Schema({
   benef1IcoEnabled: { type: Boolean, default: true },
   benef1Ico: { type: String, default: '🚚' },
 
-  // Benefício 2: Troca em 30 Dias
-  benef2Titulo: { type: String, default: 'Troca em 30 Dias' },
-  benef2Texto: { type: String, default: 'Sem burocracia. Sua satisfação é nossa prioridade.' },
+  // Benefício 2: Devolução em 7 Dias (direito de arrependimento, CDC art. 49
+  // — nunca "troca": a loja não promete trocar produto por outro tamanho/cor,
+  // só devolver dentro do prazo legal. Ver /devolucao.html.)
+  benef2Titulo: { type: String, default: 'Devolução em 7 Dias' },
+  benef2Texto: { type: String, default: 'Direito de arrependimento garantido por lei.' },
   benef2IcoEnabled: { type: Boolean, default: true },
-  benef2Ico: { type: String, default: '🔄' },
+  benef2Ico: { type: String, default: '↩️' },
 
   // Benefício 3: Pagamento Seguro
   benef3Titulo: { type: String, default: 'Pagamento Seguro' },
@@ -691,6 +712,14 @@ function mergePublicConfig(doc) {
   const cepOrigemEfetivo =
     cepOrigemSalvo ||
     String(process.env.LOJA_CEP_ORIGEM || configPadrao.cepOrigem || '01310100').replace(/\D/g, '');
+  // Mesmo padrão do cepOrigem acima: painel > config.js > fallback fixo.
+  const pageTitleSuffixSalvo = doc?.pageTitleSuffix ? String(doc.pageTitleSuffix).trim() : '';
+  const pageTitleSuffixEfetivo =
+    pageTitleSuffixSalvo || String(configPadrao.pageTitleSuffix || 'Loja Oficial').trim();
+  // CNPJ não tem fallback nenhum (ver comentário no schema) — só o que o
+  // painel salvou, ou vazio mesmo, pras páginas legais saberem mostrar um
+  // aviso de "complete isso" em vez de inventar um número.
+  const cnpjSalvo = doc?.cnpj ? String(doc.cnpj).replace(/\D/g, '') : '';
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
   const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
@@ -730,7 +759,13 @@ function mergePublicConfig(doc) {
     cepOrigem: cepOrigemSalvo,
     cepOrigemEfetivo,
     colors: colorsMerged,
-    pageTitleSuffix: configPadrao.pageTitleSuffix || 'Moda Premium',
+    // pageTitleSuffix: valor cru salvo pelo painel (vazio = nunca configurado
+    // por lá). pageTitleSuffixEfetivo: o que de fato entra no <title> agora —
+    // mesma lógica de precedência do cepOrigem, sem o rung do .env (não faz
+    // sentido pra esse campo).
+    pageTitleSuffix: pageTitleSuffixSalvo,
+    pageTitleSuffixEfetivo,
+    cnpj: cnpjSalvo,
 
     // Textos do hero — vazio de propósito quando não configurado no admin,
     // pra o front saber que deve preservar o texto padrão já no HTML.
@@ -749,10 +784,10 @@ function mergePublicConfig(doc) {
     benef1IcoEnabled: bool(doc?.benef1IcoEnabled, true),
     benef1Ico: String(doc?.benef1Ico ?? '').trim() || '🚚',
 
-    benef2Titulo: String(doc?.benef2Titulo ?? '').trim() || 'Troca em 30 Dias',
-    benef2Texto: String(doc?.benef2Texto ?? '').trim() || 'Sem burocracia. Sua satisfação é nossa prioridade.',
+    benef2Titulo: String(doc?.benef2Titulo ?? '').trim() || 'Devolução em 7 Dias',
+    benef2Texto: String(doc?.benef2Texto ?? '').trim() || 'Direito de arrependimento garantido por lei.',
     benef2IcoEnabled: bool(doc?.benef2IcoEnabled, true),
-    benef2Ico: String(doc?.benef2Ico ?? '').trim() || '🔄',
+    benef2Ico: String(doc?.benef2Ico ?? '').trim() || '↩️',
 
     benef3Titulo: String(doc?.benef3Titulo ?? '').trim() || 'Pagamento Seguro',
     benef3Texto: String(doc?.benef3Texto ?? '').trim() || 'PIX com total segurança.',
@@ -1698,14 +1733,11 @@ async function buscarConfigCompleta() {
   // Se o banco estiver vazio, retornamos um objeto padrão.
   const publicCfg = mergePublicConfig(doc);
 
-  // default (exemplo) caso não exista no banco
-  const defaultHeroImagem =
-    'https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=80';
-
   const heroImagemFile = doc?.heroImagem ? String(doc.heroImagem).trim() : '';
   const heroImagemUrl = doc?.heroImagemUrl ? String(doc.heroImagemUrl).trim() : '';
-
-  const heroImagemFinal = heroImagemFile || heroImagemUrl || defaultHeroImagem;
+  // Sem foto configurada: gradiente com as cores do tema, nunca mais uma
+  // foto de roupa genérica escolhida pra um cliente específico.
+  const heroImagemFinal = heroImagemFile || heroImagemUrl || construirHeroPlaceholderSvg(publicCfg);
 
   return { ...publicCfg, heroImagem: heroImagemFinal };
 }
@@ -1730,6 +1762,8 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       clienteTag,
       cidadeLoja,
       cepOrigem,
+      pageTitleSuffix,
+      cnpj,
 
       // ✅ NOVO: hero do split
       heroImagem,
@@ -1796,6 +1830,20 @@ app.post('/api/config', verificarJWT, async (req, res) => {
         return res.status(400).json({ erro: 'CEP de origem inválido — use 8 dígitos ou deixe em branco.' });
       }
       dados.cepOrigem = cepOrigemDigitos;
+    }
+    // Vazio é válido de propósito — mesmo raciocínio do cepOrigem: "desfaz" o
+    // valor salvo aqui e volta a depender do config.js. Limite de tamanho só
+    // pra não deixar alguém colar um parágrafo inteiro num <title>.
+    if (pageTitleSuffix !== undefined) dados.pageTitleSuffix = String(pageTitleSuffix).trim().slice(0, 60);
+    if (cnpj !== undefined) {
+      // Mesmo critério de CPF já usado em /api/orders: 14 dígitos ou nada.
+      // Vazio é válido — apaga o CNPJ salvo, as páginas legais voltam a
+      // mostrar o aviso de "complete isso" em vez de manter um valor velho.
+      const cnpjDigitos = String(cnpj).replace(/\D/g, '');
+      if (cnpjDigitos && cnpjDigitos.length !== 14) {
+        return res.status(400).json({ erro: 'CNPJ inválido — use 14 dígitos ou deixe em branco.' });
+      }
+      dados.cnpj = cnpjDigitos;
     }
     if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || configPadrao.nomeLoja);
 
@@ -2664,9 +2712,17 @@ async function renderLojaHtmlComConfig(req) {
     }
 
     // Título da página com o nome real da loja.
-    const suf = escapeParaAtributo(cfg?.pageTitleSuffix);
+    const suf = escapeParaAtributo(cfg?.pageTitleSuffixEfetivo);
     if (nome) {
-      html = html.replace(/<title>[^<]*<\/title>/, `<title>${nome}${suf ? ' — ' + suf : ''}</title>`);
+      const tituloCompleto = `${nome}${suf ? ' — ' + suf : ''}`;
+      html = html.replace(/<title>[^<]*<\/title>/, `<title>${tituloCompleto}</title>`);
+      // og:title/twitter:title nunca eram tocados aqui — só pelo JS client-side
+      // (que não roda pra quem faz o preview do link: WhatsApp, Facebook,
+      // Twitter etc. não executam JS, só leem o HTML como veio do servidor).
+      // Resultado: o preview de link mostrava "VN Imports" fixo pra qualquer
+      // loja, mesmo já configurada.
+      html = html.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${tituloCompleto}$2`);
+      html = html.replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${tituloCompleto}$2`);
     }
 
   } catch (e) {
@@ -2695,6 +2751,28 @@ function construirFaviconSvg(cfg) {
     `<text x='32' y='45' font-family='Georgia,serif' font-size='34' font-weight='700' fill='#ffffff' text-anchor='middle'>${inicial}</text>` +
     `</svg>`
   );
+}
+
+/**
+ * Placeholder do hero (banner principal da vitrine) quando nenhuma foto foi
+ * configurada — nunca mais uma foto de roupa genérica escolhida pra um
+ * cliente específico. Painel de gradiente com as cores do tema, sem texto:
+ * sempre parece intencional, nunca "quebrado", nunca a loja de ninguém.
+ * Mesmo princípio branco-de-loja do construirFaviconSvg.
+ */
+function construirHeroPlaceholderSvg(cfg) {
+  const corRaw1 = String(cfg?.colors?.gold || '#9A7A3A').trim();
+  const cor1 = /^#[0-9a-fA-F]{3,8}$/.test(corRaw1) ? corRaw1 : '#9A7A3A';
+  const corRaw2 = String(cfg?.colors?.gold2 || '#C4A55A').trim();
+  const cor2 = /^#[0-9a-fA-F]{3,8}$/.test(corRaw2) ? corRaw2 : '#C4A55A';
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1500'>` +
+    `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>` +
+    `<stop offset='0%' stop-color='${cor1}'/><stop offset='100%' stop-color='${cor2}'/>` +
+    `</linearGradient></defs>` +
+    `<rect width='1200' height='1500' fill='url(#g)'/>` +
+    `</svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
 const adminHtml = path.join(__dirname, 'admin.html');
@@ -2798,6 +2876,33 @@ app.get('/produto.html', (req, res) => {
   if (!produtoHtmlCache) produtoHtmlCache = fs.readFileSync(produtoHtmlPath, 'utf8');
   semCacheHtml(res);
   res.send(produtoHtmlCache);
+});
+
+// Páginas legais (Devolução, Privacidade, Termos) — mesmo motivo e mesmo
+// tratamento de search.html/produto.html acima: sem rota explícita +
+// rewrite correspondente no vercel.json, batem 404 em produção.
+const devolucaoHtmlPath = path.join(__dirname, 'devolucao.html');
+let devolucaoHtmlCache = null;
+app.get('/devolucao.html', (req, res) => {
+  if (!devolucaoHtmlCache) devolucaoHtmlCache = fs.readFileSync(devolucaoHtmlPath, 'utf8');
+  semCacheHtml(res);
+  res.send(devolucaoHtmlCache);
+});
+
+const privacidadeHtmlPath = path.join(__dirname, 'privacidade.html');
+let privacidadeHtmlCache = null;
+app.get('/privacidade.html', (req, res) => {
+  if (!privacidadeHtmlCache) privacidadeHtmlCache = fs.readFileSync(privacidadeHtmlPath, 'utf8');
+  semCacheHtml(res);
+  res.send(privacidadeHtmlCache);
+});
+
+const termosHtmlPath = path.join(__dirname, 'termos.html');
+let termosHtmlCache = null;
+app.get('/termos.html', (req, res) => {
+  if (!termosHtmlCache) termosHtmlCache = fs.readFileSync(termosHtmlPath, 'utf8');
+  semCacheHtml(res);
+  res.send(termosHtmlCache);
 });
 
 if (process.env.NODE_ENV !== 'production') {

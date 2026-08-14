@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Política de Devolução — Minha Loja</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F7F4F0;--bg2:#EDE9E3;--ink:#111111;--ink2:#1E1E1E;--mid:#444;--muted:#888;
+      --border:#D9D4CC;--white:#FFFFFF;--gold:#9A7A3A;--gold2:#C4A55A;--red:#A0391E;
+      --serif:'Libre Baskerville',serif;--sans:'Barlow',sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7}
+    a{color:var(--gold);text-decoration:none}
+    a:hover{text-decoration:underline}
+    header{background:var(--white);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .brand{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink)}
+    .voltar{font-size:13px;font-weight:600;letter-spacing:.04em}
+    .disclaimer{
+      max-width:760px;margin:24px auto 0;padding:14px 18px;background:#fff8e6;
+      border:1px solid #e6c869;border-radius:10px;font-size:13px;color:#6b5400;line-height:1.6;
+    }
+    .aviso-escopo{
+      max-width:760px;margin:14px auto 0;padding:14px 18px;background:#fff;
+      border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;
+      font-size:13px;color:var(--mid);line-height:1.6;
+    }
+    main{max-width:760px;margin:0 auto;padding:32px 24px 64px}
+    h1{font-family:var(--serif);font-size:32px;font-weight:400;margin:0 0 6px}
+    .atualizado{font-size:12px;color:var(--muted);margin-bottom:32px}
+    h2{font-family:var(--serif);font-size:21px;font-weight:400;margin:36px 0 12px;color:var(--ink2)}
+    p,li{font-size:15px;color:var(--mid)}
+    ul{padding-left:20px}
+    li{margin-bottom:6px}
+    .aviso-cnpj{display:none;font-size:12px;color:var(--red);margin-top:4px}
+    .empresa{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+    footer{background:var(--ink);color:rgba(247,244,240,.6);text-align:center;padding:24px;font-size:12px}
+    footer a{color:rgba(247,244,240,.85)}
+    footer .links{margin-bottom:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="brand" data-loja="nome">Minha Loja</span>
+  <a class="voltar" href="/">← Voltar à loja</a>
+</header>
+
+<div class="disclaimer">
+  <strong>Este documento é um modelo genérico</strong>, incluído no template da loja pra deixar a base de configuração pronta. Ele não substitui orientação jurídica — revise com um advogado antes de publicar ou usar comercialmente, ajustando ao funcionamento real do negócio.
+</div>
+
+<div class="aviso-escopo">
+  Esta página trata só de <strong>devolução por arrependimento</strong>, um direito garantido por lei (abaixo). <span data-loja="nome">Minha Loja</span> não oferece troca do produto por outro tamanho, cor ou modelo — só a devolução com reembolso descrita aqui.
+</div>
+
+<main>
+  <h1>Política de Devolução</h1>
+  <p class="atualizado">Última atualização: <span id="dataAtual"></span></p>
+
+  <h2>Direito de arrependimento (7 dias)</h2>
+  <p>
+    Conforme o artigo 49 do Código de Defesa do Consumidor (Lei nº 8.078/1990), em compras realizadas fora do estabelecimento comercial — o que inclui compras pela internet — o consumidor pode desistir da compra em até <strong>7 (sete) dias corridos</strong>, contados do recebimento do produto, sem precisar justificar o motivo.
+  </p>
+  <p>
+    Nesse caso, o valor pago é integralmente devolvido, incluindo o valor do frete pago na compra, e a devolução do produto até <span data-loja="nome">Minha Loja</span> não gera custo de frete para quem comprou.
+  </p>
+
+  <h2>Como solicitar</h2>
+  <p>Para exercer esse direito, entre em contato dentro do prazo de 7 dias corridos após o recebimento, informando o número do pedido:</p>
+  <ul>
+    <li>E-mail: <span data-loja="email">e-mail não configurado</span></li>
+    <li>WhatsApp: <span data-loja="whatsapp">WhatsApp não configurado</span></li>
+  </ul>
+  <p>Depois do contato, serão passadas as instruções para o envio do produto de volta.</p>
+
+  <h2>Condição do produto</h2>
+  <p>
+    Para a devolução ser aceita, o produto deve ser enviado sem sinais de uso, com etiquetas e embalagem original, sempre que aplicável, acompanhado da nota fiscal ou comprovante da compra.
+  </p>
+
+  <h2>Reembolso</h2>
+  <p>
+    Após o recebimento e a conferência do produto devolvido, o reembolso é feito pelo mesmo método de pagamento usado na compra, em até 10 (dez) dias úteis.
+  </p>
+
+  <h2>Produto com defeito</h2>
+  <p>
+    Se o produto apresentar defeito, o consumidor tem prazo de até 30 (trinta) dias, contados da entrega, para reclamar do problema junto à loja, conforme o artigo 26 do Código de Defesa do Consumidor. Entre em contato pelos mesmos canais acima para tratar o caso.
+  </p>
+
+  <div class="empresa">
+    <span data-loja="nome">Minha Loja</span><br>
+    CNPJ: <span data-loja="cnpj">CNPJ não informado</span>
+    <div class="aviso-cnpj" id="cnpjAviso">CNPJ ainda não cadastrado no painel administrativo.</div>
+  </div>
+</main>
+
+<footer>
+  <div class="links">
+    <a href="/">Loja</a>
+    <a href="/privacidade.html">Política de Privacidade</a>
+    <a href="/termos.html">Termos de Uso</a>
+    <a href="/devolucao.html">Devolução</a>
+  </div>
+  <span>© <span id="anoAtual"></span> <span data-loja="nome">Minha Loja</span>. Todos os direitos reservados.</span>
+</footer>
+
+<script>
+  const API_URL = '/api';
+
+  function aplicarDadosLegal(d){
+    const nome = (d && d.nomeLoja && String(d.nomeLoja).trim()) || 'Minha Loja';
+    document.querySelectorAll('[data-loja="nome"]').forEach(el => { el.textContent = nome; });
+    document.title = document.title.replace('Minha Loja', nome);
+
+    const email = (d && d.emailContato && String(d.emailContato).trim()) || '';
+    document.querySelectorAll('[data-loja="email"]').forEach(el => {
+      el.textContent = email || 'e-mail não configurado';
+    });
+
+    const whats = (d && d.whatsappContato && String(d.whatsappContato).trim()) || '';
+    document.querySelectorAll('[data-loja="whatsapp"]').forEach(el => {
+      el.textContent = whats || 'WhatsApp não configurado';
+    });
+
+    const cnpjDigitos = (d && d.cnpj && String(d.cnpj).replace(/\D/g, '')) || '';
+    const cnpjFmt = cnpjDigitos.length === 14
+      ? cnpjDigitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+      : '';
+    document.querySelectorAll('[data-loja="cnpj"]').forEach(el => {
+      el.textContent = cnpjFmt || 'CNPJ não informado';
+    });
+    const cnpjAviso = document.getElementById('cnpjAviso');
+    if (cnpjAviso) cnpjAviso.style.display = cnpjFmt ? 'none' : 'block';
+
+    if (d && d.colors) {
+      const root = document.documentElement.style;
+      Object.entries(d.colors).forEach(([k, v]) => { if (v) root.setProperty('--' + k, v); });
+    }
+  }
+
+  async function carregarDadosLegal(){
+    try{
+      const r = await fetch(API_URL + '/config');
+      if(!r.ok) throw new Error('config http ' + r.status);
+      const d = await r.json();
+      aplicarDadosLegal(d);
+    }catch(e){
+      aplicarDadosLegal(null);
+    }
+  }
+  carregarDadosLegal();
+
+  const hoje = new Date();
+  const dataFmt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const dataEl = document.getElementById('dataAtual');
+  if (dataEl) dataEl.textContent = dataFmt;
+  const anoEl = document.getElementById('anoAtual');
+  if (anoEl) anoEl.textContent = String(hoje.getFullYear());
+</script>
+</body>
+</html>

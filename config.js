@@ -3,21 +3,21 @@
  * Para um novo cliente, altere apenas este arquivo.
  */
 module.exports = {
-  nomeLoja: 'VN IMPORTS',
+  nomeLoja: 'Minha Loja',
   corPrimaria: '#9A7A3A',
   corSecundaria: '#C4A55A',
-  whatsappContato: '+5511999990000',
-  instagramLink: 'https://instagram.com/vnimports',
-  emailContato: 'oi@vnimports.com.br',
+  whatsappContato: '',
+  instagramLink: '',
+  emailContato: '',
   /** CEP de origem (remetente) para cotação de frete no Melhor Envio.
    *  Troque pelo CEP real da loja — ou defina LOJA_CEP_ORIGEM no .env, que
    *  tem prioridade sobre este valor sem precisar mexer no código. */
   cepOrigem: '37006-670',
   /** Identificador do cliente para uploads/tags no Cloudinary */
-  clienteTag: 'vn-imports',
+  clienteTag: 'minha-loja',
   /** Chave PIX exibida quando não houver valor salvo no painel */
   chavePix: '',
-  pageTitleSuffix: 'Moda Premium',
+  pageTitleSuffix: 'Loja Oficial',
   colors: {
     bg: '#F7F4F0',
     bg2: '#EDE9E3',

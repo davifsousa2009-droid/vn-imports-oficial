@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>Produto — VN IMPORTS</title>
+  <title>Produto — Minha Loja</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -1724,7 +1724,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         </div>
         <div class="pv-feats">
           <div class="pv-feat" id="pvFeatFrete" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$<span id="pvFeatFreteVal">299</span></div>
-          <div class="pv-feat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Troca grátis</strong> em até 30 dias</div>
+          <a class="pv-feat" href="/devolucao.html" style="text-decoration:none;color:inherit"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Devolução</strong> em até 7 dias</a>
           <div class="pv-feat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> <strong>Pagamento seguro</strong> · PIX</div>
         </div>
       </div>
@@ -1774,6 +1774,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <h5>Ajuda</h5>
       <ul>
         <li><a href="#" href="/">Fale conosco</a></li>
+        <li><a href="/devolucao.html">Devolução</a></li>
+        <li><a href="/privacidade.html">Política de Privacidade</a></li>
+        <li><a href="/termos.html">Termos de Uso</a></li>
       </ul>
     </div>
     <div class="foot-col">
@@ -1800,7 +1803,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <script>
   const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
 
-  let vitrineNomeLoja = 'VN IMPORTS';
+  let vitrineNomeLoja = 'Minha Loja';
 
   // ─── NOME DA LOJA — stale-while-revalidate (evita FOUC) ─────────────────
   // O HTML não tem mais nenhum nome chumbado nos spans [data-loja="nome"]
@@ -1826,7 +1829,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       el.textContent = nomeFinal;
       el.classList.add('is-ready');
     });
-    document.title = document.title.replace('VN IMPORTS', nomeFinal);
+    document.title = document.title.replace('Minha Loja', nomeFinal);
   }
 
   // Aplica as cores da loja (tema de fundo + cor primária/secundária) como

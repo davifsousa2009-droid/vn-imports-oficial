@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>Busca — VN IMPORTS</title>
+  <title>Busca — Minha Loja</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -1861,6 +1861,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <h5>Ajuda</h5>
       <ul>
         <li><a href="#" href="/">Fale conosco</a></li>
+        <li><a href="/devolucao.html">Devolução</a></li>
+        <li><a href="/privacidade.html">Política de Privacidade</a></li>
+        <li><a href="/termos.html">Termos de Uso</a></li>
       </ul>
     </div>
     <div class="foot-col">
@@ -1889,7 +1892,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   function escapeHtmlTexto(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
-  let vitrineNomeLoja = 'VN IMPORTS';
+  let vitrineNomeLoja = 'Minha Loja';
 
   // ─── NOME DA LOJA — stale-while-revalidate (evita FOUC) ─────────────────
   // O HTML não tem mais nenhum nome chumbado nos spans [data-loja="nome"]
@@ -1915,7 +1918,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       el.textContent = nomeFinal;
       el.classList.add('is-ready');
     });
-    document.title = document.title.replace('VN IMPORTS', nomeFinal);
+    document.title = document.title.replace('Minha Loja', nomeFinal);
   }
 
   // Aplica as cores da loja (tema de fundo + cor primária/secundária) como

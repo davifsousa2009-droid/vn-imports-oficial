@@ -40,6 +40,18 @@
     {
       "source": "/favicon.svg",
       "destination": "/server.js"
+    },
+    {
+      "source": "/devolucao.html",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/privacidade.html",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/termos.html",
+      "destination": "/server.js"
     }
   ]
 }
