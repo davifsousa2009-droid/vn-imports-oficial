@@ -115,27 +115,38 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        // sdk.mercadopago.com: o SDK do cartão (tokenização) é carregado via
-        // <script src> criado em runtime — sem liberar aqui, o script nem
-        // carrega, e pagamento com cartão fica quebrado sem nenhum erro
-        // visível pro cliente (achado ao auditar quais serviços externos o
-        // front chama, mesma classe de bug do ViaCEP abaixo).
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://sdk.mercadopago.com'],
+        // Mercado Pago não publica uma lista oficial fechada de domínios pra CSP
+        // (pesquisado: não existe página de docs dedicada a isso). Na prática o
+        // SDK de cartão (tokenização/Secure Fields) usa os três domínios do
+        // grupo Mercado Pago/Mercado Livre — mercadopago.com, mercadolibre.com
+        // (iframe e imagem de antifraude) e mlstatic.com (assets estáticos do
+        // SDK) — liberados por subdomínio (https://*.dominio.com), não um
+        // wildcard genérico: não abre nenhum domínio fora desses 3, que são do
+        // próprio Mercado Pago.
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://*.mercadopago.com', 'https://*.mercadolibre.com', 'https://*.mlstatic.com'],
         // O site usa dezenas de onclick="" inline no HTML (VN_IMPORTS.html e admin.html).
         // CSP trata isso como uma diretiva separada de <script>; sem isso, todo botão
         // com onclick inline fica bloqueado silenciosamente no console do navegador.
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
-        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
+        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.mercadopago.com', 'https://*.mercadolibre.com', 'https://*.mlstatic.com'],
+        // Não existia antes: sem frame-src, o iframe de Secure Fields que a
+        // tokenização de cartão abre (em mercadolibre.com) caía no default-src
+        // 'self' e era bloqueado — era isso que travava o pagamento com cartão.
+        frameSrc: ["'self'", 'https://*.mercadopago.com', 'https://*.mercadolibre.com'],
         // viacep.com.br: o autofill de endereço no checkout chama isso direto do
         // navegador (fetch), diferente da cotação de frete, que passa pelo
         // servidor (/api/frete/calcular, same-origin) — sem essa liberação o CSP
         // bloqueia a chamada silenciosamente, sem erro nenhum visível pro usuário.
-        // api.mercadopago.com: o SDK de cartão chama isso direto do navegador
-        // pra gerar o token do cartão (createCardToken) — mesmo raciocínio do
-        // viacep.com.br, sem isso a tokenização falha silenciosamente.
-        connectSrc: ["'self'", 'https://viacep.com.br', 'https://api.mercadopago.com']
+        // *.mercadopago.com/*.mercadolibre.com/*.mlstatic.com: o SDK de cartão
+        // chama vários subdomínios desses 3 domínios direto do navegador (token
+        // de cartão + antifraude) — mesmo raciocínio do viacep.com.br.
+        connectSrc: ["'self'", 'https://viacep.com.br', 'https://*.mercadopago.com', 'https://*.mercadolibre.com', 'https://*.mlstatic.com'],
+        // Reporta ao servidor qualquer violação de CSP que ainda ocorrer (log via
+        // POST /api/csp-report), pra não depender do cliente ter o console aberto
+        // pra a gente descobrir o próximo domínio que falta liberar.
+        reportUri: ['/api/csp-report']
       }
     }
   })
@@ -229,6 +240,20 @@ app.use((req, res, next) => {
   })(req, res, next);
 });
 app.use(express.json());
+
+// Endpoint de diagnóstico: o navegador envia aqui (via report-uri na CSP acima)
+// qualquer violação de CSP que ocorrer, mesmo em produção — só loga no console
+// do servidor (visível nos logs da Vercel), não bloqueia nem armazena nada.
+// Content-Type é application/csp-report, por isso o parser dedicado abaixo.
+app.post(
+  '/api/csp-report',
+  express.json({ type: ['application/json', 'application/csp-report'] }),
+  (req, res) => {
+    const relatorio = req.body && req.body['csp-report'] ? req.body['csp-report'] : req.body;
+    console.warn('[CSP] Violação reportada:', JSON.stringify(relatorio));
+    res.status(204).end();
+  }
+);
 
 // ── CONEXÃO COM MONGODB (singleton) ────────────────────
 // Na Vercel, o mesmo código pode ser executado em múltiplas invocações.
