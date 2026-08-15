@@ -499,7 +499,22 @@ const produtoSchema = new mongoose.Schema(
     // Um número (mesmo 0) = controle ativo, com aquela quantidade disponível.
     estoque: { type: Number, default: null },
     // Array de tamanhos disponíveis para o produto (ex: ['P','M','G'])
-    sizes: { type: [String], default: [] }
+    sizes: { type: [String], default: [] },
+    // Peso/dimensões REAIS do produto pra cotação de frete — conceito
+    // diferente de `sizes` acima: sizes é o que o cliente escolhe (P/M/G),
+    // isto aqui é o que a transportadora cobra pra despachar a caixa. Um
+    // mesmo produto pode ter os dois, sem relação entre eles.
+    // null = não cadastrado. Não bloqueia o cadastro/edição do produto (o
+    // lojista pode cadastrar sem esse dado), mas bloqueia a VENDA — ver
+    // resolverDadosEnvioProduto: sem peso/dimensão próprios nem um padrão da
+    // loja configurado (Config.pesoKgPadrao etc.), o produto não entra no
+    // carrinho nem em POST /api/orders. Nunca cai num número fixo genérico —
+    // foi exatamente isso que fez o frete sair errado pra todo produto antes
+    // desta mudança.
+    pesoKg: { type: Number, default: null },
+    larguraCm: { type: Number, default: null },
+    alturaCm: { type: Number, default: null },
+    comprimentoCm: { type: Number, default: null }
   },
   { timestamps: true }
 );
@@ -669,6 +684,16 @@ const ConfigSchema = new mongoose.Schema({
   // contador do lojista.
   retencaoPedidosPagosAnos: { type: Number, default: null },
 
+  // Peso/dimensões padrão da loja, usados só quando um produto específico
+  // não tem os próprios cadastrados (ver resolverDadosEnvioProduto) — reduz
+  // trabalho de cadastro pra loja com produtos de peso parecido. null em
+  // qualquer um destes = sem padrão definido; nesse caso um produto sem dado
+  // próprio fica bloqueado pra venda, não usa nenhum valor inventado.
+  pesoKgPadrao: { type: Number, default: null },
+  larguraCmPadrao: { type: Number, default: null },
+  alturaCmPadrao: { type: Number, default: null },
+  comprimentoCmPadrao: { type: Number, default: null },
+
   // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
   // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
   // podia nem oferecer de verdade (ex: parcelamento sem ter cartão configurado).
@@ -773,6 +798,17 @@ function mergePublicConfig(doc) {
   // painel salvou, ou vazio mesmo, pras páginas legais saberem mostrar um
   // aviso de "complete isso" em vez de inventar um número.
   const cnpjSalvo = doc?.cnpj ? String(doc.cnpj).replace(/\D/g, '') : '';
+  // Sem terceiro degrau de fallback aqui de propósito (diferente do cepOrigem
+  // acima) — um peso/dimensão inventado é exatamente o bug que motivou essa
+  // mudança inteira. null = sem padrão definido, e é isso mesmo.
+  const numeroPositivoOuNull = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const pesoKgPadrao = numeroPositivoOuNull(doc?.pesoKgPadrao);
+  const larguraCmPadrao = numeroPositivoOuNull(doc?.larguraCmPadrao);
+  const alturaCmPadrao = numeroPositivoOuNull(doc?.alturaCmPadrao);
+  const comprimentoCmPadrao = numeroPositivoOuNull(doc?.comprimentoCmPadrao);
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
   const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
@@ -821,6 +857,10 @@ function mergePublicConfig(doc) {
     cnpj: cnpjSalvo,
     retencaoPedidosPagosAnos: retencaoPedidosPagosAnosSalvo,
     retencaoPedidosPagosAnosEfetivo,
+    pesoKgPadrao,
+    larguraCmPadrao,
+    alturaCmPadrao,
+    comprimentoCmPadrao,
 
     // Textos do hero — vazio de propósito quando não configurado no admin,
     // pra o front saber que deve preservar o texto padrão já no HTML.
@@ -1049,10 +1089,21 @@ app.get('/api/produtos/:id', async (req, res) => {
   }
 });
 
+// Lê peso/dimensão do corpo da requisição: vazio/ausente é válido (não
+// bloqueia cadastro nem edição — ver decisão registrada no schema de
+// Produto), null é o valor salvo pra "não preenchido"; só rejeita algo que
+// não é número válido e positivo, pra não salvar NaN por engano.
+function lerCampoEnvioOpcional(valor, rotulo) {
+  if (valor === '' || valor == null) return { ok: true, valor: null };
+  const n = Number(valor);
+  if (!Number.isFinite(n) || n <= 0) return { ok: false, erro: `${rotulo} inválido — use um número maior que zero, ou deixe em branco.` };
+  return { ok: true, valor: n };
+}
+
 app.post('/api/produtos', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco, sizes } = req.body;
+    const { nome, preco, sizes, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
     if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório' });
     if (!preco || isNaN(preco)) return res.status(400).json({ erro: 'Preço inválido' });
 
@@ -1061,9 +1112,22 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
       ? sizes.map((s) => String(s).trim()).filter(Boolean)
       : [];
 
+    const campos = {};
+    for (const [chave, valor, rotulo] of [
+      ['pesoKg', pesoKg, 'Peso'],
+      ['larguraCm', larguraCm, 'Largura'],
+      ['alturaCm', alturaCm, 'Altura'],
+      ['comprimentoCm', comprimentoCm, 'Comprimento']
+    ]) {
+      const lido = lerCampoEnvioOpcional(valor, rotulo);
+      if (!lido.ok) return res.status(400).json({ erro: lido.erro });
+      campos[chave] = lido.valor;
+    }
+
     const novo = new Produto({
       ...req.body,
-      sizes: normalizedSizes
+      sizes: normalizedSizes,
+      ...campos
     });
 
     await novo.save();
@@ -1076,7 +1140,7 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
 app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco, imagem, imagens, descricao, categoria, estoque, sizes } = req.body;
+    const { nome, preco, imagem, imagens, descricao, categoria, estoque, sizes, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
 
     // nome/preco são obrigatórios no schema, mas findByIdAndUpdate não roda
     // validators do Mongoose por padrão (só runValidators:true abaixo cobre o
@@ -1095,6 +1159,22 @@ app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
     // e o Number(...) mais abaixo silenciosamente viraria NaN salvo no banco.
     if (estoque !== undefined && estoque !== '' && estoque !== null && isNaN(estoque)) {
       return res.status(400).json({ erro: 'Estoque inválido' });
+    }
+    // Peso/dimensão: vazio/null é válido de propósito (apaga o valor próprio
+    // do produto e volta a depender do padrão da loja, ou fica bloqueado pra
+    // venda se não houver padrão — ver resolverDadosEnvioProduto). Só rejeita
+    // algo que não é um número positivo válido.
+    const camposEnvio = {};
+    for (const [chave, valor, rotulo] of [
+      ['pesoKg', pesoKg, 'Peso'],
+      ['larguraCm', larguraCm, 'Largura'],
+      ['alturaCm', alturaCm, 'Altura'],
+      ['comprimentoCm', comprimentoCm, 'Comprimento']
+    ]) {
+      if (valor === undefined) continue;
+      const lido = lerCampoEnvioOpcional(valor, rotulo);
+      if (!lido.ok) return res.status(400).json({ erro: lido.erro });
+      camposEnvio[chave] = lido.valor;
     }
 
     // Allowlist explícita: só estes campos podem ser alterados por aqui — o
@@ -1126,6 +1206,7 @@ app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
     if (Array.isArray(imagens) && imagens.length) {
       dados.imagens = imagens.map((s) => String(s).trim()).filter(Boolean);
     }
+    Object.assign(dados, camposEnvio);
 
     const atualizado = await Produto.findByIdAndUpdate(req.params.id, { $set: dados }, {
       new: true,
@@ -1538,6 +1619,12 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
     // (localStorage/DevTools) para pagar um valor diferente do real.
     const decrementedForRollback = []; // acumula decrementos aplicados, para rollback em caso de erro
     const itemsForOrder = [];
+    // Peso/dimensões reais por item, resolvidos no loop abaixo (produto ou
+    // padrão da loja — ver resolverDadosEnvioProduto), pra cotar o frete de
+    // verdade mais adiante. Buscamos a Config aqui, antes do loop, porque
+    // cfgFrete.pesoKgPadrao etc. são o padrão da loja usado item a item.
+    const itemsParaCotarFrete = [];
+    const cfgFrete = await buscarConfigCompleta();
     let totalNum = 0;
 
     for (const it of rawItems) {
@@ -1586,6 +1673,23 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
         decrementedForRollback.push({ productId, qty });
       }
 
+      // Produto sem peso/dimensão própria nem padrão da loja não pode ser
+      // vendido (decisão registrada no schema de Produto) — checado aqui,
+      // logo após resolver `prod` e ANTES de somar ao pedido, seguindo o
+      // mesmo padrão das validações de endereço acima: nunca decrementar
+      // estoque de um item e só descobrir depois que o pedido não pode
+      // fechar. Cobre também o produto que perdeu o dado depois de já estar
+      // no carrinho do cliente — o carrinho é do navegador, não é confiável.
+      const dadosEnvio = resolverDadosEnvioProduto(prod, cfgFrete);
+      if (!dadosEnvio.ok) {
+        await rollbackStock(decrementedForRollback);
+        return res.status(409).json({
+          erro: 'Produto sem peso/dimensão cadastrados — indisponível para venda: ' + (prod.nome || it?.name || 'item'),
+          produtoId: productId,
+          motivo: 'SEM_DADOS_ENVIO'
+        });
+      }
+
       const precoReal = Number(prod.preco || 0);
       totalNum += precoReal * qty;
 
@@ -1599,6 +1703,16 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
         // withStockControl acima) — produto com controle de estoque desativado
         // (estoque=null) nunca deve ser incrementado na devolução.
         estoqueDecrementado: !!withStockControl
+      });
+
+      itemsParaCotarFrete.push({
+        id: productId,
+        quantity: qty,
+        unitary_value: precoReal,
+        pesoKg: dadosEnvio.pesoKg,
+        larguraCm: dadosEnvio.larguraCm,
+        alturaCm: dadosEnvio.alturaCm,
+        comprimentoCm: dadosEnvio.comprimentoCm
       });
     }
 
@@ -1622,7 +1736,8 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
     const freteServicoId = req.body?.freteServicoId != null ? String(req.body.freteServicoId).trim() : '';
     let freteNum = 0;
 
-    const cfgFrete = await buscarConfigCompleta();
+    // cfgFrete já foi buscada antes do loop de itens (precisava dela ali pra
+    // resolver peso/dimensão de cada item) — reaproveitada aqui.
     const freteGratisAplicavel = cfgFrete.freteGratisAtivo && totalNum >= cfgFrete.freteGratisValor;
 
     if (freteGratisAplicavel) {
@@ -1636,8 +1751,7 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
       let opcoes = [];
       let cepForaDeArea = false;
       if (meTokenPedido && cepDigitosPedido.length === 8) {
-        const produtosParaCotar = itemsForOrder.map((it) => ({ quantity: it.qty, unitary_value: it.price }));
-        const resultadoFrete = await cotarFreteMelhorEnvio(meTokenPedido, cfgFrete.cepOrigemEfetivo, cepDigitosPedido, produtosParaCotar, totalNum);
+        const resultadoFrete = await cotarFreteMelhorEnvio(meTokenPedido, cfgFrete.cepOrigemEfetivo, cepDigitosPedido, itemsParaCotarFrete);
         if (resultadoFrete.ok) {
           opcoes = resultadoFrete.options;
           // Melhor Envio respondeu (ok:true) mas nenhuma opção sobrou depois do
@@ -1982,6 +2096,10 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       pageTitleSuffix,
       cnpj,
       retencaoPedidosPagosAnos,
+      pesoKgPadrao,
+      larguraCmPadrao,
+      alturaCmPadrao,
+      comprimentoCmPadrao,
 
       // ✅ NOVO: hero do split
       heroImagem,
@@ -2078,6 +2196,20 @@ app.post('/api/config', verificarJWT, async (req, res) => {
         }
         dados.retencaoPedidosPagosAnos = anosNum;
       }
+    }
+    // Padrão da loja de peso/dimensão — mesmo raciocínio de "vazio apaga o
+    // valor salvo" do cepOrigem/retenção acima. Sem terceiro fallback fixo
+    // (ver comentário em mergePublicConfig): vazio aqui é vazio de verdade.
+    for (const [chave, valor, rotulo] of [
+      ['pesoKgPadrao', pesoKgPadrao, 'Peso padrão'],
+      ['larguraCmPadrao', larguraCmPadrao, 'Largura padrão'],
+      ['alturaCmPadrao', alturaCmPadrao, 'Altura padrão'],
+      ['comprimentoCmPadrao', comprimentoCmPadrao, 'Comprimento padrão']
+    ]) {
+      if (valor === undefined) continue;
+      const lido = lerCampoEnvioOpcional(valor, rotulo);
+      if (!lido.ok) return res.status(400).json({ erro: lido.erro });
+      dados[chave] = lido.valor;
     }
     if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || configPadrao.nomeLoja);
 
@@ -2453,6 +2585,31 @@ app.get('/api/payment/status/:orderId', async (req, res) => {
 });
 
 /**
+ * Resolve o peso/dimensões REAIS de um produto pro cálculo de frete: primeiro
+ * o que está cadastrado no próprio produto, campo a campo; qualquer campo
+ * ausente cai pro padrão da loja (Config), também campo a campo. Se depois
+ * disso ainda faltar algum dos quatro, ok:false — o produto não pode ser
+ * vendido (ver decisão registrada nos comentários do schema de Produto).
+ * Nunca inventa um número: é essa garantia que corrige o bug de frete fixo
+ * (0,3kg/11x2x16 pra qualquer produto) que existia antes desta função.
+ */
+function resolverDadosEnvioProduto(produto, cfgFrete) {
+  const resolverCampo = (valorProduto, valorPadrao) => {
+    const p = Number(valorProduto);
+    if (Number.isFinite(p) && p > 0) return p;
+    const d = Number(valorPadrao);
+    if (Number.isFinite(d) && d > 0) return d;
+    return null;
+  };
+  const pesoKg = resolverCampo(produto?.pesoKg, cfgFrete?.pesoKgPadrao);
+  const larguraCm = resolverCampo(produto?.larguraCm, cfgFrete?.larguraCmPadrao);
+  const alturaCm = resolverCampo(produto?.alturaCm, cfgFrete?.alturaCmPadrao);
+  const comprimentoCm = resolverCampo(produto?.comprimentoCm, cfgFrete?.comprimentoCmPadrao);
+  if (!pesoKg || !larguraCm || !alturaCm || !comprimentoCm) return { ok: false };
+  return { ok: true, pesoKg, larguraCm, alturaCm, comprimentoCm };
+}
+
+/**
  * Consulta o Melhor Envio de verdade e devolve as opções de frete disponíveis
  * pro CEP/produtos informados. Compartilhada entre /api/frete/calcular
  * (cotação exibida no checkout) e POST /api/orders (revalidação do frete
@@ -2469,20 +2626,21 @@ app.get('/api/payment/status/:orderId', async (req, res) => {
  * decrementou estoque antes de chegar aqui, então um erro não tratado aqui
  * não pode derrubar a criação do pedido inteira.
  */
-async function cotarFreteMelhorEnvio(meToken, cepOrigem, cepDigitos, rawProducts, subtotalFallback) {
-  // Dimensões/peso padrão pra produto sem cadastro dedicado — o schema de
-  // Produto hoje não tem campo de dimensão/peso, então TODO item cai nesse
-  // padrão. Não trava a cotação por falta de dado.
-  const produtosParaEnvio = (rawProducts.length ? rawProducts : [{ quantity: 1, unitary_value: subtotalFallback }])
-    .map((p) => ({
-      id: p?.id != null ? String(p.id) : undefined,
-      width: 11,
-      height: 2,
-      length: 16,
-      weight: 0.3,
-      insurance_value: Number(p?.unitary_value) || 0,
-      quantity: Math.max(1, Number(p?.quantity) || 1)
-    }));
+async function cotarFreteMelhorEnvio(meToken, cepOrigem, cepDigitos, rawProducts) {
+  // rawProducts já chega com peso/dimensões REAIS resolvidos por quem chamou
+  // (ver resolverDadosEnvioProduto) — cada item da lista é um produto do
+  // carrinho, e a Melhor Envio calcula o frete da remessa combinada a partir
+  // dessa lista sozinha; não precisamos somar/aproximar caixa nenhuma aqui.
+  if (!rawProducts.length) return { ok: false, reason: 'SEM_ITENS', options: [] };
+  const produtosParaEnvio = rawProducts.map((p) => ({
+    id: p?.id != null ? String(p.id) : undefined,
+    width: Number(p?.larguraCm) || 0,
+    height: Number(p?.alturaCm) || 0,
+    length: Number(p?.comprimentoCm) || 0,
+    weight: Number(p?.pesoKg) || 0,
+    insurance_value: Number(p?.unitary_value) || 0,
+    quantity: Math.max(1, Number(p?.quantity) || 1)
+  }));
 
   try {
     const meRes = await fetch('https://melhorenvio.com.br/api/v2/me/shipment/calculate', {
@@ -2560,8 +2718,45 @@ app.post('/api/frete/calcular', async (req, res) => {
       return res.json({ ok: false, reason: 'NO_ME_TOKEN', options: [] });
     }
 
+    // O cliente manda quais produtos/quantidades quer cotar (isso é só uma
+    // estimativa antes de fechar o pedido — o valor final é sempre recotado
+    // em POST /api/orders), mas peso/dimensão SEMPRE vêm do banco por
+    // productId, nunca do que o navegador mandar — mesmo princípio de nunca
+    // confiar no cliente já aplicado ao preço/frete. Se o carrinho tiver um
+    // item sem peso/dimensão cadastrados (nem padrão da loja), a estimativa
+    // já reflete isso em vez de simular uma cotação que não vai fechar depois.
     const rawProducts = Array.isArray(req.body?.products) ? req.body.products : [];
-    const resultado = await cotarFreteMelhorEnvio(meToken, cfg.cepOrigemEfetivo, cepDigitos, rawProducts, subtotal);
+    const idsSolicitados = rawProducts
+      .map((p) => (p?.id != null ? String(p.id) : null))
+      .filter(Boolean);
+    const produtosDb = idsSolicitados.length
+      ? await Produto.find({ _id: { $in: idsSolicitados } }).lean()
+      : [];
+    const produtoPorId = new Map(produtosDb.map((p) => [String(p._id), p]));
+
+    const itemsParaCotarFrete = [];
+    for (const p of rawProducts) {
+      const id = p?.id != null ? String(p.id) : null;
+      const produtoDb = id ? produtoPorId.get(id) : null;
+      if (!produtoDb) {
+        return res.json({ ok: false, reason: 'SEM_DADOS_ENVIO', options: [], produtoId: id || '' });
+      }
+      const dadosEnvio = resolverDadosEnvioProduto(produtoDb, cfg);
+      if (!dadosEnvio.ok) {
+        return res.json({ ok: false, reason: 'SEM_DADOS_ENVIO', options: [], produtoId: id, produtoNome: produtoDb.nome || '' });
+      }
+      itemsParaCotarFrete.push({
+        id,
+        quantity: p?.quantity,
+        unitary_value: p?.unitary_value,
+        pesoKg: dadosEnvio.pesoKg,
+        larguraCm: dadosEnvio.larguraCm,
+        alturaCm: dadosEnvio.alturaCm,
+        comprimentoCm: dadosEnvio.comprimentoCm
+      });
+    }
+
+    const resultado = await cotarFreteMelhorEnvio(meToken, cfg.cepOrigemEfetivo, cepDigitos, itemsParaCotarFrete);
 
     if (!resultado.ok) {
       console.warn('[frete/calcular] Falha ao consultar Melhor Envio:', resultado.reason, resultado.detalhe || '');

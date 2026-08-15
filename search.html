@@ -1945,6 +1945,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const d = await r.json();
       if(d && d.nomeLoja) aplicarNomeLoja(d.nomeLoja);
       if(d && d.colors) aplicarCoresDaLoja(d.colors);
+      // Padrão de peso/dimensão da loja — usado por temDadosEnvio() pra
+      // decidir se um produto sem peso/dimensão próprio pode ser vendido.
+      window.S_pesoKgPadrao = d?.pesoKgPadrao ?? null;
+      window.S_larguraCmPadrao = d?.larguraCmPadrao ?? null;
+      window.S_alturaCmPadrao = d?.alturaCmPadrao ?? null;
+      window.S_comprimentoCmPadrao = d?.comprimentoCmPadrao ?? null;
       salvarConfigCache(d);
     }catch(e){
       if(!cache) aplicarNomeLoja(vitrineNomeLoja); // sem cache e rede falhou — evita ficar em branco pra sempre
@@ -1969,8 +1975,28 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       badge: null,
       // null = controle de estoque desativado (nunca esgotado); um número é a
       // quantidade real — só 0 significa esgotado de verdade.
-      stock: p.estoque != null ? Number(p.estoque) : null
+      stock: p.estoque != null ? Number(p.estoque) : null,
+      pesoKg: p.pesoKg != null ? Number(p.pesoKg) : null,
+      larguraCm: p.larguraCm != null ? Number(p.larguraCm) : null,
+      alturaCm: p.alturaCm != null ? Number(p.alturaCm) : null,
+      comprimentoCm: p.comprimentoCm != null ? Number(p.comprimentoCm) : null
     };
+  }
+
+  // Espelha resolverDadosEnvioProduto do servidor — só decide se o botão de
+  // comprar fica ativo aqui na UI; a garantia de verdade é sempre no
+  // servidor (POST /api/orders rejeita o pedido de qualquer forma).
+  function temDadosEnvio(p){
+    const resolve = (proprio, padrao) => {
+      const v = Number(proprio);
+      if (Number.isFinite(v) && v > 0) return true;
+      const d = Number(padrao);
+      return Number.isFinite(d) && d > 0;
+    };
+    return resolve(p.pesoKg, window.S_pesoKgPadrao)
+      && resolve(p.larguraCm, window.S_larguraCmPadrao)
+      && resolve(p.alturaCm, window.S_alturaCmPadrao)
+      && resolve(p.comprimentoCm, window.S_comprimentoCmPadrao);
   }
 
   // ─── TEMA CLARO/ESCURO (mesma chave/lógica do site principal) ───
@@ -2014,6 +2040,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     // descobrir ali) — quem trava de verdade é o decremento atômico no servidor.
     if (p && p.stock === 0) {
       showToast('Produto esgotado.');
+      return;
+    }
+    if (p && !temDadosEnvio(p)) {
+      showToast('Este produto está temporariamente indisponível para compra.');
       return;
     }
     const item = p ? { _id: p._id, name: p.name, price: p.price, img: p.img, tamanhoSelecionado: '', qty: 1 } : { _id: _id, name: 'Produto', price:0, img:'', qty:1 };
@@ -2304,12 +2334,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const inWish = isInWishlist(p._id) ? ' on' : '';
       // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
       const esgotado = p.stock === 0;
+      // Sem peso/dimensão (própria ou padrão da loja): mesma mecânica visual
+      // do "Esgotado", rótulo diferente pro cliente não confundir os motivos.
+      const semDadosEnvio = !esgotado && !temDadosEnvio(p);
+      const indisponivel = esgotado || semDadosEnvio;
+      const rotuloIndisponivel = esgotado ? 'Esgotado' : 'Indisponível';
       return `
         <div class="prod-card" data-pid="${p._id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
           <div class="prod-card-frame" onclick="window.location.href='/produto.html?id=${encodeURIComponent(p._id)}'">
-            <div class="prod-card-media${esgotado?' esgotado':''}">
-              ${esgotado ? '<span class="prod-badge-esgotado">Esgotado</span>' : ''}
-              ${p.img ? `<img src="${p.img}" alt="${escapeHtmlTexto(p.name)}" loading="lazy" />` : `<div class="prod-card-empty">Sem imagem</div>`}
+            <div class="prod-card-media${indisponivel?' esgotado':''}">
+              ${indisponivel ? `<span class="prod-badge-esgotado">${rotuloIndisponivel}</span>` : ''}
+              ${p.img ? `<img src="${escapeHtmlTexto(p.img)}" alt="${escapeHtmlTexto(p.name)}" loading="lazy" />` : `<div class="prod-card-empty">Sem imagem</div>`}
               <button class="prod-wish-btn${inWish}" onclick="event.stopPropagation();toggleWishlist('${p._id}', this)"><i class="fa-regular fa-heart"></i></button>
             </div>
             <div class="prod-card-body">
@@ -2319,8 +2354,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
                 ${p.old?`<span class="prod-old-price">${R$(p.old)}</span>`:''}
                 <span class="prod-price">${R$(p.price)}</span>
               </div>
-              ${esgotado
-                ? '<button class="btn-fill prod-add-btn" disabled aria-disabled="true">Esgotado</button>'
+              ${indisponivel
+                ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
                 : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddFromGrid('${p._id}')">Adicionar</button>`
               }
             </div>

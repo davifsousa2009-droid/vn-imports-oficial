@@ -2218,6 +2218,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
           <button class="pv-wish-btn" id="pvWishBtn"><i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos</button>
         </div>
+        <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
         <div class="pv-feats">
           <div class="pv-feat" id="pvFeatFrete" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$<span id="pvFeatFreteVal">299</span></div>
           <a class="pv-feat" href="/devolucao.html" style="text-decoration:none;color:inherit"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Devolução</strong> em até 7 dias</a>
@@ -2593,13 +2594,19 @@ function renderGrid(list){
 
     // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
     const esgotado = p.stock === 0;
+    // Sem peso/dimensão (própria ou padrão da loja): não pode ser vendido —
+    // mesma mecânica visual do "Esgotado", rótulo diferente pro cliente não
+    // confundir os dois motivos (ver decisão registrada em temDadosEnvio).
+    const semDadosEnvio = !esgotado && !temDadosEnvio(p);
+    const indisponivel = esgotado || semDadosEnvio;
+    const rotuloIndisponivel = esgotado ? 'Esgotado' : 'Indisponível';
 
     return `
       <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
         <div class="prod-card-frame">
 
-          <div class="prod-card-media${esgotado?' esgotado':''}">
-            ${esgotado ? '<span class="prod-badge-esgotado">Esgotado</span>' : ''}
+          <div class="prod-card-media${indisponivel?' esgotado':''}">
+            ${indisponivel ? `<span class="prod-badge-esgotado">${rotuloIndisponivel}</span>` : ''}
             ${p.img
               ? `<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}" loading="lazy" />`
               : `<div class="prod-card-empty">Sem imagem</div>`
@@ -2623,8 +2630,8 @@ function renderGrid(list){
               ${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}
             </div>
 
-            ${esgotado
-              ? '<button class="btn-fill prod-add-btn" disabled aria-disabled="true">Esgotado</button>'
+            ${indisponivel
+              ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
               : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>`
             }
           </div>
@@ -2730,11 +2737,17 @@ function openProd(id){
   };
   // stock null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
   const esgotado = p.stock === 0;
+  // Sem peso/dimensão (própria ou padrão da loja): mesma mecânica visual do
+  // "Esgotado", rótulo diferente pro cliente não confundir os dois motivos.
+  const semDadosEnvio = !esgotado && !temDadosEnvio(p);
+  const indisponivel = esgotado || semDadosEnvio;
   const addBtn = document.getElementById('pvAddBtn');
+  const indisponivelMsg = document.getElementById('pvIndisponivelMsg');
+  if (indisponivelMsg) indisponivelMsg.style.display = semDadosEnvio ? 'block' : 'none';
   if (addBtn) {
-    addBtn.disabled = esgotado;
-    addBtn.textContent = esgotado ? 'Esgotado' : 'Adicionar ao Carrinho';
-    addBtn.onclick = esgotado ? null : ()=>{
+    addBtn.disabled = indisponivel;
+    addBtn.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
+    addBtn.onclick = indisponivel ? null : ()=>{
       const sel = (window.__vn_selectedSize || '').trim();
       if(!sel){
         const box = document.getElementById('pvSizes');
@@ -2908,6 +2921,10 @@ function addCart(p){
   // descobrir ali) — quem trava de verdade é o decremento atômico no servidor.
   if (p.stock === 0) {
     showToast('warn','Produto esgotado.');
+    return;
+  }
+  if (!temDadosEnvio(p)) {
+    showToast('warn','Este produto está temporariamente indisponível para compra.');
     return;
   }
   const sel = (window.__vn_selectedSize || '').trim();
@@ -3527,7 +3544,25 @@ async function checkout() {
           body: JSON.stringify(payload)
         });
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d?.erro || d?.message || 'Falha ao criar pedido.');
+        if (!r.ok) {
+          // Item ficou sem peso/dimensão depois de já estar no carrinho (ex:
+          // lojista apagou o dado, ou nunca teve) — o carrinho é do
+          // navegador, não é confiável, então o servidor pega isso na hora
+          // de criar o pedido (ver POST /api/orders). Remove o item específico
+          // em vez de só mostrar um erro genérico, pra não deixar o cliente
+          // preso tentando pagar um carrinho que nunca vai fechar.
+          if (d?.motivo === 'SEM_DADOS_ENVIO' && d?.produtoId) {
+            const idxRemover = cart.findIndex((it) => String(it._id || it.productId) === String(d.produtoId));
+            if (idxRemover !== -1) {
+              cart.splice(idxRemover, 1);
+              saveC();
+              renderCart();
+              syncDots();
+            }
+            throw new Error('Um item do seu carrinho ficou indisponível e foi removido. Revise seu carrinho e tente novamente.');
+          }
+          throw new Error(d?.erro || d?.message || 'Falha ao criar pedido.');
+        }
 
         orderId = d?.order?._id ? String(d.order._id) : '';
         orderTotal = d?.order?.total != null ? Number(d.order.total) : totalEstimado;
@@ -4546,6 +4581,12 @@ async function carregarConfigLoja() {
     window.S_freteGratisValor = freteVal;
     window.S_parcelamentoAtivo = parcOn;
     window.S_parcelamentoMax = parcVal;
+    // Padrão de peso/dimensão da loja — usado por temDadosEnvio() pra decidir
+    // se um produto sem peso/dimensão próprio ainda pode ser vendido.
+    window.S_pesoKgPadrao = d.pesoKgPadrao ?? null;
+    window.S_larguraCmPadrao = d.larguraCmPadrao ?? null;
+    window.S_alturaCmPadrao = d.alturaCmPadrao ?? null;
+    window.S_comprimentoCmPadrao = d.comprimentoCmPadrao ?? null;
     S.parc = parcVal;
     S.frete = freteVal;
 
@@ -4646,8 +4687,31 @@ function converterProduto(p, index) {
     badge: null,
     // null = controle de estoque desativado (nunca esgotado); um número é a
     // quantidade real — só 0 significa esgotado de verdade.
-    stock: p.estoque != null ? Number(p.estoque) : null
+    stock: p.estoque != null ? Number(p.estoque) : null,
+    // Peso/dimensão pra cálculo de frete — null = não cadastrado (usado por
+    // temDadosEnvio() pra saber se o produto pode entrar no carrinho).
+    pesoKg: p.pesoKg != null ? Number(p.pesoKg) : null,
+    larguraCm: p.larguraCm != null ? Number(p.larguraCm) : null,
+    alturaCm: p.alturaCm != null ? Number(p.alturaCm) : null,
+    comprimentoCm: p.comprimentoCm != null ? Number(p.comprimentoCm) : null
   };
+}
+
+// Espelha resolverDadosEnvioProduto do servidor (peso/dimensão própria,
+// senão o padrão da loja) só pra decidir se o botão de comprar fica ativo —
+// a garantia de verdade é sempre no servidor (POST /api/orders rejeita o
+// pedido de qualquer forma); isto aqui é só a experiência do cliente.
+function temDadosEnvio(p) {
+  const resolve = (proprio, padrao) => {
+    const v = Number(proprio);
+    if (Number.isFinite(v) && v > 0) return true;
+    const d = Number(padrao);
+    return Number.isFinite(d) && d > 0;
+  };
+  return resolve(p.pesoKg, window.S_pesoKgPadrao)
+    && resolve(p.larguraCm, window.S_larguraCmPadrao)
+    && resolve(p.alturaCm, window.S_alturaCmPadrao)
+    && resolve(p.comprimentoCm, window.S_comprimentoCmPadrao);
 }
 
 

@@ -289,6 +289,9 @@ tr:hover td{background:#FAFAF8}
           <div class="stat"><div class="stat-lbl">Total de Produtos</div><div class="stat-val" id="sTotal">—</div><div class="stat-sub">cadastrados</div></div>
           <div class="stat"><div class="stat-lbl">Menor Preço</div><div class="stat-val" id="sMin">—</div><div class="stat-sub">no catálogo</div></div>
           <div class="stat"><div class="stat-lbl">Maior Preço</div><div class="stat-val" id="sMax">—</div><div class="stat-sub">no catálogo</div></div>
+          <div class="stat" id="sBloqueadosBox" style="cursor:pointer" onclick="irParaProdutosBloqueados()" title="Ver produtos bloqueados">
+            <div class="stat-lbl">Sem Peso/Dimensão</div><div class="stat-val" id="sBloqueados">—</div><div class="stat-sub">não podem ser vendidos</div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Bem-vindo ao Painel Admin</div>
@@ -319,6 +322,17 @@ tr:hover td{background:#FAFAF8}
             </div>
             <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="f-desc" placeholder="Descreva o produto…"></textarea></div>
             <div class="fg"><label class="fl">Estoque</label><input class="fi" id="f-est" placeholder="Ex: 50" type="number" min="0"></div>
+
+            <div class="fg fw" style="margin-top:6px;padding-top:14px;border-top:1px solid #eee">
+              <label class="fl">Peso e Dimensões (Envio)</label>
+              <p style="font-size:12px;color:#888;line-height:1.6;margin:4px 0 12px">Usado só pra calcular o frete de verdade na Melhor Envio — diferente de "Tamanhos Disponíveis" abaixo, que é o que o cliente escolhe (P/M/G, 38/40). Pode deixar em branco agora; sem esse dado (nem um padrão definido em Configuração da Loja), o produto fica visível na loja mas não pode ser vendido.</p>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+                <div><label class="fl" style="color:#888;font-size:11px">Peso (kg)</label><input class="fi" id="f-peso" placeholder="Ex: 0.5" type="number" step="0.01" min="0"></div>
+                <div><label class="fl" style="color:#888;font-size:11px">Largura (cm)</label><input class="fi" id="f-largura" placeholder="Ex: 20" type="number" step="0.1" min="0"></div>
+                <div><label class="fl" style="color:#888;font-size:11px">Altura (cm)</label><input class="fi" id="f-altura" placeholder="Ex: 10" type="number" step="0.1" min="0"></div>
+                <div><label class="fl" style="color:#888;font-size:11px">Comprimento (cm)</label><input class="fi" id="f-comprimento" placeholder="Ex: 25" type="number" step="0.1" min="0"></div>
+              </div>
+            </div>
 
             <div class="fg fw">
               <label class="fl">Tamanhos Disponíveis</label>
@@ -690,6 +704,17 @@ tr:hover td{background:#FAFAF8}
             </div>
           </div>
 
+          <div class="fg2" style="margin-top:18px;padding-top:18px;border-top:1px solid #eee">
+            <div class="fg fw">
+              <label class="fl">Peso e Dimensões Padrão da Loja</label>
+              <p style="font-size:12px;color:#888;line-height:1.6;margin:4px 0 12px">Usado só pra produtos que não têm peso/dimensão próprios cadastrados — reduz trabalho se sua loja vende produtos de tamanho parecido. Um produto muito diferente do padrão continua precisando do próprio peso/dimensão (cadastre em Gerenciar Produtos). Deixe em branco pra não ter padrão nenhum — nesse caso, produto sem peso/dimensão próprio fica bloqueado pra venda.</p>
+            </div>
+            <div class="fg"><label class="fl">Peso Padrão (kg)</label><input class="fi" id="cfg-pesoKgPadrao" placeholder="Ex: 0.5" type="number" step="0.01" min="0"></div>
+            <div class="fg"><label class="fl">Largura Padrão (cm)</label><input class="fi" id="cfg-larguraCmPadrao" placeholder="Ex: 20" type="number" step="0.1" min="0"></div>
+            <div class="fg"><label class="fl">Altura Padrão (cm)</label><input class="fi" id="cfg-alturaCmPadrao" placeholder="Ex: 10" type="number" step="0.1" min="0"></div>
+            <div class="fg"><label class="fl">Comprimento Padrão (cm)</label><input class="fi" id="cfg-comprimentoCmPadrao" placeholder="Ex: 25" type="number" step="0.1" min="0"></div>
+          </div>
+
           <div class="fg" style="margin-top:18px">
             <label class="fl">Tema de Cores de Fundo</label>
             <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 14px">
@@ -809,6 +834,17 @@ tr:hover td{background:#FAFAF8}
         </div>
         <div class="fg fw"><label class="fl">Descrição</label><textarea class="fta" id="edesc"></textarea></div>
         <div class="fg"><label class="fl">Estoque</label><input class="fi" id="eest" type="number" min="0"></div>
+
+        <div class="fg fw" style="margin-top:6px;padding-top:14px;border-top:1px solid #eee">
+          <label class="fl">Peso e Dimensões (Envio)</label>
+          <p style="font-size:12px;color:#888;line-height:1.6;margin:4px 0 12px">Usado só pra calcular o frete de verdade na Melhor Envio — diferente de "Tamanhos Disponíveis" abaixo, que é o que o cliente escolhe (P/M/G, 38/40). Deixar em branco apaga o valor próprio deste produto e volta a depender do padrão da loja (Configuração da Loja); sem nenhum dos dois, o produto fica visível na loja mas não pode ser vendido.</p>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div><label class="fl" style="color:#888;font-size:11px">Peso (kg)</label><input class="fi" id="epeso" placeholder="Ex: 0.5" type="number" step="0.01" min="0"></div>
+            <div><label class="fl" style="color:#888;font-size:11px">Largura (cm)</label><input class="fi" id="elargura" placeholder="Ex: 20" type="number" step="0.1" min="0"></div>
+            <div><label class="fl" style="color:#888;font-size:11px">Altura (cm)</label><input class="fi" id="ealtura" placeholder="Ex: 10" type="number" step="0.1" min="0"></div>
+            <div><label class="fl" style="color:#888;font-size:11px">Comprimento (cm)</label><input class="fi" id="ecomprimento" placeholder="Ex: 25" type="number" step="0.1" min="0"></div>
+          </div>
+        </div>
 
         <div class="fg fw">
           <label class="fl">Tamanhos Disponíveis</label>
@@ -1306,7 +1342,21 @@ async function loadStats() {
       document.getElementById('sMin').textContent = fmt(Math.min(...pr));
       document.getElementById('sMax').textContent = fmt(Math.max(...pr));
     }
+    // statusEnvioProduto depende de pesoKgPadraoAtual etc., carregados por
+    // loadConfig() — se essa chamada (disparada junto no fim do arquivo)
+    // ainda não retornou, a contagem considera "sem padrão da loja" por um
+    // instante e se autocorrige no próximo loadStats()/loadTable().
+    const bloqueados = ps.filter(p => statusEnvioProduto(p).bloqueado).length;
+    document.getElementById('sBloqueados').textContent = bloqueados;
   } catch { /* silencioso */ }
+}
+
+function irParaProdutosBloqueados() {
+  const sbItem = document.querySelector('.sb-item[onclick*="loadTable"]');
+  showPanel('produtos', sbItem);
+  loadTable().then(() => {
+    renderTable(todosProdutos.filter(p => statusEnvioProduto(p).bloqueado));
+  });
 }
 
 // ── CADASTRAR ─────────────────────────────────────────
@@ -1369,12 +1419,16 @@ const descricao = document.getElementById('f-desc').value.trim();
   }
 
   const tamanhos = getTamanhosFromUI('f');
+  const pesoKg = document.getElementById('f-peso').value.trim();
+  const larguraCm = document.getElementById('f-largura').value.trim();
+  const alturaCm = document.getElementById('f-altura').value.trim();
+  const comprimentoCm = document.getElementById('f-comprimento').value.trim();
 
   try {
     const r = await fetch(API + '/produtos', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos })
+      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 
@@ -1398,7 +1452,7 @@ const descricao = document.getElementById('f-desc').value.trim();
 }
 
 async function limpar() {
-  ['f-nome', 'f-preco', 'f-desc', 'f-est'].forEach(id => {
+  ['f-nome', 'f-preco', 'f-desc', 'f-est', 'f-peso', 'f-largura', 'f-altura', 'f-comprimento'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-file').value = '';
@@ -1543,6 +1597,42 @@ async function excluirReview(id) {
 }
 
 
+// Espelha resolverDadosEnvioProduto do server.js: peso/dimensão própria do
+// produto, senão o padrão da loja (campo a campo). Usado só pra decidir o
+// aviso mostrado aqui no admin — a garantia de verdade (bloquear a venda)
+// é sempre no servidor, isto aqui é só pra o lojista ver o que precisa
+// resolver sem precisar abrir cada produto.
+function resolverCampoEnvioUI(valorProduto, valorPadrao) {
+  const p = Number(valorProduto);
+  if (Number.isFinite(p) && p > 0) return p;
+  const d = Number(valorPadrao);
+  if (Number.isFinite(d) && d > 0) return d;
+  return null;
+}
+
+function statusEnvioProduto(p) {
+  const peso = resolverCampoEnvioUI(p.pesoKg, pesoKgPadraoAtual);
+  const largura = resolverCampoEnvioUI(p.larguraCm, larguraCmPadraoAtual);
+  const altura = resolverCampoEnvioUI(p.alturaCm, alturaCmPadraoAtual);
+  const comprimento = resolverCampoEnvioUI(p.comprimentoCm, comprimentoCmPadraoAtual);
+  const completo = peso != null && largura != null && altura != null && comprimento != null;
+  if (!completo) return { bloqueado: true, usandoPadrao: false };
+  const temProprio = p.pesoKg != null && p.larguraCm != null && p.alturaCm != null && p.comprimentoCm != null;
+  if (!temProprio) return { bloqueado: false, usandoPadrao: true, peso, largura, altura, comprimento };
+  return { bloqueado: false, usandoPadrao: false };
+}
+
+function badgeEnvioProduto(p) {
+  const s = statusEnvioProduto(p);
+  if (s.bloqueado) {
+    return '<div style="margin-top:4px;font-size:11px;color:#a0391e;font-weight:600">⚠ Bloqueado para venda — cadastre peso e dimensões</div>';
+  }
+  if (s.usandoPadrao) {
+    return `<div style="margin-top:4px;font-size:11px;color:#888">Usando padrão da loja (${s.peso}kg, ${s.largura}×${s.altura}×${s.comprimento}cm)</div>`;
+  }
+  return '';
+}
+
 function renderTable(list) {
   if (!list.length) {
     document.getElementById('tblBody').innerHTML =
@@ -1563,7 +1653,7 @@ function renderTable(list) {
             <td>${p.imagem
               ? `<img class="td-img" src="${escHtml(mediaUrl(p.imagem))}" onerror="this.style.display='none'">`
               : '<span style="color:#bbb">—</span>'}</td>
-            <td class="td-name">${escHtml(p.nome)}</td>
+            <td class="td-name">${escHtml(p.nome)}${badgeEnvioProduto(p)}</td>
             <td class="td-price">${fmt(p.preco)}</td>
             <td><span class="td-cat">${escHtml(getCatNome(p.categoria))}</span></td>
             <td>${p.estoque ?? '—'}</td>
@@ -1609,6 +1699,10 @@ async function editar(id) {
   document.getElementById('e-galeria-prev').innerHTML = '';
   document.getElementById('edesc').value  = p.descricao || '';
 document.getElementById('eest').value = p.estoque != null ? p.estoque : '';
+  document.getElementById('epeso').value = p.pesoKg != null ? p.pesoKg : '';
+  document.getElementById('elargura').value = p.larguraCm != null ? p.larguraCm : '';
+  document.getElementById('ealtura').value = p.alturaCm != null ? p.alturaCm : '';
+  document.getElementById('ecomprimento').value = p.comprimentoCm != null ? p.comprimentoCm : '';
   popularTamanhosNoUI('e', p.sizes);
 
   if (p.imagem) {
@@ -1657,7 +1751,10 @@ const descricao = document.getElementById('edesc').value.trim();
   const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
 
   const tamanhos = getTamanhosFromUI('e');
-
+  const pesoKg = document.getElementById('epeso').value.trim();
+  const larguraCm = document.getElementById('elargura').value.trim();
+  const alturaCm = document.getElementById('ealtura').value.trim();
+  const comprimentoCm = document.getElementById('ecomprimento').value.trim();
 
   if (!nome || !preco) { toast('Nome e preço são obrigatórios'); return; }
 
@@ -1689,7 +1786,7 @@ const descricao = document.getElementById('edesc').value.trim();
     const r = await fetch(`${API}/produtos/${id}`, {
       method: 'PUT',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos })
+      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 
@@ -2254,6 +2351,10 @@ let pageTitleSuffixSalvoAtual = '';
 let pageTitleSuffixEfetivoAtual = '';
 let retencaoAnosSalvoAtual = null;
 let retencaoAnosEfetivoAtual = null;
+let pesoKgPadraoAtual = null;
+let larguraCmPadraoAtual = null;
+let alturaCmPadraoAtual = null;
+let comprimentoCmPadraoAtual = null;
 
 function formatarCep(digitos) {
   const d = String(digitos || '').replace(/\D/g, '');
@@ -2405,6 +2506,14 @@ async function loadConfig() {
     retencaoAnosSalvoAtual = d.retencaoPedidosPagosAnos || null;
     retencaoAnosEfetivoAtual = d.retencaoPedidosPagosAnosEfetivo || null;
     atualizarHintRetencaoAnos();
+    document.getElementById('cfg-pesoKgPadrao').value = d.pesoKgPadrao || '';
+    document.getElementById('cfg-larguraCmPadrao').value = d.larguraCmPadrao || '';
+    document.getElementById('cfg-alturaCmPadrao').value = d.alturaCmPadrao || '';
+    document.getElementById('cfg-comprimentoCmPadrao').value = d.comprimentoCmPadrao || '';
+    pesoKgPadraoAtual = d.pesoKgPadrao || null;
+    larguraCmPadraoAtual = d.larguraCmPadrao || null;
+    alturaCmPadraoAtual = d.alturaCmPadrao || null;
+    comprimentoCmPadraoAtual = d.comprimentoCmPadrao || null;
 
     document.getElementById('cfg-freteGratisAtivo').checked = !!d.freteGratisAtivo;
     document.getElementById('cfg-freteGratisValor').value = d.freteGratisValor || '';
@@ -2454,6 +2563,14 @@ async function loadConfig() {
     retencaoAnosSalvoAtual = null;
     retencaoAnosEfetivoAtual = null;
     atualizarHintRetencaoAnos();
+    document.getElementById('cfg-pesoKgPadrao').value = '';
+    document.getElementById('cfg-larguraCmPadrao').value = '';
+    document.getElementById('cfg-alturaCmPadrao').value = '';
+    document.getElementById('cfg-comprimentoCmPadrao').value = '';
+    pesoKgPadraoAtual = null;
+    larguraCmPadraoAtual = null;
+    alturaCmPadraoAtual = null;
+    comprimentoCmPadraoAtual = null;
   }
 }
 
@@ -2470,6 +2587,10 @@ async function salvarConfig() {
   const pageTitleSuffix = document.getElementById('cfg-pageTitleSuffix').value.trim();
   const cnpj = document.getElementById('cfg-cnpj').value.trim();
   const retencaoAnos = document.getElementById('cfg-retencaoAnos').value.trim();
+  const pesoKgPadrao = document.getElementById('cfg-pesoKgPadrao').value.trim();
+  const larguraCmPadrao = document.getElementById('cfg-larguraCmPadrao').value.trim();
+  const alturaCmPadrao = document.getElementById('cfg-alturaCmPadrao').value.trim();
+  const comprimentoCmPadrao = document.getElementById('cfg-comprimentoCmPadrao').value.trim();
 
   const freteGratisAtivo = !!document.getElementById('cfg-freteGratisAtivo')?.checked;
   const freteGratisValor = Number(document.getElementById('cfg-freteGratisValor')?.value) || 0;
@@ -2538,6 +2659,10 @@ async function salvarConfig() {
     pageTitleSuffix,
     cnpj: cnpjDigitos,
     retencaoPedidosPagosAnos: retencaoAnos,
+    pesoKgPadrao,
+    larguraCmPadrao,
+    alturaCmPadrao,
+    comprimentoCmPadrao,
     freteGratisAtivo,
     freteGratisValor,
     parcelamentoAtivo,
@@ -2575,6 +2700,10 @@ async function salvarConfig() {
       retencaoAnosSalvoAtual = d.config?.retencaoPedidosPagosAnos || null;
       retencaoAnosEfetivoAtual = d.config?.retencaoPedidosPagosAnosEfetivo || null;
       atualizarHintRetencaoAnos();
+      pesoKgPadraoAtual = d.config?.pesoKgPadrao || null;
+      larguraCmPadraoAtual = d.config?.larguraCmPadrao || null;
+      alturaCmPadraoAtual = d.config?.alturaCmPadrao || null;
+      comprimentoCmPadraoAtual = d.config?.comprimentoCmPadrao || null;
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');

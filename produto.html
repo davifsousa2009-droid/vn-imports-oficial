@@ -1722,6 +1722,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
           <button class="pv-wish-btn" id="pvWishBtn"><i class="fa-regular fa-heart ui-ico" id="pvWishIco" aria-hidden="true"></i><span id="pvWishTxt">Adicionar aos Favoritos</span></button>
         </div>
+        <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
         <div class="pv-feats">
           <div class="pv-feat" id="pvFeatFrete" style="display:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="11"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg> <strong>Frete grátis</strong> acima de R$<span id="pvFeatFreteVal">299</span></div>
           <a class="pv-feat" href="/devolucao.html" style="text-decoration:none;color:inherit"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> <strong>Devolução</strong> em até 7 dias</a>
@@ -1856,6 +1857,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const d = await r.json();
       if(d && d.nomeLoja) aplicarNomeLoja(d.nomeLoja);
       if(d && d.colors) aplicarCoresDaLoja(d.colors);
+      // Padrão de peso/dimensão da loja — usado por temDadosEnvio() pra
+      // decidir se um produto sem peso/dimensão próprio pode ser vendido.
+      window.S_pesoKgPadrao = d?.pesoKgPadrao ?? null;
+      window.S_larguraCmPadrao = d?.larguraCmPadrao ?? null;
+      window.S_alturaCmPadrao = d?.alturaCmPadrao ?? null;
+      window.S_comprimentoCmPadrao = d?.comprimentoCmPadrao ?? null;
       salvarConfigCache(d);
     }catch(e){
       if(!cache) aplicarNomeLoja(vitrineNomeLoja); // sem cache e rede falhou — evita ficar em branco pra sempre
@@ -1865,6 +1872,22 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function R$(n){ const x = Number(n)||0; return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
   function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
   function escapeHtmlTexto(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+  // Espelha resolverDadosEnvioProduto do servidor — só decide se o botão de
+  // comprar fica ativo aqui na UI; a garantia de verdade é sempre no
+  // servidor (POST /api/orders rejeita o pedido de qualquer forma).
+  function temDadosEnvio(p){
+    const resolve = (proprio, padrao) => {
+      const v = Number(proprio);
+      if (Number.isFinite(v) && v > 0) return true;
+      const d = Number(padrao);
+      return Number.isFinite(d) && d > 0;
+    };
+    return resolve(p.pesoKg, window.S_pesoKgPadrao)
+      && resolve(p.larguraCm, window.S_larguraCmPadrao)
+      && resolve(p.alturaCm, window.S_alturaCmPadrao)
+      && resolve(p.comprimentoCm, window.S_comprimentoCmPadrao);
+  }
 
   // ─── TEMA CLARO/ESCURO (mesma chave/lógica do site principal) ───
   function applyTheme(theme){
@@ -2049,6 +2072,10 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       showToast('warning','Produto esgotado.');
       return;
     }
+    if(!temDadosEnvio(produtoAtual)){
+      showToast('warning','Este produto está temporariamente indisponível para compra.');
+      return;
+    }
     if(document.getElementById('pvSizes').children.length && !tamanhoSelecionado){
       showToast('warning','Escolha um tamanho antes de continuar');
       return;
@@ -2087,12 +2114,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
       // estoque null = controle de estoque desativado, nunca esgotado. Só 0 é esgotado de verdade.
       const esgotado = p.estoque === 0;
+      // Sem peso/dimensão (própria ou padrão da loja): mesma mecânica visual
+      // do "Esgotado", rótulo diferente pro cliente não confundir os motivos.
+      const semDadosEnvio = !esgotado && !temDadosEnvio(p);
+      const indisponivel = esgotado || semDadosEnvio;
       const badgeEsgotado = document.getElementById('pvBadgeEsgotado');
-      if (badgeEsgotado) badgeEsgotado.style.display = esgotado ? 'inline-block' : 'none';
+      if (badgeEsgotado) {
+        badgeEsgotado.textContent = esgotado ? 'Esgotado' : 'Indisponível';
+        badgeEsgotado.style.display = indisponivel ? 'inline-block' : 'none';
+      }
+      const indisponivelMsg = document.getElementById('pvIndisponivelMsg');
+      if (indisponivelMsg) indisponivelMsg.style.display = semDadosEnvio ? 'block' : 'none';
       const addBtn = document.getElementById('pvAddBtn');
       if (addBtn) {
-        addBtn.disabled = esgotado;
-        addBtn.textContent = esgotado ? 'Esgotado' : 'Adicionar ao Carrinho';
+        addBtn.disabled = indisponivel;
+        addBtn.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
       }
 
       // Galeria: capa + fotos adicionais, sem repetir
