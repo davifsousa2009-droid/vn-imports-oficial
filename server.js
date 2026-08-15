@@ -1673,6 +1673,23 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
         decrementedForRollback.push({ productId, qty });
       }
 
+      // Produto com tamanhos cadastrados exige um tamanho VÁLIDO (um dos
+      // valores reais de prod.sizes, não só "não vazio") — achado ao
+      // investigar um bug de adicionar-rápido que mandava tamanho vazio ou
+      // herdado de outro produto sem passar por nenhuma validação aqui.
+      // Igual às checagens acima: antes de somar ao pedido, com rollback de
+      // estoque se falhar — o carrinho é do navegador, nunca confiável.
+      const tamanhoEnviado = it?.tamanhoSelecionado ? String(it.tamanhoSelecionado).trim() : '';
+      if (Array.isArray(prod.sizes) && prod.sizes.length > 0 && !prod.sizes.includes(tamanhoEnviado)) {
+        await rollbackStock(decrementedForRollback);
+        return res.status(400).json({
+          erro: 'Selecione um tamanho válido para ' + (prod.nome || it?.name || 'item'),
+          produtoId: productId,
+          motivo: 'TAMANHO_INVALIDO',
+          tamanhosDisponiveis: prod.sizes
+        });
+      }
+
       // Produto sem peso/dimensão própria nem padrão da loja não pode ser
       // vendido (decisão registrada no schema de Produto) — checado aqui,
       // logo após resolver `prod` e ANTES de somar ao pedido, seguindo o
@@ -1697,7 +1714,7 @@ app.post('/api/orders', ordersLimiter, async (req, res) => {
         name: String(prod.nome || it?.name || '').trim(),
         qty,
         price: precoReal,
-        tamanhoSelecionado: it?.tamanhoSelecionado ? String(it.tamanhoSelecionado) : '',
+        tamanhoSelecionado: tamanhoEnviado,
         productId,
         // true só quando este item de fato debitou estoque real (branch do
         // withStockControl acima) — produto com controle de estoque desativado

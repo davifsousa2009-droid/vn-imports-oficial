@@ -865,6 +865,16 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 @media(prefers-reduced-motion:reduce){
   .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn{animation:none !important;transition:none !important}
 }
+
+/* Chips de tamanho revelados no card — mesma linguagem visual do seletor de
+   tamanho da página do produto, compacto o bastante pra caber no card. */
+.qa-wrap{margin-top:12px}
+.qa-sizes{display:flex;flex-wrap:wrap;gap:6px}
+.qa-size-chip{
+  min-width:36px;height:36px;padding:0 8px;border:1.5px solid var(--border);background:transparent;
+  font-size:12px;font-weight:600;color:var(--ink);border-radius:8px;cursor:pointer;transition:all .15s ease;
+}
+.qa-size-chip:hover,.qa-size-chip:active{background:var(--ink2);color:var(--bg);border-color:var(--gold2)}
 .prod-card{
   background:#ffffff;cursor:pointer;position:relative;
   transition:background .15s;
@@ -2033,7 +2043,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     updateHeaderDots();
   }
 
-  function quickAddFromGrid(_id){
+  // tamanho vem sempre explícito de quem chama — nunca deduzido de estado
+  // global. Produto sem tamanho cadastrado: '' passa direto. Produto com
+  // tamanho: exige que seja um dos valores reais do produto (mesma whitelist
+  // aplicada no servidor em POST /api/orders).
+  function quickAddFromGrid(_id, tamanho){
     const base = window._searchBase || [];
     const p = base.find(x=>x._id===_id);
     // Checagem client-side só de UX (evita o cliente chegar até o checkout pra
@@ -2046,13 +2060,57 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       showToast('Este produto está temporariamente indisponível para compra.');
       return;
     }
-    const item = p ? { _id: p._id, name: p.name, price: p.price, img: p.img, tamanhoSelecionado: '', qty: 1 } : { _id: _id, name: 'Produto', price:0, img:'', qty:1 };
+    const sizes = p && Array.isArray(p.sizes) ? p.sizes : [];
+    const sel = (tamanho || '').trim();
+    if (sizes.length && !sizes.includes(sel)) {
+      showToast('Selecione um tamanho.');
+      return;
+    }
+    const item = p ? { _id: p._id, name: p.name, price: p.price, img: p.img, tamanhoSelecionado: sel, qty: 1 } : { _id: _id, name: 'Produto', price:0, img:'', qty:1 };
     let cart = [];
     try { cart = JSON.parse(localStorage.getItem('vn_cart')||'[]'); } catch(e) { cart = []; }
     cart.push(item);
     localStorage.setItem('vn_cart', JSON.stringify(cart));
     showToast('Produto adicionado ao carrinho');
     updateHeaderDots();
+  }
+
+  /** Gera o botão/ação de "adicionar" de um card: produto sem tamanho
+   * continua um toque só e direto; produto com tamanho revela os chips no
+   * lugar do botão, sem navegar pra página do produto. */
+  function renderQuickAddAction(p, btnClass, btnLabel){
+    const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+    if (!sizes.length) {
+      return `<button class="${btnClass}" onclick="event.stopPropagation();quickAddFromGrid('${p._id}','')">${btnLabel}</button>`;
+    }
+    return `
+      <div class="qa-wrap">
+        <button class="${btnClass} qa-btn" onclick="event.stopPropagation();toggleQuickSize(this)">${btnLabel}</button>
+        <div class="qa-sizes" style="display:none">
+          ${sizes.map(s => `<button type="button" class="qa-size-chip" data-tamanho="${escapeHtmlTexto(s)}" onclick="event.stopPropagation();addCartComTamanho(this,'${p._id}')">${escapeHtmlTexto(s)}</button>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function toggleQuickSize(btn){
+    const wrap = btn.closest('.qa-wrap');
+    if (!wrap) return;
+    const sizesBox = wrap.querySelector('.qa-sizes');
+    if (!sizesBox) return;
+    const abrindo = sizesBox.style.display === 'none';
+    sizesBox.style.display = abrindo ? 'flex' : 'none';
+    btn.style.display = abrindo ? 'none' : '';
+  }
+
+  function addCartComTamanho(chip, id){
+    quickAddFromGrid(id, chip.dataset.tamanho || '');
+    const wrap = chip.closest('.qa-wrap');
+    if (wrap) {
+      const sizesBox = wrap.querySelector('.qa-sizes');
+      const btn = wrap.querySelector('.qa-btn');
+      if (sizesBox) sizesBox.style.display = 'none';
+      if (btn) btn.style.display = '';
+    }
   }
 
   function showToast(msg){
@@ -2356,7 +2414,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
               </div>
               ${indisponivel
                 ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
-                : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddFromGrid('${p._id}')">Adicionar</button>`
+                : renderQuickAddAction(p, 'btn-fill prod-add-btn', 'Adicionar')
               }
             </div>
           </div>

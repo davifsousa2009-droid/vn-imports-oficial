@@ -875,6 +875,17 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 @media(prefers-reduced-motion:reduce){
   .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn{animation:none !important;transition:none !important}
 }
+
+/* Chips de tamanho revelados no card (destaques, favoritos, grid) — mesma
+   linguagem visual do seletor de tamanho da página do produto (.pv-size),
+   só que compacto o bastante pra caber num rodapé de card. */
+.qa-wrap{margin-top:12px}
+.qa-sizes{display:flex;flex-wrap:wrap;gap:6px}
+.qa-size-chip{
+  min-width:36px;height:36px;padding:0 8px;border:1.5px solid var(--border);background:transparent;
+  font-size:12px;font-weight:600;color:var(--ink);border-radius:8px;cursor:pointer;transition:all .15s ease;
+}
+.qa-size-chip:hover,.qa-size-chip:active{background:var(--ink2);color:var(--bg);border-color:var(--gold2)}
 .prod-card{
   background:#ffffff;cursor:pointer;position:relative;
   transition:background .15s;
@@ -2514,7 +2525,7 @@ function renderHome(){
         </div>
         <div class="hfc-foot">
           <span class="hfc-price">${R$(p.price)}</span>
-          <button class="btn-sm" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
+          ${renderQuickAddAction(p, 'btn-sm', '+ Carrinho')}
         </div>
       </div>
     </div>`).join('');
@@ -2632,7 +2643,7 @@ function renderGrid(list){
 
             ${indisponivel
               ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
-              : `<button class="btn-fill prod-add-btn" onclick="event.stopPropagation();quickAddCart(${p.id})">Adicionar ao Carrinho</button>`
+              : renderQuickAddAction(p, 'btn-fill prod-add-btn', 'Adicionar ao Carrinho')
             }
           </div>
         </div>
@@ -2640,12 +2651,6 @@ function renderGrid(list){
   }).join('');
 
   container.innerHTML = productCardHTML;
-}
-
-
-// ─── Quick add (abre a página do produto para selecionar tamanho) ───
-function quickAddCart(pid){
-  openProd(pid);
 }
 
 
@@ -2748,8 +2753,14 @@ function openProd(id){
     addBtn.disabled = indisponivel;
     addBtn.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
     addBtn.onclick = indisponivel ? null : ()=>{
+      // Só exige tamanho quando o produto de fato tem tamanho cadastrado —
+      // achado ao mexer nesta linha: antes disso, `!sel` bloqueava qualquer
+      // produto sem tamanho também, porque window.__vn_selectedSize começa
+      // vazio pra "tamanho único" (ver openProd acima). Corrigido junto,
+      // já que a regra do site inteiro agora é a mesma em todo lugar.
+      const sizesPv = Array.isArray(p.sizes) ? p.sizes : [];
       const sel = (window.__vn_selectedSize || '').trim();
-      if(!sel){
+      if (sizesPv.length && !sizesPv.includes(sel)) {
         const box = document.getElementById('pvSizes');
         if(box){
           box.insertAdjacentHTML('afterend', '<div class="pv-alert-tam" style="margin-top:-12px;margin-bottom:18px;font-size:12px;color:#fff;background:#A0391E;border:1px solid rgba(160,57,30,.75);padding:10px 12px;border-radius:12px;">Selecione um tamanho para adicionar ao carrinho.</div>');
@@ -2757,7 +2768,7 @@ function openProd(id){
         box?.scrollIntoView({behavior:'smooth',block:'center'});
         return;
       }
-      addCart(p);
+      addCart(p, sel);
     };
   }
 
@@ -2903,7 +2914,7 @@ function renderWL(){
       <div class="prod-img-wrap">
         ${p.img?`<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-hover-btns">
-          <button class="phb phb-cart" onclick="event.stopPropagation();addCart(S.products[${p.id}])">+ Carrinho</button>
+          ${renderQuickAddAction(p, 'phb phb-cart', '+ Carrinho')}
           <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()"><i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Remover</button>
         </div>
       </div>
@@ -2916,7 +2927,14 @@ function renderWL(){
 }
 
 /* ─── CART ─── */
-function addCart(p){
+// tamanho vem sempre explícito de quem chama — nunca lido de uma variável
+// global compartilhada. Era exatamente essa variável (window.__vn_selectedSize)
+// que causava o bug de tamanho herdado: ela guardava o tamanho do ÚLTIMO
+// produto aberto na página do produto, e um clique em "+ Carrinho" nos
+// destaques ou nos favoritos (que nunca passa pela página do produto) lia
+// esse valor achando que era do produto errado — às vezes vazio, às vezes o
+// tamanho de um produto completamente diferente.
+function addCart(p, tamanho){
   // Checagem client-side só de UX (evita o cliente chegar até o checkout pra
   // descobrir ali) — quem trava de verdade é o decremento atômico no servidor.
   if (p.stock === 0) {
@@ -2927,8 +2945,12 @@ function addCart(p){
     showToast('warn','Este produto está temporariamente indisponível para compra.');
     return;
   }
-  const sel = (window.__vn_selectedSize || '').trim();
-  if(!sel){
+  const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+  const sel = (tamanho || '').trim();
+  // Só exige tamanho de produto que de fato tem tamanhos cadastrados — e o
+  // valor precisa ser um dos tamanhos reais do produto, não qualquer string
+  // não-vazia (mesma whitelist aplicada no servidor em POST /api/orders).
+  if (sizes.length && !sizes.includes(sel)) {
     showToast('warn','Selecione um tamanho.');
     return;
   }
@@ -2945,6 +2967,49 @@ function addCart(p){
   renderCart();
   showToast('ok', p.name+' adicionado!');
   setTimeout(openCart,350);
+}
+
+/** Gera o botão/ação de "adicionar" de um card: produto sem tamanho continua
+ * um toque só e direto; produto com tamanho revela os chips no lugar do
+ * botão (ver toggleQuickSize/addCartComTamanho) em vez de navegar pra
+ * página do produto — mesmo padrão nos três carrosséis (grid, destaques,
+ * favoritos), pra um produto nunca se comportar diferente dependendo de
+ * onde o cliente clicou. */
+function renderQuickAddAction(p, btnClass, btnLabel){
+  const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+  if (!sizes.length) {
+    return `<button class="${btnClass}" onclick="event.stopPropagation();addCart(S.products[${p.id}],'')">${btnLabel}</button>`;
+  }
+  return `
+    <div class="qa-wrap">
+      <button class="${btnClass} qa-btn" onclick="event.stopPropagation();toggleQuickSize(this)">${btnLabel}</button>
+      <div class="qa-sizes" style="display:none">
+        ${sizes.map(s => `<button type="button" class="qa-size-chip" data-tamanho="${escHtml(s)}" onclick="event.stopPropagation();addCartComTamanho(this,${p.id})">${escHtml(s)}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleQuickSize(btn){
+  const wrap = btn.closest('.qa-wrap');
+  if (!wrap) return;
+  const sizesBox = wrap.querySelector('.qa-sizes');
+  if (!sizesBox) return;
+  const abrindo = sizesBox.style.display === 'none';
+  sizesBox.style.display = abrindo ? 'flex' : 'none';
+  btn.style.display = abrindo ? 'none' : '';
+}
+
+function addCartComTamanho(chip, pid){
+  const p = S.products[pid];
+  if (!p) return;
+  addCart(p, chip.dataset.tamanho || '');
+  const wrap = chip.closest('.qa-wrap');
+  if (wrap) {
+    const sizesBox = wrap.querySelector('.qa-sizes');
+    const btn = wrap.querySelector('.qa-btn');
+    if (sizesBox) sizesBox.style.display = 'none';
+    if (btn) btn.style.display = '';
+  }
 }
 
 function openCart(){  document.getElementById('cartDrawer').classList.add('on');  document.getElementById('overlay').classList.add('on'); }
@@ -3560,6 +3625,21 @@ async function checkout() {
               syncDots();
             }
             throw new Error('Um item do seu carrinho ficou indisponível e foi removido. Revise seu carrinho e tente novamente.');
+          }
+          // Cobre carrinho salvo no navegador ANTES desta correção, com um
+          // tamanho vazio ou herdado de outro produto (ver o bug corrigido
+          // em addCart/renderQuickAddAction) — remove o item específico em
+          // vez de deixar o cliente preso tentando pagar um pedido que o
+          // servidor nunca vai aceitar.
+          if (d?.motivo === 'TAMANHO_INVALIDO' && d?.produtoId) {
+            const idxRemover = cart.findIndex((it) => String(it._id || it.productId) === String(d.produtoId));
+            if (idxRemover !== -1) {
+              cart.splice(idxRemover, 1);
+              saveC();
+              renderCart();
+              syncDots();
+            }
+            throw new Error('Um item do seu carrinho estava sem tamanho válido e foi removido. Adicione-o de novo escolhendo o tamanho.');
           }
           throw new Error(d?.erro || d?.message || 'Falha ao criar pedido.');
         }
