@@ -599,7 +599,13 @@ const OrderSchema = new mongoose.Schema(
     // Trava de idempotência: true assim que o estoque deste pedido já foi
     // devolvido (abandono via cron ou cancelamento manual pelo admin). Nunca
     // devolvido duas vezes — ver devolverEstoqueDoPedido.
-    estoqueRevertido: { type: Boolean, default: false }
+    estoqueRevertido: { type: Boolean, default: false },
+    // null = ainda tem CPF/e-mail/telefone/endereço reais. Data = quando os
+    // dados pessoais deste pedido foram removidos (retenção por idade,
+    // abandono nunca pago, ou pedido de exclusão do titular — ver
+    // camposAnonimizacaoPedido). Também serve de trava de idempotência: uma
+    // vez preenchido, as rotinas de expurgo pulam este pedido.
+    anonimizadoEm: { type: Date, default: null }
   },
   { timestamps: true }
 );
@@ -655,6 +661,13 @@ const ConfigSchema = new mongoose.Schema({
   // documento de empresa): vazio aqui é vazio nas páginas, com aviso pro
   // lojista completar, não um número inventado.
   cnpj: { type: String, default: '' },
+  // Prazo (em anos) até um pedido PAGO ser anonimizado (ver
+  // /api/cron/anonimizar-pedidos-antigos). null = painel nunca configurado —
+  // usa RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK. 5 anos é referência provisória
+  // (CTN art. 173), não parecer jurídico/contábil — mantido configurável
+  // aqui de propósito pra ajustar sem redeploy assim que confirmado com o
+  // contador do lojista.
+  retencaoPedidosPagosAnos: { type: Number, default: null },
 
   // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
   // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
@@ -728,6 +741,13 @@ function mergePublicSettings(doc) {
   };
 }
 
+// Referência provisória (CTN art. 173 — prazo de 5 anos que a Receita tem
+// pra constituir crédito tributário), NÃO parecer jurídico/contábil. Usado só
+// como fallback até o lojista confirmar o prazo certo com o contador dele
+// (varia por regime tributário) e salvar um valor no painel — ver
+// retencaoPedidosPagosAnos no ConfigSchema e /api/cron/anonimizar-pedidos-antigos.
+const RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK = 5;
+
 function mergePublicConfig(doc) {
   const nomeDb = doc?.nomeLoja?.trim();
   const pixDb = doc?.chavePix != null ? String(doc.chavePix).trim() : '';
@@ -741,6 +761,14 @@ function mergePublicConfig(doc) {
   const pageTitleSuffixSalvo = doc?.pageTitleSuffix ? String(doc.pageTitleSuffix).trim() : '';
   const pageTitleSuffixEfetivo =
     pageTitleSuffixSalvo || String(configPadrao.pageTitleSuffix || 'Loja Oficial').trim();
+  // Mesmo padrão de painel > fallback fixo dos campos acima — aqui o fallback
+  // é RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK (ver comentário na constante).
+  const retencaoPedidosPagosAnosSalvo =
+    doc?.retencaoPedidosPagosAnos != null && Number.isFinite(Number(doc.retencaoPedidosPagosAnos)) && Number(doc.retencaoPedidosPagosAnos) > 0
+      ? Number(doc.retencaoPedidosPagosAnos)
+      : null;
+  const retencaoPedidosPagosAnosEfetivo =
+    retencaoPedidosPagosAnosSalvo || RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK;
   // CNPJ não tem fallback nenhum (ver comentário no schema) — só o que o
   // painel salvou, ou vazio mesmo, pras páginas legais saberem mostrar um
   // aviso de "complete isso" em vez de inventar um número.
@@ -791,6 +819,8 @@ function mergePublicConfig(doc) {
     pageTitleSuffix: pageTitleSuffixSalvo,
     pageTitleSuffixEfetivo,
     cnpj: cnpjSalvo,
+    retencaoPedidosPagosAnos: retencaoPedidosPagosAnosSalvo,
+    retencaoPedidosPagosAnosEfetivo,
 
     // Textos do hero — vazio de propósito quando não configurado no admin,
     // pra o front saber que deve preservar o texto padrão já no HTML.
@@ -1366,6 +1396,31 @@ async function rollbackStock(decrementedList) {
 }
 
 /**
+ * Campos de dado pessoal zerados na anonimização de um pedido — usado tanto
+ * pra pedido nunca pago (devolverEstoqueDoPedido, abaixo) quanto pra pedido
+ * pago velho (ver /api/cron/anonimizar-pedidos-antigos) e pra pedido de
+ * exclusão sob demanda de um comprador específico (ver
+ * /api/admin/orders/anonimizar-comprador). Mantém tudo que tem valor de
+ * histórico de vendas — total, items, frete, status — e generaliza em vez de
+ * apagar cidade/estado: sozinhos, sem rua/número/CEP, não identificam
+ * ninguém, mas ainda dão pro lojista análise regional de vendas.
+ */
+function camposAnonimizacaoPedido() {
+  return {
+    customerName: '',
+    email: '',
+    telefone: '',
+    cpf: '',
+    rua: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cep: '',
+    anonimizadoEm: new Date()
+  };
+}
+
+/**
  * Devolve ao estoque os itens de um pedido que nunca foi pago — abandono
  * detectado pelo cron (ver /api/cron/liberar-estoque-pendente) ou cancelamento
  * manual do admin (ver PUT /api/orders/:id). Sem isso, todo pedido 'Pendente'
@@ -1373,11 +1428,17 @@ async function rollbackStock(decrementedList) {
  * estoque decrementado na criação pra sempre — ver rollbackStock acima, que só
  * cobre falha DENTRO da própria criação do pedido, não abandono depois dela.
  *
+ * Também anonimiza o pedido nesse mesmo momento: um pedido nunca pago não
+ * gerou venda nem documento fiscal nenhum, então não há razão pra guardar
+ * CPF/endereço dele nem um dia além do necessário pra confirmar que ele não
+ * vai virar venda. Isso nunca acontece com Pago->Cancelado (reembolso depois
+ * do envio, por exemplo) — esse caso não passa por aqui, ver PUT /api/orders/:id.
+ *
  * Idempotente e seguro contra corrida: o findOneAndUpdate abaixo só "ganha" o
  * direito de devolver quem conseguir marcar estoqueRevertido false->true
  * primeiro — atômico por documento no Mongo, então mesmo que essa função seja
  * chamada duas vezes pro mesmo pedido (cron sobreposto, clique duplo do admin)
- * apenas uma delas de fato incrementa o estoque.
+ * apenas uma delas de fato incrementa o estoque (e anonimiza).
  *
  * Só incrementa itens com estoqueDecrementado:true (gravado na criação do
  * pedido) — produtos com controle de estoque desativado (estoque:null) nunca
@@ -1386,7 +1447,7 @@ async function rollbackStock(decrementedList) {
 async function devolverEstoqueDoPedido(orderId, novoStatus) {
   const order = await Order.findOneAndUpdate(
     { _id: orderId, estoqueRevertido: { $ne: true } },
-    { $set: { estoqueRevertido: true, status: novoStatus } },
+    { $set: { estoqueRevertido: true, status: novoStatus, ...camposAnonimizacaoPedido() } },
     { new: false }
   );
   if (!order) return false; // já tinha sido revertido, ou pedido não existe
@@ -1710,6 +1771,54 @@ app.delete('/api/orders/:id', verificarJWT, async (req, res) => {
   }
 });
 
+/** Monta o filtro $or de busca por comprador (CPF e/ou e-mail), compartilhado
+ * entre a busca (GET) e a anonimização sob demanda (POST) abaixo — pra nunca
+ * divergir quem a busca mostra do que a anonimização de fato afeta. */
+function montarFiltroComprador({ cpf, email }) {
+  const or = [];
+  const cpfDigitos = cpf ? String(cpf).replace(/\D/g, '') : '';
+  const emailBusca = email ? String(email).trim().toLowerCase() : '';
+  if (cpfDigitos) or.push({ cpf: cpfDigitos });
+  if (emailBusca) or.push({ email: { $regex: '^' + escapeRegexEspecial(emailBusca) + '$', $options: 'i' } });
+  return or.length ? { $or: or } : null;
+}
+
+// Busca os pedidos de um comprador específico (por CPF ou e-mail), pro admin
+// conferir quais registros existem ANTES de disparar a anonimização — sem
+// isso, o lojista teria que vasculhar a tabela de pedidos manualmente pra
+// confirmar que está anonimizando a pessoa certa.
+app.get('/api/admin/orders/buscar-por-comprador', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const filtro = montarFiltroComprador({ cpf: req.query?.cpf, email: req.query?.email });
+    if (!filtro) return res.status(400).json({ erro: 'Informe CPF ou e-mail do comprador.' });
+    const list = await Order.find(filtro).sort({ createdAt: -1 }).lean();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao buscar pedidos do comprador', detalhe: err.message });
+  }
+});
+
+// Atende um pedido de exclusão (LGPD) de um comprador específico: anonimiza
+// TODOS os pedidos dele (qualquer status, qualquer idade — diferente das
+// rotinas por idade acima, aqui é sob demanda, disparado pelo lojista) sem
+// apagar o histórico de vendas em si (total/itens/data seguem preservados,
+// só a identificação do comprador é removida — ver camposAnonimizacaoPedido).
+app.post('/api/admin/orders/anonimizar-comprador', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const filtro = montarFiltroComprador({ cpf: req.body?.cpf, email: req.body?.email });
+    if (!filtro) return res.status(400).json({ erro: 'Informe CPF ou e-mail do comprador.' });
+    const r = await Order.updateMany(
+      { ...filtro, anonimizadoEm: null },
+      { $set: camposAnonimizacaoPedido() }
+    );
+    res.json({ mensagem: 'Dados do comprador removidos.', pedidosAfetados: r.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao anonimizar pedidos do comprador', detalhe: err.message });
+  }
+});
+
 // Prazo pra considerar um pedido 'Pendente' abandonado. Ajustável: só precisa
 // ser longo o bastante pra não cancelar um pagamento genuinamente em andamento
 // (Pix ainda não expirou, cliente ainda na tela de cartão).
@@ -1750,6 +1859,64 @@ app.get('/api/cron/liberar-estoque-pendente', async (req, res) => {
     res.json({ ok: true, verificados: pedidosExpirados.length, liberados });
   } catch (err) {
     console.error('[cron/liberar-estoque-pendente] Erro:', err.message);
+    res.status(500).json({ ok: false, erro: err.message });
+  }
+});
+
+/**
+ * Cron da Vercel (ver vercel.json) — anonimiza pedidos PAGOS mais velhos que
+ * o prazo de retenção configurado (painel > RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK,
+ * ver mergePublicConfig). Deliberadamente uma rota/agendamento SEPARADO do
+ * cron de liberação de estoque acima: liberar estoque é sentido no mesmo dia
+ * pelo lojista (produto volta a ficar vendável), enquanto anonimizar é faxina
+ * sem urgência — se esta rotina falhar, travar em timeout de função serverless
+ * ou ficar lenta numa base grande, isso não pode arrastar a liberação de
+ * estoque junto.
+ *
+ * Não mexe em pedido nunca pago — esse caso já é resolvido no mesmo instante
+ * do cancelamento por devolverEstoqueDoPedido, não por idade aqui.
+ *
+ * Protegida por CRON_SECRET, mesmo padrão de /api/cron/liberar-estoque-pendente.
+ *
+ * Idempotente: cada pedido processado só se anonimizadoEm ainda for null
+ * (trava atômica no próprio updateOne) — rodar duas vezes não afeta de novo
+ * quem já foi anonimizado.
+ */
+app.get('/api/cron/anonimizar-pedidos-antigos', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ ok: false, reason: 'UNAUTHORIZED' });
+  }
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const configDoc = await Config.findOne().lean();
+    const anosSalvo = configDoc?.retencaoPedidosPagosAnos;
+    const anos =
+      Number.isFinite(Number(anosSalvo)) && Number(anosSalvo) > 0
+        ? Number(anosSalvo)
+        : RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK;
+
+    const limite = new Date();
+    limite.setFullYear(limite.getFullYear() - anos);
+
+    const candidatos = await Order.find({
+      status: 'Pago',
+      anonimizadoEm: null,
+      createdAt: { $lt: limite }
+    }).select('_id').lean();
+
+    let anonimizados = 0;
+    for (const p of candidatos) {
+      const r = await Order.updateOne(
+        { _id: p._id, anonimizadoEm: null },
+        { $set: camposAnonimizacaoPedido() }
+      );
+      if (r.modifiedCount) anonimizados++;
+    }
+
+    res.json({ ok: true, retencaoAnos: anos, verificados: candidatos.length, anonimizados });
+  } catch (err) {
+    console.error('[cron/anonimizar-pedidos-antigos] Erro:', err.message);
     res.status(500).json({ ok: false, erro: err.message });
   }
 });
@@ -1814,6 +1981,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       cepOrigem,
       pageTitleSuffix,
       cnpj,
+      retencaoPedidosPagosAnos,
 
       // ✅ NOVO: hero do split
       heroImagem,
@@ -1894,6 +2062,22 @@ app.post('/api/config', verificarJWT, async (req, res) => {
         return res.status(400).json({ erro: 'CNPJ inválido — use 14 dígitos ou deixe em branco.' });
       }
       dados.cnpj = cnpjDigitos;
+    }
+    if (retencaoPedidosPagosAnos !== undefined) {
+      // Vazio é válido de propósito — mesmo raciocínio do cepOrigem: "desfaz"
+      // o valor salvo aqui e volta a depender de RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK.
+      // Faixa de 1-20 anos é só uma trava de sanidade contra erro de digitação
+      // (ex: "500"), não um limite legal.
+      const anosRaw = String(retencaoPedidosPagosAnos).trim();
+      if (!anosRaw) {
+        dados.retencaoPedidosPagosAnos = null;
+      } else {
+        const anosNum = Number(anosRaw);
+        if (!Number.isFinite(anosNum) || !Number.isInteger(anosNum) || anosNum < 1 || anosNum > 20) {
+          return res.status(400).json({ erro: 'Prazo de retenção inválido — use um número inteiro de anos entre 1 e 20, ou deixe em branco.' });
+        }
+        dados.retencaoPedidosPagosAnos = anosNum;
+      }
     }
     if (!dados.clienteTag) dados.clienteTag = slugifyTenantTag(dados.nomeLoja || configPadrao.nomeLoja);
 

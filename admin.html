@@ -611,6 +611,19 @@ tr:hover td{background:#FAFAF8}
             <div id="ordersBody" class="tbl-scroll" style="padding:18px"> <div class="empty">Carregando…</div></div>
           </div>
         </div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Privacidade — Remover Dados de um Comprador</div>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">
+            Atende um pedido de exclusão de dados (LGPD) de um comprador específico. Busca primeiro pra você conferir os pedidos antes de remover — a ação só apaga CPF, e-mail, telefone e endereço; total, itens e data continuam no histórico de vendas.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <input class="fi" id="privCpf" placeholder="CPF do comprador" type="text" maxlength="14" style="flex:1;min-width:160px" autocomplete="off">
+            <input class="fi" id="privEmail" placeholder="ou e-mail do comprador" type="text" style="flex:1;min-width:200px" autocomplete="off">
+            <button class="btn btn-g" onclick="buscarPedidosPorComprador()">Buscar</button>
+          </div>
+          <div id="privResultado"></div>
+        </div>
       </div>
 
       <!-- CONFIGURAÇÃO (loja) -->
@@ -669,6 +682,11 @@ tr:hover td{background:#FAFAF8}
               <label class="fl">CNPJ</label>
               <input class="fi" id="cfg-cnpj" placeholder="00.000.000/0000-00" type="text" maxlength="18" autocomplete="off">
               <p style="font-size:11px;color:#999;margin-top:6px">Exigido nas páginas de Política de Privacidade, Termos de Uso e Devolução. Sem isso, elas mostram um aviso pra completar.</p>
+            </div>
+            <div class="fg">
+              <label class="fl">Retenção de Pedidos Pagos (anos)</label>
+              <input class="fi" id="cfg-retencaoAnos" placeholder="5" type="number" min="1" max="20" step="1" autocomplete="off" oninput="atualizarHintRetencaoAnos()">
+              <p style="font-size:11px;color:#999;margin-top:6px" id="cfg-retencaoAnosHint">Depois desse prazo, CPF/e-mail/telefone/endereço de um pedido pago são removidos automaticamente (mantendo total, itens e data pro seu histórico de vendas). 5 anos é referência provisória (CTN art. 173) — confirme o prazo certo com seu contador antes de considerar definitivo.</p>
             </div>
           </div>
 
@@ -2134,6 +2152,89 @@ async function excluirPedido(id) {
   }
 }
 
+// ── PRIVACIDADE (LGPD) — remover dados de um comprador específico ─────
+let privUltimaBuscaCpf = '';
+let privUltimaBuscaEmail = '';
+
+async function buscarPedidosPorComprador() {
+  const cpf = document.getElementById('privCpf').value.trim();
+  const email = document.getElementById('privEmail').value.trim();
+  const box = document.getElementById('privResultado');
+  if (!cpf && !email) {
+    box.innerHTML = '<p style="font-size:13px;color:#a0391e">Informe o CPF ou o e-mail do comprador.</p>';
+    return;
+  }
+  privUltimaBuscaCpf = cpf;
+  privUltimaBuscaEmail = email;
+  box.innerHTML = '<div class="empty">Buscando…</div>';
+  try {
+    const params = new URLSearchParams();
+    if (cpf) params.set('cpf', cpf);
+    if (email) params.set('email', email);
+    const r = await fetch(API + '/admin/orders/buscar-por-comprador?' + params.toString(), {
+      headers: headersComJwt({})
+    });
+    if (r.status === 401) { relogar(); box.innerHTML = ''; return; }
+    const list = await r.json().catch(() => []);
+    if (!r.ok) throw new Error('http ' + r.status);
+    renderResultadoBuscaComprador(Array.isArray(list) ? list : []);
+  } catch {
+    box.innerHTML = '<p style="font-size:13px;color:#a0391e">Erro ao buscar. Tente novamente.</p>';
+  }
+}
+
+function renderResultadoBuscaComprador(list) {
+  const box = document.getElementById('privResultado');
+  if (!list.length) {
+    box.innerHTML = '<p style="font-size:13px;color:#888">Nenhum pedido encontrado com esse CPF/e-mail.</p>';
+    return;
+  }
+  const jaAnonimizados = list.filter(o => o.anonimizadoEm).length;
+  const linhas = list.map(o => {
+    const data = o.createdAt ? new Date(o.createdAt).toLocaleDateString('pt-BR') : '—';
+    const total = Number(o.total);
+    const totalTxt = Number.isFinite(total) ? fmt(total) : '—';
+    const nome = o.customerName ? escHtml(String(o.customerName)) : '—';
+    return `<tr>
+      <td>${data}</td>
+      <td>${nome}</td>
+      <td>${escHtml(String(o.status || '—'))}</td>
+      <td>${totalTxt}</td>
+      <td>${o.anonimizadoEm ? 'Já sem dados pessoais' : 'Tem CPF/e-mail/endereço'}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `
+    <table>
+      <thead><tr><th>Data</th><th>Nome</th><th>Status</th><th>Total</th><th>Dados pessoais</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div style="margin-top:14px">
+      ${jaAnonimizados === list.length
+        ? '<p style="font-size:13px;color:#888">Todos os pedidos encontrados já estão sem dados pessoais.</p>'
+        : `<button class="btn btn-danger btn-sm" onclick="anonimizarComprador()">Remover dados deste comprador (${list.length - jaAnonimizados} pedido${list.length - jaAnonimizados === 1 ? '' : 's'})</button>`
+      }
+    </div>`;
+}
+
+async function anonimizarComprador() {
+  if (!confirm('Remover CPF, e-mail, telefone e endereço de todos os pedidos deste comprador?\nO total, os itens e a data de cada pedido continuam no histórico. Essa ação não pode ser desfeita.')) return;
+  try {
+    const r = await fetch(API + '/admin/orders/anonimizar-comprador', {
+      method: 'POST',
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ cpf: privUltimaBuscaCpf, email: privUltimaBuscaEmail })
+    });
+    if (r.status === 401) { relogar(); return; }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d?.erro || 'http ' + r.status);
+    toast(`Dados removidos de ${d.pedidosAfetados} pedido${d.pedidosAfetados === 1 ? '' : 's'}.`);
+    buscarPedidosPorComprador();
+    loadOrders();
+  } catch (e) {
+    alert(e.message || 'Não foi possível remover os dados. Tente novamente.');
+  }
+}
+
 // ── TEMA DE FUNDO (amostras clicáveis) ────────────────
 // Espelha TEMAS_FUNDO do server.js — mantenha os dois catálogos em
 // sincronia se adicionar/mudar um tema. bg/bg2/border sempre juntos porque
@@ -2151,6 +2252,8 @@ let cepOrigemSalvoAtual = '';
 let cepOrigemEfetivoAtual = '';
 let pageTitleSuffixSalvoAtual = '';
 let pageTitleSuffixEfetivoAtual = '';
+let retencaoAnosSalvoAtual = null;
+let retencaoAnosEfetivoAtual = null;
 
 function formatarCep(digitos) {
   const d = String(digitos || '').replace(/\D/g, '');
@@ -2221,6 +2324,37 @@ function atualizarHintPageTitleSuffix() {
   }
 }
 
+// Mesmo raciocínio dos hints acima: painel > RETENCAO_PEDIDOS_PAGOS_ANOS_FALLBACK
+// (ver server.js/mergePublicConfig) — avisa de onde vem o prazo em uso quando
+// o campo está vazio, e alerta que 5 anos é só referência provisória.
+function atualizarHintRetencaoAnos() {
+  const hint = document.getElementById('cfg-retencaoAnosHint');
+  if (!hint) return;
+  const valor = document.getElementById('cfg-retencaoAnos').value.trim();
+  const base = '5 anos é referência provisória (CTN art. 173) — confirme o prazo certo com seu contador antes de considerar definitivo.';
+
+  if (valor) {
+    const num = Number(valor);
+    if (!Number.isFinite(num) || !Number.isInteger(num) || num < 1 || num > 20) {
+      hint.textContent = 'Use um número inteiro de anos entre 1 e 20.';
+      hint.style.color = '#a0391e';
+      return;
+    }
+    hint.style.color = '#999';
+    hint.textContent = (num === retencaoAnosSalvoAtual
+      ? 'Este é o prazo em uso agora.'
+      : 'Será usado assim que você salvar.') + ' ' + base;
+    return;
+  }
+
+  hint.style.color = '#999';
+  if (retencaoAnosSalvoAtual) {
+    hint.textContent = `Deixar em branco e salvar apaga o prazo salvo (${retencaoAnosSalvoAtual} anos) e volta a usar o padrão do sistema. ${base}`;
+  } else {
+    hint.textContent = `Nenhum prazo salvo aqui ainda — está sendo usado ${retencaoAnosEfetivoAtual || 5} anos (padrão do sistema). ${base}`;
+  }
+}
+
 function renderTemaFundoGrid() {
   const grid = document.getElementById('temaFundoGrid');
   if (!grid) return;
@@ -2267,6 +2401,10 @@ async function loadConfig() {
     pageTitleSuffixEfetivoAtual = d.pageTitleSuffixEfetivo || '';
     atualizarHintPageTitleSuffix();
     document.getElementById('cfg-cnpj').value = formatarCnpj(d.cnpj || '');
+    document.getElementById('cfg-retencaoAnos').value = d.retencaoPedidosPagosAnos || '';
+    retencaoAnosSalvoAtual = d.retencaoPedidosPagosAnos || null;
+    retencaoAnosEfetivoAtual = d.retencaoPedidosPagosAnosEfetivo || null;
+    atualizarHintRetencaoAnos();
 
     document.getElementById('cfg-freteGratisAtivo').checked = !!d.freteGratisAtivo;
     document.getElementById('cfg-freteGratisValor').value = d.freteGratisValor || '';
@@ -2312,6 +2450,10 @@ async function loadConfig() {
     pageTitleSuffixEfetivoAtual = '';
     atualizarHintPageTitleSuffix();
     document.getElementById('cfg-cnpj').value = '';
+    document.getElementById('cfg-retencaoAnos').value = '';
+    retencaoAnosSalvoAtual = null;
+    retencaoAnosEfetivoAtual = null;
+    atualizarHintRetencaoAnos();
   }
 }
 
@@ -2327,6 +2469,7 @@ async function salvarConfig() {
   const cepOrigem = document.getElementById('cfg-cepOrigem').value.trim();
   const pageTitleSuffix = document.getElementById('cfg-pageTitleSuffix').value.trim();
   const cnpj = document.getElementById('cfg-cnpj').value.trim();
+  const retencaoAnos = document.getElementById('cfg-retencaoAnos').value.trim();
 
   const freteGratisAtivo = !!document.getElementById('cfg-freteGratisAtivo')?.checked;
   const freteGratisValor = Number(document.getElementById('cfg-freteGratisValor')?.value) || 0;
@@ -2370,6 +2513,14 @@ async function salvarConfig() {
     return;
   }
 
+  if (retencaoAnos) {
+    const retencaoAnosNum = Number(retencaoAnos);
+    if (!Number.isFinite(retencaoAnosNum) || !Number.isInteger(retencaoAnosNum) || retencaoAnosNum < 1 || retencaoAnosNum > 20) {
+      showMsg(msg, 'Retenção de pedidos pagos precisa ser um número inteiro de anos entre 1 e 20 (ou fique em branco).', 'er');
+      return;
+    }
+  }
+
   // Só inclui heroImagem/heroImagemUrl no payload quando há um valor novo de verdade.
   // Sem isso, salvar qualquer outro campo (ex: só a cor) apagava a imagem do hero,
   // porque o input de arquivo nunca vem pré-preenchido com a imagem já salva.
@@ -2386,6 +2537,7 @@ async function salvarConfig() {
     cepOrigem: cepOrigemDigitos,
     pageTitleSuffix,
     cnpj: cnpjDigitos,
+    retencaoPedidosPagosAnos: retencaoAnos,
     freteGratisAtivo,
     freteGratisValor,
     parcelamentoAtivo,
@@ -2420,6 +2572,9 @@ async function salvarConfig() {
       pageTitleSuffixEfetivoAtual = d.config?.pageTitleSuffixEfetivo || '';
       atualizarHintPageTitleSuffix();
       document.getElementById('cfg-cnpj').value = formatarCnpj(d.config?.cnpj || '');
+      retencaoAnosSalvoAtual = d.config?.retencaoPedidosPagosAnos || null;
+      retencaoAnosEfetivoAtual = d.config?.retencaoPedidosPagosAnosEfetivo || null;
+      atualizarHintRetencaoAnos();
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');
