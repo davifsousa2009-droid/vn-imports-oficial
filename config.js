@@ -24,7 +24,7 @@ module.exports = {
     ink: '#111111',
     ink2: '#1E1E1E',
     mid: '#444444',
-    muted: '#888888',
+    muted: '#5C5C5C',
     silver: '#BBBBBB',
     border: '#D9D4CC',
     border2: '#C8C2B8',

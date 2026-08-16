@@ -644,11 +644,11 @@ const Order = mongoose.models.Order || mongoose.model('Order', OrderSchema);
 // contraste estranho contra o fundo novo). Espelhado em admin.html — mantenha
 // os dois catálogos em sincronia se adicionar/mudar um tema.
 const TEMAS_FUNDO = {
-  creme: { nome: 'Creme Clássico', bg: '#F7F4F0', bg2: '#EDE9E3', border: '#D9D4CC' },
-  gelo: { nome: 'Branco Gelo', bg: '#F7F8FA', bg2: '#ECEEF1', border: '#DBDFE4' },
-  rose: { nome: 'Rosé Suave', bg: '#FAF3F2', bg2: '#F3E7E5', border: '#E3D0CD' },
-  salvia: { nome: 'Verde Sálvia', bg: '#F4F6F1', bg2: '#E8ECE2', border: '#D3D9C8' },
-  neblina: { nome: 'Azul Névoa', bg: '#F2F5F8', bg2: '#E5EBF0', border: '#CFD9E1' }
+  creme: { nome: 'Creme Clássico', bg: '#F0E9DC', bg2: '#E8DCC7', border: '#C9B896' },
+  gelo: { nome: 'Branco Gelo', bg: '#E8ECF1', bg2: '#DCE3EB', border: '#B8C4D4' },
+  rose: { nome: 'Rosé Suave', bg: '#F3E1DD', bg2: '#EDD3CD', border: '#D1A79C' },
+  salvia: { nome: 'Verde Sálvia', bg: '#E5EADC', bg2: '#DAE1CB', border: '#AFBE96' },
+  neblina: { nome: 'Azul Névoa', bg: '#E1E8EF', bg2: '#D4DEE9', border: '#A8BDD1' }
 };
 
 const ConfigSchema = new mongoose.Schema({
