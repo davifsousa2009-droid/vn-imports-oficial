@@ -3332,12 +3332,18 @@ function construirHeroPlaceholderSvg(cfg) {
   const cor1 = /^#[0-9a-fA-F]{3,8}$/.test(corRaw1) ? corRaw1 : '#9A7A3A';
   const corRaw2 = String(cfg?.colors?.gold2 || '#C4A55A').trim();
   const cor2 = /^#[0-9a-fA-F]{3,8}$/.test(corRaw2) ? corRaw2 : '#C4A55A';
+  // viewBox horizontal (era 1200x1500, vertical — feito pro painel estreito
+  // do hero split antigo). O hero agora é uma faixa larga de ponta a ponta;
+  // um gradiente cortado/esticado não perde informação nenhuma (não é foto,
+  // não tem "parte importante" pra cortar), mas o viewBox errado fazia o
+  // primeiro carregamento de uma loja nova (antes de qualquer foto subida)
+  // parecer um recorte estranho em vez de um gradiente intencional.
   const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 1500'>` +
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'>` +
     `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>` +
     `<stop offset='0%' stop-color='${cor1}'/><stop offset='100%' stop-color='${cor2}'/>` +
     `</linearGradient></defs>` +
-    `<rect width='1200' height='1500' fill='url(#g)'/>` +
+    `<rect width='1920' height='1080' fill='url(#g)'/>` +
     `</svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }

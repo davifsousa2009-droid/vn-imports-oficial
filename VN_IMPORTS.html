@@ -294,31 +294,62 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 [data-loja="nome"]{opacity:0;transition:opacity .3s ease}
 [data-loja="nome"].is-ready{opacity:1}
 
-/* ─── HERO (Split 50/50) ─── */
-.hero{
-  max-width:1240px;
-  margin:0 auto;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  min-height:calc(100vh - 90px);
-  padding:0 36px;
-  align-items:stretch;
-  gap:0;
-  background:var(--bg);
-}
-
-.hero-left{
+/* ─── HERO (foto de largura total, texto sobreposto) ───
+   Decisão registrada: a camada escura é UNIFORME (piso 60% de opacidade em
+   toda a imagem), não um gradiente direcional. Um gradiente teria uma região
+   "clara" fixa por posição — mas a altura do texto do lojista não é fixa
+   (título de 1 linha vs. 3 linhas), então um título longo podia crescer até
+   invadir a região clara e ficar ilegível numa loja que nunca vamos revisar.
+   Piso uniforme não depende de onde o texto para.
+   60% foi calculado (fórmula de contraste WCAG), não estimado: contra o pior
+   caso real — texto branco sobre foto branca pura — 60% garante AA (4.5:1)
+   pro título grande E pro texto normal (mínimo matemático ~54%; 60% é esse
+   mínimo mais margem, por pedido explícito: "prefiro escurecer mais forte a
+   um texto que só funciona em foto escura"). Reforço extra só na direção da
+   base (até 78%) nunca desce abaixo do piso de 60% em lugar nenhum — ver
+   .hero-full-scrim.
+   Altura por min-height (não height fixo): título/descrição comuns rendem
+   exatamente na altura alvo; texto anormalmente longo cresce o container em
+   vez de estourar ou cortar — ver comentário na regra mobile sobre dvh. */
+.hero-full{
+  position:relative;
   display:flex;
   flex-direction:column;
-  justify-content:center;
-  gap:14px;
-  padding:72px 56px 72px 0;
-  background:transparent;
+  justify-content:flex-end;
+  min-height:70vh;
+  min-height:70dvh; /* dvh desconta a barra de endereço do navegador no celular — só some no fallback vh em browser muito antigo, que não reconhece dvh e ignora esta linha */
+  overflow:hidden;
+  background:var(--bg);
 }
-
-/* Substitui o antigo separador visual por respiro (luxo/minimal) */
-.hero-left{
-  border-right:none;
+.hero-full-media{
+  position:absolute;
+  inset:0;
+  z-index:0;
+}
+.hero-full-media img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+}
+.hero-full-scrim{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,.78) 0%, rgba(0,0,0,.6) 60%, rgba(0,0,0,.6) 100%);
+}
+.hero-full-content{
+  position:relative;
+  z-index:2;
+  width:100%;
+  max-width:1240px;
+  margin:0 auto;
+  padding:48px 36px 56px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
 
 .hero-season{
@@ -329,9 +360,12 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   font-weight:700;
   letter-spacing:2px;
   text-transform:uppercase;
-  color:var(--gold);
-  background:rgba(154,122,58,.08);
-  border:1px solid rgba(154,122,58,.2);
+  /* Branco sobre pílula translúcida — testado junto do resto do texto do
+     hero contra o mesmo piso de contraste; o tom dourado original era
+     calibrado pra fundo claro (--bg) e não foi testado contra foto escurecida. */
+  color:#fff;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.32);
   padding:8px 18px;
   border-radius:999px;
   width:fit-content;
@@ -343,10 +377,12 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   font-family:var(--sans);
   font-size:clamp(30px,3.6vw,56px);
   font-weight:900;
-  line-height:0.98;
+  line-height:1.05;
   letter-spacing:-.03em;
   margin-bottom:0;
-  color:var(--ink);
+  /* Branco fixo, só dentro do hero — testado contra o pior caso (foto clara)
+     no piso de 60% da camada escura (ver .hero-full-scrim). */
+  color:#fff;
   /* Inicialmente escondemos o título para evitar FOUC enquanto a fonte carrega */
   opacity: 0;
   transition: opacity 0.4s ease-in;
@@ -357,13 +393,18 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-title i,
 .hero-title strong {
   font-style: italic;
-  color: var(--gold2);
+  /* Era var(--gold2) — testado e reprovado: contraste ~2.4:1 contra o pior
+     caso, abaixo de AA. Sem cor diferenciada aqui, só itálico — branco
+     garantido é melhor que um destaque bonito que falha em foto clara. */
+  color: inherit;
   font-weight: 900;
 }
 
 .hero-lead{
   font-size:15px;
-  color:var(--muted);
+  /* Branco com leve transparência (não var(--muted), calibrado pra fundo
+     claro) — ainda dentro da margem de segurança do piso de 60%. */
+  color:rgba(255,255,255,.92);
   line-height:1.8;
   max-width:520px;
   font-weight:300;
@@ -405,25 +446,16 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 }
 .btn-line:hover{border-color:var(--ink);color:var(--ink)}
 
-.hero-right{
-  padding:54px 0 54px 56px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+/* .btn-line é reaproveitado em outras seções sobre fundo claro (texto
+   escuro, borda clara) — achado ao montar o hero: sem esta sobrescrita
+   escopada, o botão "Categorias" ficaria com texto escuro sobre foto
+   escurecida, quase ilegível. Não toquei na regra base, só o comportamento
+   dela dentro do hero. */
+.hero-full .btn-line{
+  color:#fff;
+  border-color:rgba(255,255,255,.5);
 }
-
-/* Coluna direita: imagem ocupa toda a altura do container */
-.hero-media{
-  width:100%;
-  height:100%;
-  max-height:none;
-  aspect-ratio: auto;
-  border:none;
-  background:transparent;
-  overflow:hidden;
-  border-radius:20px;
-}
-.hero-media img{width:100%;height:100%;object-fit:cover;display:block;border-radius:20px}
+.hero-full .btn-line:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.1)}
 
 /* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
@@ -459,10 +491,15 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
 
 @media(max-width:768px){
-  .hero{grid-template-columns:1fr;min-height:auto;padding:0}
-  .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid transparent;}
-  .hero-right{padding:0 20px 24px 20px;}
-  .hero-media{height:340px;}
+  /* Sem vh puro no celular: tela alta e estreita faz um alvo pensado pro
+     desktop (70vh) virar mais da metade da tela só de hero. max-height em
+     px trava o teto mesmo num aparelho com tela muito alta. */
+  .hero-full{
+    min-height:55vh;
+    min-height:55dvh;
+    max-height:600px;
+  }
+  .hero-full-content{padding:0 20px 40px}
   .hero-benefits-bar{padding:0 20px;margin-top:0}
   .hero-benefits{flex-direction:row;gap:10px;overflow:auto;justify-content:flex-start}
   .hero-benefit{flex:none}
@@ -489,9 +526,11 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 /* glassmorphism search */
 #main-nav{background:rgba(255,255,255,.85);}
 .search-wrap{background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.06)}
+/* Esta regra vem DEPOIS da primeira definição de .hero-lead no cascade —
+   sem repetir a cor branca aqui, ela venceria e apagaria a mudança de lá. */
 .hero-lead{
-  font-size:16px;color:var(--muted);line-height:1.8;
-  max-width:420px;margin-bottom:44px;font-weight:300;
+  font-size:16px;color:rgba(255,255,255,.92);line-height:1.8;
+  max-width:640px;margin-bottom:0;font-weight:300;
 }
 .hero-btns{display:flex;gap:14px;flex-wrap:wrap}
 .btn-fill{
@@ -518,10 +557,6 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .stat-val{font-family:var(--sans);font-size:30px;font-weight:900;line-height:1;display:block;margin-bottom:6px;letter-spacing:-.02em}
 .stat-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
-.hero-right{
-  display:flex;flex-direction:column;justify-content:center;
-  padding:36px 0 36px 52px;gap:16px;
-}
 .hero-feat-card{
   border:1px solid var(--border);background:var(--white);
   display:flex;gap:18px;padding:20px;
@@ -1690,9 +1725,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   /* Zonas de toque ≥44px no header e nos ícones do topo */
   .nav-btn{width:44px;height:44px}
 
-  .hero{grid-template-columns:1fr;min-height:auto;padding:0}
-  .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
-  .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
   .hero-feat-card{flex:1;min-width:240px}
   .sec{padding:60px 20px}
   .cats-inner{padding:0 20px}
@@ -1809,11 +1841,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </nav>
 
-<!-- HERO -->
-<div class="hero">
-  <!-- LEFT: texto -->
-  <div class="hero-left">
-
+<!-- HERO: foto de largura total, texto sobreposto sobre camada escura fixa -->
+<div class="hero-full">
+  <div class="hero-full-media">
+    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyM5QTdBM0EnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNDNEE1NUEnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
+  </div>
+  <div class="hero-full-scrim" aria-hidden="true"></div>
+  <div class="hero-full-content">
     <div class="hero-season" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
     <h1 class="hero-title" id="heroTitle">
       Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
@@ -1829,13 +1863,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div><span class="stat-val" id="stProdutos">—</span><span class="stat-label">Produtos</span></div>
       <div><span class="stat-val" id="stAvaliacao">—</span><span class="stat-label">Avaliação</span></div>
       <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
-    </div>
-  </div>
-
-  <!-- RIGHT: imagem -->
-  <div class="hero-right">
-    <div class="hero-media" aria-label="Imagem principal" role="img">
-      <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMjAwIDE1MDAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyM5QTdBM0EnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNDNEE1NUEnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTIwMCcgaGVpZ2h0PScxNTAwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
     </div>
   </div>
 </div>
