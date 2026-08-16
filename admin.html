@@ -292,6 +292,9 @@ tr:hover td{background:#FAFAF8}
           <div class="stat" id="sBloqueadosBox" style="cursor:pointer" onclick="irParaProdutosBloqueados()" title="Ver produtos bloqueados">
             <div class="stat-lbl">Sem Peso/Dimensão</div><div class="stat-val" id="sBloqueados">—</div><div class="stat-sub">não podem ser vendidos</div>
           </div>
+          <div class="stat" id="sSemPalavrasChaveBox" style="cursor:pointer" onclick="irParaProdutosSemPalavrasChave()" title="Ver produtos sem palavras-chave">
+            <div class="stat-lbl">Sem Palavras-chave</div><div class="stat-val" id="sSemPalavrasChave">—</div><div class="stat-sub">busca só encontra pelo nome</div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Bem-vindo ao Painel Admin</div>
@@ -354,6 +357,12 @@ tr:hover td{background:#FAFAF8}
                 <label class="fl" style="color:#888">Outros Tamanhos</label>
                 <input class="fi" id="f-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
               </div>
+            </div>
+
+            <div class="fg fw">
+              <label class="fl">Palavras-chave (opcional)</label>
+              <input class="fi" id="f-palavraschave" placeholder="Ex: casaco, blusa de frio, agasalho" type="text" autocomplete="off">
+              <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 0">Outros nomes que o cliente pode usar pra este produto na busca — ex: um produto "Jaqueta" pode listar "casaco, blusa de frio". Separe por vírgula. Sem preencher, o produto continua aparecendo normalmente pelo nome/categoria/descrição.</p>
             </div>
           </div>
           <div class="form-btns">
@@ -867,6 +876,12 @@ tr:hover td{background:#FAFAF8}
             <input class="fi" id="e-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
           </div>
         </div>
+
+        <div class="fg fw">
+          <label class="fl">Palavras-chave (opcional)</label>
+          <input class="fi" id="e-palavraschave" placeholder="Ex: casaco, blusa de frio, agasalho" type="text" autocomplete="off">
+          <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 0">Outros nomes que o cliente pode usar pra este produto na busca. Separe por vírgula.</p>
+        </div>
       </div>
       <div class="form-btns">
         <button class="btn btn-p" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar alterações</button>
@@ -1348,6 +1363,12 @@ async function loadStats() {
     // instante e se autocorrige no próximo loadStats()/loadTable().
     const bloqueados = ps.filter(p => statusEnvioProduto(p).bloqueado).length;
     document.getElementById('sBloqueados').textContent = bloqueados;
+    // Visibilidade barata pro campo opcional de busca: não diz QUAL palavra
+    // falta (isso exigiria rastrear buscas sem resultado — fica pra outra
+    // rodada), só quantos produtos ainda dependem só do nome/categoria pra
+    // serem encontrados.
+    const semPalavrasChave = ps.filter(p => !Array.isArray(p.palavrasChave) || !p.palavrasChave.length).length;
+    document.getElementById('sSemPalavrasChave').textContent = semPalavrasChave;
   } catch { /* silencioso */ }
 }
 
@@ -1356,6 +1377,14 @@ function irParaProdutosBloqueados() {
   showPanel('produtos', sbItem);
   loadTable().then(() => {
     renderTable(todosProdutos.filter(p => statusEnvioProduto(p).bloqueado));
+  });
+}
+
+function irParaProdutosSemPalavrasChave() {
+  const sbItem = document.querySelector('.sb-item[onclick*="loadTable"]');
+  showPanel('produtos', sbItem);
+  loadTable().then(() => {
+    renderTable(todosProdutos.filter(p => !Array.isArray(p.palavrasChave) || !p.palavrasChave.length));
   });
 }
 
@@ -1419,6 +1448,7 @@ const descricao = document.getElementById('f-desc').value.trim();
   }
 
   const tamanhos = getTamanhosFromUI('f');
+  const palavrasChave = getPalavrasChaveFromUI('f');
   const pesoKg = document.getElementById('f-peso').value.trim();
   const larguraCm = document.getElementById('f-largura').value.trim();
   const alturaCm = document.getElementById('f-altura').value.trim();
@@ -1428,7 +1458,7 @@ const descricao = document.getElementById('f-desc').value.trim();
     const r = await fetch(API + '/produtos', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos, pesoKg, larguraCm, alturaCm, comprimentoCm })
+      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 
@@ -1452,7 +1482,7 @@ const descricao = document.getElementById('f-desc').value.trim();
 }
 
 async function limpar() {
-  ['f-nome', 'f-preco', 'f-desc', 'f-est', 'f-peso', 'f-largura', 'f-altura', 'f-comprimento'].forEach(id => {
+  ['f-nome', 'f-preco', 'f-desc', 'f-est', 'f-peso', 'f-largura', 'f-altura', 'f-comprimento', 'f-palavraschave'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-file').value = '';
@@ -1704,6 +1734,7 @@ document.getElementById('eest').value = p.estoque != null ? p.estoque : '';
   document.getElementById('ealtura').value = p.alturaCm != null ? p.alturaCm : '';
   document.getElementById('ecomprimento').value = p.comprimentoCm != null ? p.comprimentoCm : '';
   popularTamanhosNoUI('e', p.sizes);
+  popularPalavrasChaveNoUI('e', p.palavrasChave);
 
   if (p.imagem) {
     document.getElementById('eprev-img').src = mediaUrl(p.imagem);
@@ -1751,6 +1782,7 @@ const descricao = document.getElementById('edesc').value.trim();
   const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
 
   const tamanhos = getTamanhosFromUI('e');
+  const palavrasChave = getPalavrasChaveFromUI('e');
   const pesoKg = document.getElementById('epeso').value.trim();
   const larguraCm = document.getElementById('elargura').value.trim();
   const alturaCm = document.getElementById('ealtura').value.trim();
@@ -1786,7 +1818,7 @@ const descricao = document.getElementById('edesc').value.trim();
     const r = await fetch(`${API}/produtos/${id}`, {
       method: 'PUT',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos, pesoKg, larguraCm, alturaCm, comprimentoCm })
+      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 
@@ -1899,6 +1931,21 @@ function popularTamanhosNoUI(prefix, sizesArray) {
 
   const outrosEl = document.getElementById(prefix + '-tam-outros');
   if (outrosEl) outrosEl.value = outros.join(', ');
+}
+
+// Mesmo padrão de leitura/gravação do campo "Outros Tamanhos" acima, sem os
+// chips fixos (palavra-chave não tem opções pré-definidas, é livre).
+function getPalavrasChaveFromUI(prefix) {
+  const el = document.getElementById(prefix + '-palavraschave');
+  const raw = el ? el.value : '';
+  if (!raw) return [];
+  const tokens = raw.split(/[,\n\r]+/).map((s) => s.trim().replace(/\s+/g, ' ')).filter(Boolean);
+  return tokens.filter((v, i) => tokens.indexOf(v) === i);
+}
+
+function popularPalavrasChaveNoUI(prefix, arr) {
+  const el = document.getElementById(prefix + '-palavraschave');
+  if (el) el.value = Array.isArray(arr) ? arr.join(', ') : '';
 }
 
 function showMsg(el, txt, cls) {
