@@ -1563,10 +1563,14 @@ app.post('/api/settings', verificarJWT, async (req, res) => {
     // isso só sobrescrevemos quando vier algo de fato preenchido, e usamos
     // $set (nunca um objeto de substituição direta) pra essa atualização
     // nunca apagar campos que não fazem parte deste payload.
-    // pix_key/mp_public_key já vêm pré-preenchidos no admin (não são
-    // segredo), então um valor vazio ali é uma limpeza intencional — sempre
-    // aplicamos o que vier.
-    const dados = { pix_key, mp_public_key };
+    // pix_key entra na mesma regra dos tokens acima (achado de auditoria: uma
+    // falha ao carregar a página deixava esse campo em branco, indistinguível
+    // de "lojista limpou de propósito", e salvar nesse estado apagava a chave
+    // Pix real — quebra silenciosa de recebimento). mp_public_key não é
+    // segredo e continua sempre aplicado — é o mesmo texto que já aparece
+    // preenchido no formulário, sem essa ambiguidade.
+    const dados = { mp_public_key };
+    if (pix_key) dados.pix_key = pix_key;
     if (mp_token) dados.mp_token = mp_token;
     if (me_token) dados.me_token = me_token;
     if (mp_webhook_secret) dados.mp_webhook_secret = mp_webhook_secret;
@@ -2175,6 +2179,19 @@ app.get('/api/cron/anonimizar-pedidos-antigos', async (req, res) => {
 
 // Loja config
 // Inclui: nome, whatsapp, imagem do hero (banco) e demais tokens usados pelo template.
+//
+// PENDÊNCIA REGISTRADA (não mexer agora — próxima rodada): se a leitura do
+// Mongo falhar aqui (linha do catch logo abaixo), a função engole o erro e
+// segue com doc=null — mergePublicConfig(null) calcula todo campo a partir
+// dos fallbacks de configPadrao, e GET /api/config devolve 200 OK com esse
+// conteúdo. Do lado de fora, uma falha de banco fica indistinguível de "loja
+// realmente configurada assim". Foi um dos dois gatilhos confirmados do bug
+// em que o formulário de admin salvou "Minha Loja" por cima de um nome real
+// (ver loadConfig()/configCarregado em admin.html — a mitigação atual é do
+// lado do cliente, recusando salvar quando o carregamento não foi confirmado
+// como bem-sucedido). Vale essa rota propagar a falha (5xx) em vez de
+// devolver 200 com fallback — não implementado agora de propósito, pra não
+// misturar essa mudança de servidor com a correção já aprovada no cliente.
 async function buscarConfigCompleta() {
   let doc = null;
   try {

@@ -2433,6 +2433,15 @@ let pesoKgPadraoAtual = null;
 let larguraCmPadraoAtual = null;
 let alturaCmPadraoAtual = null;
 let comprimentoCmPadraoAtual = null;
+// true só depois que loadConfig() confirma ter recebido dado real do
+// servidor — salvarConfig() recusa salvar enquanto isso for false. Sem essa
+// trava, uma falha de rede/banco no carregamento preenche o formulário com
+// valores padrão plausíveis (não vazios — "Minha Loja", campos em branco),
+// que passam pela validação de "campo obrigatório" sem disparar erro nenhum,
+// e salvar nesse estado grava esses valores errados por cima do que já
+// estava salvo. Achado de auditoria: o nome da loja virou "Minha Loja"
+// sozinho depois de mexer só no tema de cores.
+let configCarregado = false;
 
 function formatarCep(digitos) {
   const d = String(digitos || '').replace(/\D/g, '');
@@ -2557,6 +2566,7 @@ renderTemaFundoGrid();
 
 // ── CONFIGURAÇÃO DA LOJA ──────────────────────────────
 async function loadConfig() {
+  configCarregado = false;
   try {
     const r = await fetch(API + '/config');
     if (!r.ok) throw new Error('Sem resposta');
@@ -2617,42 +2627,35 @@ async function loadConfig() {
 
     if (logo && d.nomeLoja) logo.childNodes[0].textContent = d.nomeLoja;
     if (d.nomeLoja) document.title = `Admin — ${d.nomeLoja}`;
+
+    configCarregado = true;
   } catch {
-    document.getElementById('cfg-nomeLoja').value = 'Minha Loja';
-    document.getElementById('cfg-chavePix').value = '';
-    document.getElementById('cfg-corPrimaria').value = '';
-    document.getElementById('cfg-corSecundaria').value = '';
-    temaFundoSelecionado = 'creme';
-    renderTemaFundoGrid();
-    document.getElementById('cfg-whatsappContato').value = '';
-    document.getElementById('cfg-instagramLink').value = '';
-    document.getElementById('cfg-emailContato').value = '';
-    document.getElementById('cfg-cidadeLoja').value = '';
-    document.getElementById('cfg-cepOrigem').value = '';
-    cepOrigemSalvoAtual = '';
-    cepOrigemEfetivoAtual = '';
-    atualizarHintCepOrigem();
-    document.getElementById('cfg-pageTitleSuffix').value = '';
-    pageTitleSuffixSalvoAtual = '';
-    pageTitleSuffixEfetivoAtual = '';
-    atualizarHintPageTitleSuffix();
-    document.getElementById('cfg-cnpj').value = '';
-    document.getElementById('cfg-retencaoAnos').value = '';
-    retencaoAnosSalvoAtual = null;
-    retencaoAnosEfetivoAtual = null;
-    atualizarHintRetencaoAnos();
-    document.getElementById('cfg-pesoKgPadrao').value = '';
-    document.getElementById('cfg-larguraCmPadrao').value = '';
-    document.getElementById('cfg-alturaCmPadrao').value = '';
-    document.getElementById('cfg-comprimentoCmPadrao').value = '';
-    pesoKgPadraoAtual = null;
-    larguraCmPadraoAtual = null;
-    alturaCmPadraoAtual = null;
-    comprimentoCmPadraoAtual = null;
+    // Não preenche os campos com valor nenhum — nem em branco, nem com
+    // "Minha Loja". Um formulário em branco depois de uma falha é tão
+    // enganoso quanto um com dado errado: os dois passam pela validação de
+    // "campo obrigatório" sem erro, e os dois convidam a salvar por cima do
+    // que já está no banco. configCarregado continua false, e é isso —não
+    // o estado visual do formulário — que impede salvarConfig() de rodar.
+    const msg = document.getElementById('cfgmsg');
+    if (msg) {
+      showMsg(msg, 'Não foi possível carregar as configurações salvas da loja. Atualize a página (F5) antes de mexer aqui — salvar agora gravaria valores em branco por cima do que já está configurado.', 'er');
+    }
   }
 }
 
 async function salvarConfig() {
+  const msg = document.getElementById('cfgmsg');
+  // Sem isto, uma falha ao carregar a página (ver loadConfig) deixa o
+  // formulário com valor padrão plausível — não vazio — que passa direto
+  // pelas validações abaixo e grava por cima do que já está salvo. A trava
+  // é no MOMENTO (carregou de verdade ou não), não no conteúdo de cada
+  // campo — não dá pra distinguir "campo vazio de propósito" de "campo
+  // nunca carregado" olhando só o valor.
+  if (!configCarregado) {
+    showMsg(msg, 'As configurações desta página ainda não carregaram corretamente. Atualize a página (F5) e tente salvar de novo — salvar agora apagaria dados reais já configurados.', 'er');
+    return;
+  }
+
   const nomeLoja = document.getElementById('cfg-nomeLoja').value.trim();
   const chavePix = document.getElementById('cfg-chavePix').value.trim();
   const corPrimaria = document.getElementById('cfg-corPrimaria').value.trim();
@@ -2691,12 +2694,10 @@ async function salvarConfig() {
     try {
       heroImagem = await uploadArquivo(cfgHeroFile.files[0]);
     } catch (e) {
-      showMsg(document.getElementById('cfgmsg'), e.message || 'Erro no upload da imagem do hero.', 'er');
+      showMsg(msg, e.message || 'Erro no upload da imagem do hero.', 'er');
       return;
     }
   }
-
-  const msg      = document.getElementById('cfgmsg');
 
   if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
 
