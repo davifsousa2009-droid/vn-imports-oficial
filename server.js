@@ -700,6 +700,12 @@ const ConfigSchema = new mongoose.Schema({
   alturaCmPadrao: { type: Number, default: null },
   comprimentoCmPadrao: { type: Number, default: null },
 
+  // Mostra ou não os atalhos de tamanho P/M/G/GG no cadastro de produto do
+  // admin — branco-de-loja: nem toda loja vende roupa/calçado. Default vem
+  // de configPadrao (config.js), não de um true fixo, pra cada implantação
+  // poder nascer já com o valor certo pro segmento do cliente.
+  usaTamanhosPadrao: { type: Boolean, default: configPadrao.usaTamanhosPadrao !== false },
+
   // Barra de anúncio (frete grátis / parcelamento) — desligada por padrão.
   // Antes esses valores eram texto fixo no HTML, prometendo algo que a loja
   // podia nem oferecer de verdade (ex: parcelamento sem ter cartão configurado).
@@ -727,12 +733,10 @@ const ConfigSchema = new mongoose.Schema({
   heroSubtitulo: { type: String, default: '' },
 
   // ✅ NOVO: Configurações dinâmicas de conteúdo do site (Admin → vitrine)
-  sobreTitulo: { type: String, default: 'Cibelle' },
-  sobreTexto: {
-    type: String,
-    default:
-      'Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que você imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.'
-  },
+  // Default vem de configPadrao (config.js), mesmo padrão de nomeLoja/corPrimaria
+  // acima — não um texto de cliente específico chumbado no schema.
+  sobreTitulo: { type: String, default: configPadrao.sobreTitulo },
+  sobreTexto: { type: String, default: configPadrao.sobreTexto },
 
   // Benefício 1: Entrega Rápida
   benef1Titulo: { type: String, default: 'Entrega Rápida' },
@@ -876,9 +880,8 @@ function mergePublicConfig(doc) {
     heroSubtitulo: String(doc?.heroSubtitulo ?? '').trim(),
 
     // Conteúdo (About + Benefícios)
-    sobreTitulo: String(doc?.sobreTitulo ?? '').trim() || 'Cibelle',
-    sobreTexto: String(doc?.sobreTexto ?? '').trim() ||
-      'Somos apaixonados por moda e por curadoria. A Cibelle Imports nasceu para trazer peças internacionais com qualidade real, caimento impecável e aquele diferencial que faz você se destacar. Hoje, cada produto passa por um processo de seleção para garantir que chegue até você do jeito que você imaginou. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.',
+    sobreTitulo: String(doc?.sobreTitulo ?? '').trim() || configPadrao.sobreTitulo,
+    sobreTexto: String(doc?.sobreTexto ?? '').trim() || configPadrao.sobreTexto,
 
     benef1Titulo: String(doc?.benef1Titulo ?? '').trim() || 'Entrega Rápida',
     benef1Texto: String(doc?.benef1Texto ?? '').trim() || 'Receba em até 3 dias úteis. Frete grátis acima de R$299.',
@@ -901,6 +904,8 @@ function mergePublicConfig(doc) {
     benef4Ico: String(doc?.benef4Ico ?? '').trim() || '💎',
 
     // Barra de anúncio: só mostra o que o admin realmente ativou.
+    usaTamanhosPadrao: bool(doc?.usaTamanhosPadrao, configPadrao.usaTamanhosPadrao !== false),
+
     freteGratisAtivo: bool(doc?.freteGratisAtivo, false),
     freteGratisValor: Number(doc?.freteGratisValor) || 0,
     parcelamentoAtivo: bool(doc?.parcelamentoAtivo, false),
@@ -2288,6 +2293,8 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       benef4IcoEnabled,
       benef4Ico,
 
+      usaTamanhosPadrao,
+
       freteGratisAtivo,
       freteGratisValor,
       parcelamentoAtivo,
@@ -2399,6 +2406,8 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (benef4Texto !== undefined) dados.benef4Texto = String(benef4Texto).trim();
     if (benef4IcoEnabled !== undefined) dados.benef4IcoEnabled = !!benef4IcoEnabled;
     if (benef4Ico !== undefined) dados.benef4Ico = String(benef4Ico).trim();
+
+    if (usaTamanhosPadrao !== undefined) dados.usaTamanhosPadrao = !!usaTamanhosPadrao;
 
     if (freteGratisAtivo !== undefined) dados.freteGratisAtivo = !!freteGratisAtivo;
     if (freteGratisValor !== undefined) dados.freteGratisValor = Number(freteGratisValor) || 0;
@@ -3230,6 +3239,26 @@ function escapeParaCss(v) {
   return String(v || '').replace(/[<>"'`]/g, '').replace(/\/style/gi, '');
 }
 
+// Monta o <style> de override com as cores que realmente podem divergir do
+// :root estático do arquivo (bg/bg2/border do tema de fundo, gold/gold2 da
+// cor da marca) — usado por toda página pública pra evitar o "flash" de cor
+// padrão -> cor real da loja. Os outros tokens (ink, muted, etc.) nunca
+// divergem do que já está no arquivo, não precisam de override.
+function construirOverrideCoresStyle(cfg) {
+  const bg = escapeParaCss(cfg?.colors?.bg);
+  const bg2 = escapeParaCss(cfg?.colors?.bg2);
+  const border = escapeParaCss(cfg?.colors?.border);
+  const gold = escapeParaCss(cfg?.colors?.gold);
+  const gold2 = escapeParaCss(cfg?.colors?.gold2);
+  const decls =
+    (bg ? `--bg:${bg};` : '') +
+    (bg2 ? `--bg2:${bg2};` : '') +
+    (border ? `--border:${border};` : '') +
+    (gold ? `--gold:${gold};` : '') +
+    (gold2 ? `--gold2:${gold2};` : '');
+  return decls ? `<style>:root{${decls}}</style>\n</head>` : null;
+}
+
 /**
  * Monta o HTML da vitrine já com a cor e a imagem do hero atuais do banco embutidas
  * — em vez de mandar o HTML com os valores padrão e trocar depois via JS (o que causava
@@ -3266,18 +3295,10 @@ async function renderLojaHtmlComConfig(req) {
       html = html.replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${ogImg}$2`);
     }
 
-    // Cores: só gold/gold2 podem realmente divergir do padrão já escrito no arquivo
-    // (os outros tokens de cor sempre vêm do mesmo config.js embutido no HTML).
-    const gold = escapeParaCss(cfg?.colors?.gold);
-    const gold2 = escapeParaCss(cfg?.colors?.gold2);
-    if (gold || gold2) {
-      const overrideStyle =
-        '<style>:root{' +
-        (gold ? `--gold:${gold};` : '') +
-        (gold2 ? `--gold2:${gold2};` : '') +
-        '}</style>\n</head>';
-      html = html.replace('</head>', overrideStyle);
-    }
+    // Cores: bg/bg2/border (tema de fundo) e gold/gold2 (cor da marca) são os
+    // únicos tokens que podem divergir do :root estático do arquivo.
+    const overrideStyle = construirOverrideCoresStyle(cfg);
+    if (overrideStyle) html = html.replace('</head>', overrideStyle);
 
     // Imagem do hero: troca o src padrão pelo valor real salvo no banco.
     const heroUrl = escapeParaAtributo(cfg?.heroImagem);
@@ -3446,26 +3467,51 @@ app.get('/VN_IMPORTS', async (req, res) => {
   res.send(await renderLojaHtmlComConfig(req));
 });
 
-// search.html e produto.html não têm dados injetados pelo servidor (tudo é
-// buscado via fetch no client), então só cacheamos o arquivo bruto em memória.
-// Em produção o express.static abaixo fica desligado, e sem essas rotas
-// explícitas + os rewrites correspondentes no vercel.json essas páginas
-// batiam 404 (a Vercel roteia "/search.html" e "/produto.html" para a
-// function em vez de servir o arquivo estático diretamente).
+// search.html e produto.html: o arquivo bruto continua cacheado em memória
+// (só lido do disco uma vez por cold start, igual antes) — o que muda por
+// request é só o <style> de override de cor, montado em cima do cache, não
+// mais uma leitura de disco a mais. Em produção o express.static abaixo fica
+// desligado, e sem essas rotas explícitas + os rewrites correspondentes no
+// vercel.json essas páginas batiam 404 (a Vercel roteia "/search.html" e
+// "/produto.html" para a function em vez de servir o arquivo estático
+// diretamente).
 const searchHtmlPath = path.join(__dirname, 'search.html');
 let searchHtmlCache = null;
-app.get('/search.html', (req, res) => {
+function getSearchHtmlTemplate() {
   if (!searchHtmlCache) searchHtmlCache = fs.readFileSync(searchHtmlPath, 'utf8');
-  semCacheHtml(res);
-  res.send(searchHtmlCache);
-});
+  return searchHtmlCache;
+}
 
 const produtoHtmlPath = path.join(__dirname, 'produto.html');
 let produtoHtmlCache = null;
-app.get('/produto.html', (req, res) => {
+function getProdutoHtmlTemplate() {
   if (!produtoHtmlCache) produtoHtmlCache = fs.readFileSync(produtoHtmlPath, 'utf8');
+  return produtoHtmlCache;
+}
+
+// Mesmo princípio de renderLojaHtmlComConfig, só que sem nome/hero/meta tags
+// (essas duas páginas nunca tiveram isso, e não foi pedido agora) — apenas o
+// override de cor, pra fechar o mesmo flash que search/produto tinham e as
+// outras 3 páginas já não têm.
+async function renderPaginaComOverrideCores(html) {
+  try {
+    const cfg = await buscarConfigCompleta();
+    const overrideStyle = construirOverrideCoresStyle(cfg);
+    if (overrideStyle) html = html.replace('</head>', overrideStyle);
+  } catch (e) {
+    console.warn('renderPaginaComOverrideCores:', e.message);
+  }
+  return html;
+}
+
+app.get('/search.html', async (req, res) => {
   semCacheHtml(res);
-  res.send(produtoHtmlCache);
+  res.send(await renderPaginaComOverrideCores(getSearchHtmlTemplate()));
+});
+
+app.get('/produto.html', async (req, res) => {
+  semCacheHtml(res);
+  res.send(await renderPaginaComOverrideCores(getProdutoHtmlTemplate()));
 });
 
 // Páginas legais (Devolução, Privacidade, Termos) — mesmo motivo e mesmo

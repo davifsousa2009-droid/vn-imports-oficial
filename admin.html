@@ -339,7 +339,7 @@ tr:hover td{background:#FAFAF8}
 
             <div class="fg fw">
               <label class="fl">Tamanhos Disponíveis</label>
-              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <div id="f-tam-chips" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
                 <label class="size-chip" role="button" tabindex="0">
                   <input type="checkbox" id="f-tam-P" value="P"> P
                 </label>
@@ -353,8 +353,9 @@ tr:hover td{background:#FAFAF8}
                   <input type="checkbox" id="f-tam-GG" value="GG"> GG
                 </label>
               </div>
+              <p id="f-tam-hint" style="font-size:12px;color:#888;line-height:1.6;margin:8px 0 0">Não vende roupa ou calçado? <a href="#" onclick="irParaConfigTamanhos();return false">Desative isso em Configurações do Sistema</a>.</p>
               <div style="margin-top:10px">
-                <label class="fl" style="color:#888">Outros Tamanhos</label>
+                <label class="fl" style="color:#888" id="f-tam-outros-label">Outros Tamanhos</label>
                 <input class="fi" id="f-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
               </div>
             </div>
@@ -469,7 +470,7 @@ tr:hover td{background:#FAFAF8}
           <div class="fg2">
             <div class="fg fw">
               <label class="fl">Sobre Nós — Título</label>
-              <input class="fi" id="sys-sobreTitulo" placeholder="Ex: Cibelle Imports" type="text" autocomplete="off">
+              <input class="fi" id="sys-sobreTitulo" placeholder="Ex: Sobre Nós" type="text" autocomplete="off">
             </div>
             <div class="fg fw">
               <label class="fl">Sobre Nós — Parágrafo</label>
@@ -724,6 +725,13 @@ tr:hover td{background:#FAFAF8}
             <div class="fg"><label class="fl">Comprimento Padrão (cm)</label><input class="fi" id="cfg-comprimentoCmPadrao" placeholder="Ex: 25" type="number" step="0.1" min="0"></div>
           </div>
 
+          <div class="fg fw" style="margin-top:18px;padding-top:18px;border-top:1px solid #eee">
+            <label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="cfg-usaTamanhosPadrao"> Loja usa tamanho de roupa/calçado (P, M, G, GG)
+            </label>
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:8px 0 0">Controla os atalhos de tamanho no cadastro de produto. Desative para lojas que não vendem roupa ou calçado — pet shop, joia, peça, impressão 3D. O campo de texto livre para variações (numeração, medida, o que fizer sentido) continua disponível de qualquer forma; só os atalhos fixos P/M/G/GG somem.</p>
+          </div>
+
           <div class="fg" style="margin-top:18px">
             <label class="fl">Tema de Cores de Fundo</label>
             <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 14px">
@@ -859,7 +867,7 @@ tr:hover td{background:#FAFAF8}
 
         <div class="fg fw">
           <label class="fl">Tamanhos Disponíveis</label>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <div id="e-tam-chips" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
             <label class="size-chip" role="button" tabindex="0">
               <input type="checkbox" id="e-tam-P" value="P"> P
             </label>
@@ -873,8 +881,9 @@ tr:hover td{background:#FAFAF8}
               <input type="checkbox" id="e-tam-GG" value="GG"> GG
             </label>
           </div>
+          <p id="e-tam-hint" style="font-size:12px;color:#888;line-height:1.6;margin:8px 0 0">Não vende roupa ou calçado? <a href="#" onclick="irParaConfigTamanhos();return false">Desative isso em Configurações do Sistema</a>.</p>
           <div style="margin-top:10px">
-            <label class="fl" style="color:#888">Outros Tamanhos</label>
+            <label class="fl" style="color:#888" id="e-tam-outros-label">Outros Tamanhos</label>
             <input class="fi" id="e-tam-outros" placeholder="Ex: 38, 40 ou XG" type="text" autocomplete="off">
           </div>
         </div>
@@ -1952,7 +1961,12 @@ function popularTamanhosNoUI(prefix, sizesArray) {
   for (const raw of Array.isArray(sizesArray) ? sizesArray : []) {
     const tam = String(raw).trim();
     if (!tam) continue;
-    if (padrao.includes(tam)) {
+    // Com os chips escondidos (usaTamanhosPadraoAtual = false), marcar um
+    // checkbox oculto deixaria esse valor sem nenhum jeito de aparecer pro
+    // lojista — ele veria o campo de texto livre vazio e concluiria que o
+    // produto não tem variação salva, mesmo tendo. Nesse caso todo valor,
+    // mesmo um que bata com P/M/G/GG, cai no campo de texto livre.
+    if (usaTamanhosPadraoAtual && padrao.includes(tam)) {
       const cb = document.getElementById(prefix + '-tam-' + tam);
       if (cb) cb.checked = true;
     } else {
@@ -1962,6 +1976,30 @@ function popularTamanhosNoUI(prefix, sizesArray) {
 
   const outrosEl = document.getElementById(prefix + '-tam-outros');
   if (outrosEl) outrosEl.value = outros.join(', ');
+}
+
+// Mostra/esconde os chips fixos P/M/G/GG no cadastro ('f') e na edição ('e')
+// de produto conforme usaTamanhosPadraoAtual — chamada depois que loadConfig()
+// ou salvarConfig() confirmam o valor de verdade vindo do servidor.
+function aplicarVisibilidadeTamanhos() {
+  ['f', 'e'].forEach((prefix) => {
+    const chips = document.getElementById(prefix + '-tam-chips');
+    const hint = document.getElementById(prefix + '-tam-hint');
+    const label = document.getElementById(prefix + '-tam-outros-label');
+    if (chips) chips.style.display = usaTamanhosPadraoAtual ? 'flex' : 'none';
+    if (hint) hint.style.display = usaTamanhosPadraoAtual ? '' : 'none';
+    if (label) {
+      label.textContent = usaTamanhosPadraoAtual
+        ? 'Outros Tamanhos'
+        : 'Variações disponíveis (tamanho, numeração, medida — o que fizer sentido para o seu produto)';
+    }
+  });
+}
+
+function irParaConfigTamanhos() {
+  const sbItem = document.querySelector('.sb-item[onclick*="loadConfig"]');
+  showPanel('config', sbItem);
+  loadConfig();
 }
 
 // Mesmo padrão de leitura/gravação do campo "Outros Tamanhos" acima, sem os
@@ -2433,6 +2471,9 @@ let pesoKgPadraoAtual = null;
 let larguraCmPadraoAtual = null;
 let alturaCmPadraoAtual = null;
 let comprimentoCmPadraoAtual = null;
+// Espelha usaTamanhosPadrao da config carregada — controla se os chips fixos
+// P/M/G/GG aparecem no cadastro/edição de produto (ver aplicarVisibilidadeTamanhos).
+let usaTamanhosPadraoAtual = true;
 // true só depois que loadConfig() confirma ter recebido dado real do
 // servidor — salvarConfig() recusa salvar enquanto isso for false. Sem essa
 // trava, uma falha de rede/banco no carregamento preenche o formulário com
@@ -2603,6 +2644,10 @@ async function loadConfig() {
     alturaCmPadraoAtual = d.alturaCmPadrao || null;
     comprimentoCmPadraoAtual = d.comprimentoCmPadrao || null;
 
+    document.getElementById('cfg-usaTamanhosPadrao').checked = !!d.usaTamanhosPadrao;
+    usaTamanhosPadraoAtual = !!d.usaTamanhosPadrao;
+    aplicarVisibilidadeTamanhos();
+
     document.getElementById('cfg-freteGratisAtivo').checked = !!d.freteGratisAtivo;
     document.getElementById('cfg-freteGratisValor').value = d.freteGratisValor || '';
     document.getElementById('cfg-parcelamentoAtivo').checked = !!d.parcelamentoAtivo;
@@ -2673,6 +2718,8 @@ async function salvarConfig() {
   const alturaCmPadrao = document.getElementById('cfg-alturaCmPadrao').value.trim();
   const comprimentoCmPadrao = document.getElementById('cfg-comprimentoCmPadrao').value.trim();
 
+  const usaTamanhosPadrao = !!document.getElementById('cfg-usaTamanhosPadrao')?.checked;
+
   const freteGratisAtivo = !!document.getElementById('cfg-freteGratisAtivo')?.checked;
   const freteGratisValor = Number(document.getElementById('cfg-freteGratisValor')?.value) || 0;
   const parcelamentoAtivo = !!document.getElementById('cfg-parcelamentoAtivo')?.checked;
@@ -2742,6 +2789,7 @@ async function salvarConfig() {
     larguraCmPadrao,
     alturaCmPadrao,
     comprimentoCmPadrao,
+    usaTamanhosPadrao,
     freteGratisAtivo,
     freteGratisValor,
     parcelamentoAtivo,
@@ -2783,6 +2831,8 @@ async function salvarConfig() {
       larguraCmPadraoAtual = d.config?.larguraCmPadrao || null;
       alturaCmPadraoAtual = d.config?.alturaCmPadrao || null;
       comprimentoCmPadraoAtual = d.config?.comprimentoCmPadrao || null;
+      usaTamanhosPadraoAtual = usaTamanhosPadrao;
+      aplicarVisibilidadeTamanhos();
     } else if (r.status === 401) {
       relogar();
       showMsg(msg, 'Senha incorreta. Tente novamente.', 'er');

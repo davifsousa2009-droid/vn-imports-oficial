@@ -110,14 +110,14 @@ input,textarea,select{font-family:'Barlow',sans-serif}
 
 /* ─── TOKENS ─── */
 :root{
-  --bg:#F7F4F0;
-  --bg2:#EDE9E3;
+  --bg:#F0E9DC;
+  --bg2:#E8DCC7;
   --ink:#111111;
   --ink2:#1E1E1E;
   --mid:#444;
   --muted:#5C5C5C;
   --silver:#BBB;
-  --border:#D9D4CC;
+  --border:#C9B896;
   --border2:#C8C2B8;
   --white:#FFFFFF;
   --accent:#2B2B2B;
@@ -4896,9 +4896,23 @@ function syncFilterUI(){
     // Tamanhos disponíveis: união dinâmica dos tamanhos presentes nos
     // produtos carregados, ordenados (ver compararTamanhos) em vez de ficar
     // na ordem crua em que apareceram nos produtos.
+    // Com alguma categoria selecionada, o pool é escopado só aos produtos
+    // dela — reusa expandirSlugsComFilhos, a mesma expansão pai/filho que
+    // applyFilters usa pra filtrar de verdade, pra o pool nunca divergir do
+    // que está realmente na grade (uma comparação ingênua de slug quebraria
+    // em silêncio assim que uma categoria-pai com filhas fosse marcada). Sem
+    // esse escopo, uma loja com categorias de nicho diferente (roupa e joia,
+    // por exemplo) sempre misturava os tamanhos das duas no mesmo filtro,
+    // mesmo depois do cliente já ter escolhido uma categoria específica.
     const selSizes = window.activeFilters.sizes || [];
 
-    const pool = (Array.isArray(S.products) ? S.products : [])
+    let poolSource = Array.isArray(S.products) ? S.products : [];
+    if (selectedCats.length) {
+      const setCatsPool = expandirSlugsComFilhos(categoriasVitrineTree, selectedCats);
+      poolSource = poolSource.filter(p => setCatsPool.has(p.cat));
+    }
+
+    const pool = poolSource
       .flatMap(p => Array.isArray(p?.sizes) ? p.sizes : [])
       .map(s => String(s || '').trim())
       .filter(Boolean);
@@ -4913,8 +4927,21 @@ function syncFilterUI(){
     }
     sizeList.sort(compararTamanhos);
 
+    // Filtro fantasma: um tamanho marcado que não existe mais no pool da
+    // categoria atual é removido do estado (não só escondido do menu) —
+    // escondido sem remover recriaria o mesmo bug pelo caminho desta própria
+    // correção, porque applyFilters() roda logo depois desta função, na
+    // mesma sequência síncrona (ver setCat/toggleSize), e ainda filtraria
+    // pelo tamanho morto. Removido de verdade do array, não guardado em
+    // lugar nenhum — voltar pra "Todos" não ressuscita a marcação.
+    const disponiveis = new Set(sizeList);
+    const sizesValidas = selSizes.filter(s => disponiveis.has(s));
+    if (sizesValidas.length !== selSizes.length) {
+      window.activeFilters.sizes = sizesValidas;
+    }
+
     const html = sizeList.map(s=>{
-      const on = selSizes.includes(s);
+      const on = sizesValidas.includes(s);
       return `<button type="button" class="prod-size-chip${on?' on':''}" onclick="toggleSize('${escapeHtmlTexto(s)}')">${escapeHtmlTexto(s)}</button>`;
     }).join('');
     sizesEls.forEach(el => { el.innerHTML = html; });

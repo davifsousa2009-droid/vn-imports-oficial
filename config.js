@@ -18,6 +18,18 @@ module.exports = {
   /** Chave PIX exibida quando não houver valor salvo no painel */
   chavePix: '',
   pageTitleSuffix: 'Loja Oficial',
+  /** Controla os atalhos de tamanho de roupa/calçado (P/M/G/GG) no cadastro
+   *  de produto do admin. Deixe true para lojas de roupa/calçado. Para um
+   *  cliente novo que não vende isso (pet shop, joia, peça, impressão 3D),
+   *  troque para false aqui — o campo de texto livre de variação continua
+   *  funcionando normalmente, só os atalhos fixos somem do formulário. */
+  usaTamanhosPadrao: true,
+  /** Título e texto da seção "Sobre" da vitrine — mesmo padrão de nomeLoja
+   *  acima: valor de fábrica genérico, trocado por loja aqui ou sobrescrito
+   *  a qualquer momento pelo painel (Configurações → Conteúdo do Site). */
+  sobreTitulo: 'Sobre Nós',
+  sobreTexto:
+    'Somos apaixonados pelo que fazemos. Cada produto passa por um processo de seleção cuidadoso para garantir que chegue até você com a qualidade que você espera. Da descoberta ao pós-compra, nosso compromisso é simples: atendimento humano e experiência completa.',
   colors: {
     bg: '#F7F4F0',
     bg2: '#EDE9E3',
