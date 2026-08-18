@@ -466,6 +466,38 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 }
 .hero-split .btn-line:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.1)}
 
+/* .btn-fill (botão "Ver Coleção") tinha o mesmo problema que motivou a
+   sobrescrita de .btn-line acima, só que nunca foi corrigido: preenchimento
+   fixo em --ink, então mesmo no painel padrão (Preto Absoluto = --ink) o
+   botão já era preto sobre preto, diferenciado só pelo texto branco dentro
+   — borda e sombra, ambas também --ink, ficavam invisíveis. Não é regressão
+   da cor do painel configurável, é um problema que sempre existiu e que só
+   ficou impossível de ignorar com painéis Vinho/Verde Floresta.
+   Preenchimento = cor de marca (corPrimaria/corSecundaria) foi descartado:
+   é hex livre sem catálogo validado, e branco sobre o gold/gold2 padrão do
+   próprio template já reprova AA (medido: 4.02:1 e 2.37:1) — sem garantia
+   possível pra qualquer hex que o lojista escolher depois. Preenchimento =
+   --hero-panel-bg também foi descartado: perpetuaria o mesmo problema
+   (bloco preenchido igual ao fundo, sem forma visível) em qualquer cor.
+   Branco fixo invertido (mesmo princípio do .btn-line acima) garante
+   diferenciação de forma contra qualquer um dos 5 tons do catálogo, sem
+   depender de matiz nenhum.
+   Escopo: .hero-split .btn-fill (2 classes, especificidade 0,2,0) sempre
+   vence .btn-fill sozinho (1 classe, especificidade 0,1,0) — não importa
+   qual das duas definições duplicadas de .btn-fill estiver mais abaixo no
+   cascade, nem a ordem entre elas. Fora do hero, .btn-fill continua escuro
+   sobre fundo claro (correto lá) — esta regra só aplica dentro de
+   .hero-split, nenhum outro .btn-fill do site tem esse ancestral. */
+.hero-split .btn-fill{
+  background:#fff;
+  color:var(--ink);
+  border-color:#fff;
+}
+.hero-split .btn-fill:hover{
+  background:rgba(255,255,255,.85);
+  border-color:rgba(255,255,255,.85);
+}
+
 /* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
   max-width:1240px;
