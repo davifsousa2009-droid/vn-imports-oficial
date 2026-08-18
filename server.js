@@ -651,6 +651,25 @@ const TEMAS_FUNDO = {
   neblina: { nome: 'Azul Névoa', bg: '#E1E8EF', bg2: '#D4DEE9', border: '#A8BDD1' }
 };
 
+// Catálogo pré-calibrado pra cor do painel de texto do hero (o bloco
+// --hero-panel-bg à esquerda, ver VN_IMPORTS.html) — mesmo princípio do
+// TEMAS_FUNDO acima: nunca um hex livre, porque texto branco sobre uma cor
+// de marca livre (gold/gold2) já reprova contraste na configuração padrão do
+// próprio template (medido: ~2.37:1). Todos os 5 tons são escuros e
+// dessaturados de propósito — passam AA com folga (pior caso medido:
+// 11.56:1) e não ficam "sujos" sob a barra de benefícios flutuante logo
+// abaixo do hero, que tem um véu creme translúcido fixo (rgba, não var(--bg))
+// independente do tema de fundo escolhido. Token isolado (--hero-panel-bg,
+// não --ink): trocar essa cor não pode mudar rodapé/botões/badges, que
+// reaproveitam --ink em ~24 lugares fora do hero.
+const TEMAS_HERO = {
+  preto: { nome: 'Preto Absoluto', cor: '#111111' },
+  grafite: { nome: 'Grafite', cor: '#2B2B2B' },
+  marinho: { nome: 'Azul-Marinho', cor: '#16233A' },
+  verde: { nome: 'Verde Floresta', cor: '#223326' },
+  vinho: { nome: 'Vinho', cor: '#3B1B24' }
+};
+
 const ConfigSchema = new mongoose.Schema({
   nomeLoja: { type: String, default: configPadrao.nomeLoja },
   chavePix: { type: String, default: '' },
@@ -659,6 +678,11 @@ const ConfigSchema = new mongoose.Schema({
   // Chave de um tema pré-calibrado em TEMAS_FUNDO — nunca um hex livre (ver
   // comentário acima do catálogo).
   temaFundo: { type: String, default: 'creme' },
+  // Chave de um tom pré-calibrado em TEMAS_HERO (cor do painel de texto do
+  // hero) — mesmo princípio do temaFundo acima, nunca hex livre. Default vem
+  // de configPadrao (config.js), mesmo padrão de usaTamanhosPadrao: cada
+  // implantação pode nascer com outro tom sem afetar lojas já em produção.
+  corPainelHero: { type: String, default: TEMAS_HERO[configPadrao.corPainelHero] ? configPadrao.corPainelHero : 'preto' },
   whatsappContato: { type: String, default: configPadrao.whatsappContato },
   instagramLink: { type: String, default: configPadrao.instagramLink },
   emailContato: { type: String, default: configPadrao.emailContato },
@@ -822,11 +846,20 @@ function mergePublicConfig(doc) {
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
   const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
+  const corPainelHeroFallback = TEMAS_HERO[configPadrao.corPainelHero] ? configPadrao.corPainelHero : 'preto';
+  const corPainelHeroKey = TEMAS_HERO[doc?.corPainelHero] ? doc.corPainelHero : corPainelHeroFallback;
+  const corPainelHero = TEMAS_HERO[corPainelHeroKey];
   const colorsMerged = {
     ...(configPadrao.colors || {}),
     bg: temaFundo.bg,
     bg2: temaFundo.bg2,
     border: temaFundo.border,
+    // Chave literal igual ao sufixo da CSS custom property (--hero-panel-bg)
+    // de propósito: aplicarCoresDaLoja() no client faz 'root.style.setProperty
+    // ("--" + chave, valor)' sem nenhuma conversão de camelCase pra
+    // kebab-case — uma chave "heroPanelBg" geraria "--heroPanelBg", que não
+    // bate com nada no CSS, e o valor nunca apareceria.
+    'hero-panel-bg': corPainelHero.cor,
     ...(corPrimaria ? { gold: corPrimaria } : {}),
     ...(corSecundaria ? { gold2: corSecundaria } : {})
   };
@@ -842,6 +875,7 @@ function mergePublicConfig(doc) {
     corPrimaria,
     corSecundaria,
     temaFundo: temaFundoKey,
+    corPainelHero: corPainelHeroKey,
     whatsappContato: String(doc?.whatsappContato || configPadrao.whatsappContato || '').trim(),
     instagramLink: String(doc?.instagramLink || configPadrao.instagramLink || '').trim(),
     emailContato: String(doc?.emailContato || configPadrao.emailContato || '').trim(),
@@ -2247,6 +2281,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
       corPrimaria,
       corSecundaria,
       temaFundo,
+      corPainelHero,
       whatsappContato,
       instagramLink,
       emailContato,
@@ -2314,6 +2349,11 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     // Só grava se for uma chave conhecida do catálogo — barra tentativa de
     // salvar um valor arbitrário direto na API, não só na UI do admin.
     if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'creme';
+    if (corPainelHero !== undefined) {
+      dados.corPainelHero = TEMAS_HERO[corPainelHero]
+        ? corPainelHero
+        : (TEMAS_HERO[configPadrao.corPainelHero] ? configPadrao.corPainelHero : 'preto');
+    }
     if (whatsappContato !== undefined) dados.whatsappContato = String(whatsappContato).trim();
     if (instagramLink !== undefined) dados.instagramLink = String(instagramLink).trim();
     if (emailContato !== undefined) dados.emailContato = String(emailContato).trim();
@@ -3241,21 +3281,24 @@ function escapeParaCss(v) {
 
 // Monta o <style> de override com as cores que realmente podem divergir do
 // :root estático do arquivo (bg/bg2/border do tema de fundo, gold/gold2 da
-// cor da marca) — usado por toda página pública pra evitar o "flash" de cor
-// padrão -> cor real da loja. Os outros tokens (ink, muted, etc.) nunca
-// divergem do que já está no arquivo, não precisam de override.
+// cor da marca, heroPanelBg do tom do painel do hero) — usado por toda
+// página pública pra evitar o "flash" de cor padrão -> cor real da loja. Os
+// outros tokens (ink, muted, etc.) nunca divergem do que já está no arquivo,
+// não precisam de override.
 function construirOverrideCoresStyle(cfg) {
   const bg = escapeParaCss(cfg?.colors?.bg);
   const bg2 = escapeParaCss(cfg?.colors?.bg2);
   const border = escapeParaCss(cfg?.colors?.border);
   const gold = escapeParaCss(cfg?.colors?.gold);
   const gold2 = escapeParaCss(cfg?.colors?.gold2);
+  const heroPanelBg = escapeParaCss(cfg?.colors?.['hero-panel-bg']);
   const decls =
     (bg ? `--bg:${bg};` : '') +
     (bg2 ? `--bg2:${bg2};` : '') +
     (border ? `--border:${border};` : '') +
     (gold ? `--gold:${gold};` : '') +
-    (gold2 ? `--gold2:${gold2};` : '');
+    (gold2 ? `--gold2:${gold2};` : '') +
+    (heroPanelBg ? `--hero-panel-bg:${heroPanelBg};` : '');
   return decls ? `<style>:root{${decls}}</style>\n</head>` : null;
 }
 

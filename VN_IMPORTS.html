@@ -125,6 +125,12 @@ input,textarea,select{font-family:'Barlow',sans-serif}
   --gold2:#C4A55A;
   --red:#A0391E;
   --green:#2E6B47;
+  /* Token isolado do painel de texto do hero (ver TEMAS_HERO em server.js) —
+     mesmo hex de --ink de propósito (aparência de hoje, sem loja mudar sem
+     ação do lojista), mas NUNCA reaproveita a variável --ink diretamente:
+     --ink é usado em ~24 lugares fora do hero (rodapé, botões, badges), e
+     trocar a cor do painel do hero não pode mudar nenhum deles. */
+  --hero-panel-bg:#111111;
   --serif:'Libre Baskerville',serif;
   --sans:'Barlow',sans-serif;
   --sh:0 2px 20px rgba(0,0,0,.07);
@@ -335,7 +341,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   justify-content:center;
   gap:14px;
   padding:48px clamp(28px,4vw,64px);
-  background:var(--ink);
+  background:var(--hero-panel-bg);
 }
 .hero-split-media{
   position:relative;

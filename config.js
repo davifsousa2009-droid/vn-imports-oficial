@@ -24,6 +24,11 @@ module.exports = {
    *  troque para false aqui — o campo de texto livre de variação continua
    *  funcionando normalmente, só os atalhos fixos somem do formulário. */
   usaTamanhosPadrao: true,
+  /** Chave de um tom pré-calibrado em TEMAS_HERO (server.js) pra cor do
+   *  painel de texto do hero. 'preto' mantém a aparência de hoje (mesmo hex
+   *  de --ink). Troque aqui se quiser que um cliente novo já nasça com outro
+   *  tom (grafite/marinho/verde/vinho) sem precisar configurar no painel. */
+  corPainelHero: 'preto',
   /** Título e texto da seção "Sobre" da vitrine — mesmo padrão de nomeLoja
    *  acima: valor de fábrica genérico, trocado por loja aqui ou sobrescrito
    *  a qualquer momento pelo painel (Configurações → Conteúdo do Site). */

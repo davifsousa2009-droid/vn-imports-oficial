@@ -765,6 +765,14 @@ tr:hover td{background:#FAFAF8}
             <span class="img-url" id="cfg-heroPreview-url"></span>
           </div>
 
+          <div class="fg" style="margin-top:18px">
+            <label class="fl">Cor do Painel de Texto do Hero</label>
+            <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 14px">
+              Essa cor é só do bloco de texto do hero (onde ficam o título e a descrição) — diferente do Tema de Cores de Fundo acima, que muda o resto da loja. Mesmo motivo do tema de fundo pra não ter hex livre aqui: o texto do hero é sempre branco, e uma cor clara escolhida sem pensar em contraste deixaria esse texto ilegível sem nenhum aviso.
+            </p>
+            <div class="theme-swatch-grid" id="corPainelHeroGrid"></div>
+          </div>
+
           <div class="fg" style="margin-top:28px;padding-top:20px;border-top:1px solid #eee">
             <label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer">
               <input type="checkbox" id="cfg-freteGratisAtivo"> Ativar aviso de frete grátis
@@ -2463,6 +2471,16 @@ const TEMAS_FUNDO = {
   neblina: { nome: 'Azul Névoa', bg: '#E1E8EF', bg2: '#D4DEE9', border: '#A8BDD1' }
 };
 let temaFundoSelecionado = 'creme';
+// Espelha TEMAS_HERO do server.js — mesmo aviso de sincronia manual do
+// TEMAS_FUNDO acima: mude os dois catálogos juntos.
+const TEMAS_HERO = {
+  preto: { nome: 'Preto Absoluto', cor: '#111111' },
+  grafite: { nome: 'Grafite', cor: '#2B2B2B' },
+  marinho: { nome: 'Azul-Marinho', cor: '#16233A' },
+  verde: { nome: 'Verde Floresta', cor: '#223326' },
+  vinho: { nome: 'Vinho', cor: '#3B1B24' }
+};
+let corPainelHeroSelecionada = 'preto';
 let cepOrigemSalvoAtual = '';
 let cepOrigemEfetivoAtual = '';
 let pageTitleSuffixSalvoAtual = '';
@@ -2607,6 +2625,27 @@ function selecionarTemaFundo(key) {
 
 renderTemaFundoGrid();
 
+function renderCorPainelHeroGrid() {
+  const grid = document.getElementById('corPainelHeroGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(TEMAS_HERO).map(([key, t]) => `
+    <button type="button" class="theme-swatch-item${key === corPainelHeroSelecionada ? ' on' : ''}" onclick="selecionarCorPainelHero('${key}')" title="${escHtml(t.nome)}">
+      <span class="theme-swatch-circle" style="background:${t.cor};border-color:${t.cor}">
+        <span class="theme-swatch-check">✓</span>
+      </span>
+      <span class="theme-swatch-label">${escHtml(t.nome)}</span>
+    </button>
+  `).join('');
+}
+
+function selecionarCorPainelHero(key) {
+  if (!TEMAS_HERO[key]) return;
+  corPainelHeroSelecionada = key;
+  renderCorPainelHeroGrid();
+}
+
+renderCorPainelHeroGrid();
+
 // ── CONFIGURAÇÃO DA LOJA ──────────────────────────────
 async function loadConfig() {
   configCarregado = false;
@@ -2620,6 +2659,8 @@ async function loadConfig() {
     document.getElementById('cfg-corSecundaria').value = d.corSecundaria || '';
     temaFundoSelecionado = TEMAS_FUNDO[d.temaFundo] ? d.temaFundo : 'creme';
     renderTemaFundoGrid();
+    corPainelHeroSelecionada = TEMAS_HERO[d.corPainelHero] ? d.corPainelHero : 'preto';
+    renderCorPainelHeroGrid();
     document.getElementById('cfg-whatsappContato').value = d.whatsappContato || '';
     document.getElementById('cfg-instagramLink').value = d.instagramLink || '';
     document.getElementById('cfg-emailContato').value = d.emailContato || '';
@@ -2779,6 +2820,7 @@ async function salvarConfig() {
     corPrimaria,
     corSecundaria,
     temaFundo: temaFundoSelecionado,
+    corPainelHero: corPainelHeroSelecionada,
     whatsappContato,
     instagramLink,
     emailContato,
