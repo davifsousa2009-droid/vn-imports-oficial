@@ -751,7 +751,7 @@ tr:hover td{background:#FAFAF8}
             <div class="fg fw">
               <label class="fl">Arquivo da capa (hero)</label>
               <input class="fi fi-file" id="cfg-heroFile" type="file" accept="image/*" onchange="previewLocalFile(this,'cfg-heroPreview');checarLarguraHero(this)">
-              <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 0">Essa foto ocupa a tela inteira, de ponta a ponta, com o título e a descrição por cima. Funciona melhor com: imagem horizontal (mais larga que alta), pelo menos 1920px de largura (telas grandes e de alta densidade exigem isso pra não ficar borrada) e sem texto/logo já embutido nela — o título da loja já aparece por cima. Use uma foto sua ou de banco de imagem com licença — não a primeira que aparecer numa busca do Google.</p>
+              <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 0">Essa foto aparece ao lado do título e da descrição (não mais por cima) — ocupa cerca de 60% do hero, o resto fica com um bloco de cor sólida pro texto. Como não tem mais texto sobreposto, não precisa deixar nenhuma área "vazia" pra ele caber: foto quadrada de celular, foto vertical ou horizontal, todas funcionam — o produto pode estar centralizado. Ela é cortada pra preencher o espaço (bordas de cima/baixo ou dos lados podem sumir dependendo do formato da tela), então prefira uma foto com o produto mais ou menos centralizado. Pelo menos 1920px de largura ainda ajuda a evitar borrão em tela grande/de alta densidade. Sem texto/logo já embutido na imagem — o título da loja já aparece ao lado. Use uma foto sua ou de banco de imagem com licença — não a primeira que aparecer numa busca do Google.</p>
               <p id="cfg-heroLarguraAviso" style="display:none;font-size:12px;color:#A0391E;font-weight:600;line-height:1.6;margin:8px 0 0"></p>
             </div>
             <div class="fg fw">
@@ -954,12 +954,14 @@ function previewLocalFile(input, boxId) {
   reader.readAsDataURL(f);
 }
 
-// 1920px: largura mínima pra cobrir tela cheia sem ampliar visivelmente —
-// medido contra um caso real (achado de auditoria: foto de 1022px, enviada
-// antes desta checagem existir, ficou borrada esticada no hero de largura
-// total). Só avisa, nunca bloqueia — o lojista pode não ter foto maior
-// disponível no momento, e travar a configuração dele por causa disso é
-// pior que uma loja com hero levemente macio.
+// 1920px: mesmo no layout dividido (foto ocupa ~60% do hero, não mais a tela
+// inteira), uma tela grande de alta densidade ainda pede essa resolução pra
+// não ampliar visivelmente dentro da área da foto — medido contra um caso
+// real (achado de auditoria: foto de 1022px, enviada antes desta checagem
+// existir, ficou borrada esticada no hero). Só avisa, nunca bloqueia — o
+// lojista pode não ter foto maior disponível no momento, e travar a
+// configuração dele por causa disso é pior que uma loja com hero levemente
+// macio.
 const HERO_LARGURA_MINIMA_PX = 1920;
 function checarLarguraHero(input) {
   const aviso = document.getElementById('cfg-heroLarguraAviso');
@@ -975,7 +977,7 @@ function checarLarguraHero(input) {
   img.onload = () => {
     URL.revokeObjectURL(url);
     if (img.naturalWidth < HERO_LARGURA_MINIMA_PX) {
-      aviso.textContent = `⚠ Esta imagem tem ${img.naturalWidth}px de largura — abaixo do mínimo recomendado (${HERO_LARGURA_MINIMA_PX}px) pro hero em tela cheia. É provável que ela apareça borrada, esticada em telas grandes. Você pode salvar assim mesmo; se tiver uma versão maior da mesma foto, ela evita esse problema.`;
+      aviso.textContent = `⚠ Esta imagem tem ${img.naturalWidth}px de largura — abaixo do mínimo recomendado (${HERO_LARGURA_MINIMA_PX}px) pra área da foto no hero. É provável que ela apareça borrada, esticada em telas grandes. Você pode salvar assim mesmo; se tiver uma versão maior da mesma foto, ela evita esse problema.`;
       aviso.style.display = 'block';
     }
   };

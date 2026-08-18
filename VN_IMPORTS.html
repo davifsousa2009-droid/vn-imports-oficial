@@ -294,62 +294,60 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 [data-loja="nome"]{opacity:0;transition:opacity .3s ease}
 [data-loja="nome"].is-ready{opacity:1}
 
-/* ─── HERO (foto de largura total, texto sobreposto) ───
-   Decisão registrada: a camada escura é UNIFORME (piso 60% de opacidade em
-   toda a imagem), não um gradiente direcional. Um gradiente teria uma região
-   "clara" fixa por posição — mas a altura do texto do lojista não é fixa
-   (título de 1 linha vs. 3 linhas), então um título longo podia crescer até
-   invadir a região clara e ficar ilegível numa loja que nunca vamos revisar.
-   Piso uniforme não depende de onde o texto para.
-   60% foi calculado (fórmula de contraste WCAG), não estimado: contra o pior
-   caso real — texto branco sobre foto branca pura — 60% garante AA (4.5:1)
-   pro título grande E pro texto normal (mínimo matemático ~54%; 60% é esse
-   mínimo mais margem, por pedido explícito: "prefiro escurecer mais forte a
-   um texto que só funciona em foto escura"). Reforço extra só na direção da
-   base (até 78%) nunca desce abaixo do piso de 60% em lugar nenhum — ver
-   .hero-full-scrim.
+/* ─── HERO (texto e foto lado a lado, sem sobreposição) ───
+   Decisão registrada: o layout antigo (foto de largura total + camada escura
+   + texto por cima) exigia uma foto muito específica — horizontal, alta
+   resolução, com a área esquerda vazia pro texto caber — inviável pra um
+   lojista pequeno subindo foto de celular. Aqui a área é dividida: texto
+   sobre --ink (cor sólida, fixa, nunca varia por tema — ver .hero-split-text)
+   à esquerda, foto à direita, sem nenhum um por cima do outro.
+   Isso elimina a camada escura por construção, não por ajuste fino: não há
+   mais foto atrás do texto pra precisar escurecer, então a cor real do
+   produto aparece sem filtro. E o contraste do texto deixa de depender de
+   qual foto o lojista subiu — é texto branco sobre --ink, sempre o mesmo
+   contraste (medido: ~18.9:1 título, ~16:1 descrição — bem acima do mínimo
+   AA de 4.5:1), nos 5 temas, porque --ink nunca é sobrescrito por tema
+   (só bg/bg2/border variam com temaFundo — ver TEMAS_FUNDO em server.js).
+   Proporção 42% texto / 58% foto: o texto ganhou 2 pontos a mais que a
+   divisão meio a meio óbvia porque um título peso 900 em fonte grande
+   precisa de largura própria pra não quebrar em muitas linhas; o tamanho do
+   título (.hero-title) também foi recalibrado pra essa coluna mais estreita
+   em vez de mantido do layout antigo, que era calibrado pra ocupar a tela
+   inteira.
    Altura por min-height (não height fixo): título/descrição comuns rendem
-   exatamente na altura alvo; texto anormalmente longo cresce o container em
-   vez de estourar ou cortar — ver comentário na regra mobile sobre dvh. */
-.hero-full{
+   exatamente na altura alvo; texto anormalmente longo cresce o container
+   (texto E foto juntos, é a mesma linha) em vez de estourar ou cortar — ver
+   comentário na regra mobile sobre dvh. */
+.hero-split{
   position:relative;
   display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
+  overflow:hidden;
   min-height:70vh;
   min-height:70dvh; /* dvh desconta a barra de endereço do navegador no celular — só some no fallback vh em browser muito antigo, que não reconhece dvh e ignora esta linha */
-  overflow:hidden;
-  background:var(--bg);
+  background:var(--ink);
 }
-.hero-full-media{
-  position:absolute;
-  inset:0;
-  z-index:0;
+.hero-split-text{
+  position:relative;
+  flex:0 0 42%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:14px;
+  padding:48px clamp(28px,4vw,64px);
+  background:var(--ink);
 }
-.hero-full-media img{
+.hero-split-media{
+  position:relative;
+  flex:0 0 58%;
+  min-width:0;
+}
+.hero-split-media img{
   width:100%;
   height:100%;
   object-fit:cover;
   object-position:center;
   display:block;
-}
-.hero-full-scrim{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  pointer-events:none;
-  background:linear-gradient(to top, rgba(0,0,0,.78) 0%, rgba(0,0,0,.6) 60%, rgba(0,0,0,.6) 100%);
-}
-.hero-full-content{
-  position:relative;
-  z-index:2;
-  width:100%;
-  max-width:1240px;
-  margin:0 auto;
-  padding:48px 36px 56px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
 }
 
 .hero-season{
@@ -375,13 +373,17 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 .hero-title{
   font-family:var(--sans);
-  font-size:clamp(30px,3.6vw,56px);
+  /* Recalibrado pra coluna de 42% de largura, não mais a tela inteira —
+     3.6vw/56px (layout antigo) quebrava linha cedo demais numa coluna
+     estreita; o teto certo é o da coluna, não o da viewport. */
+  font-size:clamp(24px,3.1vw,42px);
   font-weight:900;
   line-height:1.05;
   letter-spacing:-.03em;
   margin-bottom:0;
-  /* Branco fixo, só dentro do hero — testado contra o pior caso (foto clara)
-     no piso de 60% da camada escura (ver .hero-full-scrim). */
+  /* Branco fixo sobre --ink (superfície escura fixa, não mais foto) — medido:
+     ~18.9:1, bem acima do mínimo AA de 4.5:1, e vale pros 5 temas porque
+     --ink nunca muda com temaFundo. */
   color:#fff;
   /* Inicialmente escondemos o título para evitar FOUC enquanto a fonte carrega */
   opacity: 0;
@@ -393,9 +395,10 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-title i,
 .hero-title strong {
   font-style: italic;
-  /* Era var(--gold2) — testado e reprovado: contraste ~2.4:1 contra o pior
-     caso, abaixo de AA. Sem cor diferenciada aqui, só itálico — branco
-     garantido é melhor que um destaque bonito que falha em foto clara. */
+  /* Era var(--gold2) — testado e reprovado: contraste ~2.37:1 mesmo no valor
+     padrão do template, bem abaixo de AA (a cor de marca é hex livre do
+     lojista, sem validação de contraste — não dá pra confiar nela aqui).
+     Sem cor diferenciada, só itálico — branco garantido sempre passa. */
   color: inherit;
   font-weight: 900;
 }
@@ -403,7 +406,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-lead{
   font-size:15px;
   /* Branco com leve transparência (não var(--muted), calibrado pra fundo
-     claro) — ainda dentro da margem de segurança do piso de 60%. */
+     claro) sobre --ink — medido: ~16:1, bem acima do mínimo AA. */
   color:rgba(255,255,255,.92);
   line-height:1.8;
   max-width:520px;
@@ -448,14 +451,14 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 /* .btn-line é reaproveitado em outras seções sobre fundo claro (texto
    escuro, borda clara) — achado ao montar o hero: sem esta sobrescrita
-   escopada, o botão "Categorias" ficaria com texto escuro sobre foto
-   escurecida, quase ilegível. Não toquei na regra base, só o comportamento
-   dela dentro do hero. */
-.hero-full .btn-line{
+   escopada, o botão "Categorias" ficaria com texto escuro sobre --ink,
+   quase ilegível. Não toquei na regra base, só o comportamento dela dentro
+   do hero. */
+.hero-split .btn-line{
   color:#fff;
   border-color:rgba(255,255,255,.5);
 }
-.hero-full .btn-line:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.1)}
+.hero-split .btn-line:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.1)}
 
 /* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
@@ -491,15 +494,27 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
 
 @media(max-width:768px){
-  /* Sem vh puro no celular: tela alta e estreita faz um alvo pensado pro
-     desktop (70vh) virar mais da metade da tela só de hero. max-height em
-     px trava o teto mesmo num aparelho com tela muito alta. */
-  .hero-full{
-    min-height:55vh;
-    min-height:55dvh;
-    max-height:600px;
+  /* Empilhado: faixa de texto (altura de conteúdo, cresce se o texto for
+     longo) em cima, foto embaixo. Sem min-height/max-height no container —
+     diferente do layout antigo (foto+scrim+texto sobrepostos, que precisava
+     de um teto de altura porque tudo vivia numa única camada) — aqui texto e
+     foto são blocos separados na mesma coluna, então a altura total é só a
+     soma das duas, sem risco de um cortar o outro. */
+  .hero-split{
+    flex-direction:column;
+    min-height:0;
   }
-  .hero-full-content{padding:0 20px 40px}
+  .hero-split-text{
+    flex:none;
+    padding:32px 24px 28px;
+  }
+  .hero-split-media{
+    flex:none;
+    /* Mais larga que alta — oposto do desktop (mais alta que larga). Teto
+       previsível de corte (ver comentário no CSS do .hero-split-media img)
+       em vez de uma fração arbitrária de tela. */
+    aspect-ratio:16/10;
+  }
   .hero-benefits-bar{padding:0 20px;margin-top:0}
   .hero-benefits{flex-direction:row;gap:10px;overflow:auto;justify-content:flex-start}
   .hero-benefit{flex:none}
@@ -1841,13 +1856,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </nav>
 
-<!-- HERO: foto de largura total, texto sobreposto sobre camada escura fixa -->
-<div class="hero-full">
-  <div class="hero-full-media">
-    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyM5QTdBM0EnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNDNEE1NUEnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
-  </div>
-  <div class="hero-full-scrim" aria-hidden="true"></div>
-  <div class="hero-full-content">
+<!-- HERO: texto (--ink sólido) e foto lado a lado, sem sobreposição — ver
+     comentário no CSS (.hero-split) pro raciocínio completo. Ordem no DOM é
+     texto primeiro, foto depois: em row (desktop) isso já posiciona texto à
+     esquerda/foto à direita; em column (mobile, ver media query) a mesma
+     ordem vira texto em cima/foto embaixo — nenhum order/reverse necessário. -->
+<div class="hero-split">
+  <div class="hero-split-text">
     <div class="hero-season" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
     <h1 class="hero-title" id="heroTitle">
       Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
@@ -1864,6 +1879,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div><span class="stat-val" id="stAvaliacao">—</span><span class="stat-label">Avaliação</span></div>
       <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
     </div>
+  </div>
+  <div class="hero-split-media">
+    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyM5QTdBM0EnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNDNEE1NUEnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
   </div>
 </div>
 
