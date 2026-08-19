@@ -4,6 +4,8 @@ Documento de leitura — gerado a partir de uma varredura do código em 2026-08-
 
 **Atualização 2026-08-18:** dos "Pontos de atenção" abaixo, os itens 1 (arquivos órfãos), 2 (`server_HEAD.js`/arquivo `git`), 6 (default "Cibelle") e 9 (TODOs desatualizados) já foram resolvidos. Os demais continuam em aberto. A seção 6 ganhou uma entrada nova sobre hierarquia de categorias (o que existe hoje e o que ativar de verdade exigiria) — ver "Categorias são flat hoje".
 
+**Atualização 2026-08-19:** a partir dos achados de `AUDITORIA_QUALIDADE.md`, mais itens foram removidos — o item 4 abaixo (`qr_backend_patch.js`) foi resolvido. Além disso, sem chamador em nenhum front-end confirmado por busca: as rotas `POST /api/pix/qr-mp` e `GET /api/pix/automatic` (duplicavam, sem uso, o que `POST /api/payment/create` e `GET /api/payment/config` já fazem — removidas da tabela da seção 2); a dependência `mongodb` no `package.json` (nunca usada diretamente — `mongoose` já a traz como dependência própria); e, em `VN_IMPORTS.html`, um segundo mecanismo morto de contador do carrinho no cabeçalho (`updateHeaderDots`, lendo uma chave de `localStorage` que nunca era escrita) junto de uma tela de confirmação de carrinho nunca ligada a nenhum botão (`showCartConfirmation`) — `produto.html` e `search.html` também tiveram sua versão do contador corrigida para usar o mesmo mecanismo visual que já funcionava (`syncDots`, classe `.on`) em vez de escrever texto num elemento que o CSS mantém sempre invisível.
+
 Este é um template white-label de e-commerce (Node/Express + MongoDB Atlas + Mongoose, deploy na Vercel como função serverless, sem etapa de build). Cada cliente roda sua própria cópia do repositório, com seu próprio banco e suas próprias variáveis de ambiente.
 
 ---
@@ -12,7 +14,7 @@ Este é um template white-label de e-commerce (Node/Express + MongoDB Atlas + Mo
 
 ### Backend
 
-**`server.js`** (~3570 linhas) — o backend inteiro. Não há divisão por módulos: Express app, todos os schemas Mongoose que importam de verdade (Produto, Category, Banner, Settings, Order, Config — só `Review` vem de um arquivo separado), todas as rotas de API, geração dos HTMLs templados, os dois crons, integração com Mercado Pago (cartão e Pix), cotação de frete (Melhor Envio), upload para Cloudinary, autenticação JWT. **Este é o arquivo que você vai abrir para quase qualquer mudança de backend.**
+**`server.js`** (~3470 linhas) — o backend inteiro. Não há divisão por módulos: Express app, todos os schemas Mongoose que importam de verdade (Produto, Category, Banner, Settings, Order, Config — só `Review` vem de um arquivo separado), todas as rotas de API, geração dos HTMLs templados, os dois crons, integração com Mercado Pago (cartão e Pix), cotação de frete (Melhor Envio), upload para Cloudinary, autenticação JWT. **Este é o arquivo que você vai abrir para quase qualquer mudança de backend.**
 
 **`config.js`** (~40 linhas) — o "branco-de-loja": valores específicos de cada implantação, editados à mão uma vez por cliente. Comentário no próprio arquivo: *"Para um novo cliente, altere apenas este arquivo."* Contém nome da loja, cor primária/secundária, CEP de origem, tag do cliente (Cloudinary), chave Pix padrão, sufixo do título, se a loja usa tamanhos de roupa por padrão, e a paleta de cores base. Mexa aqui ao configurar uma loja nova.
 
@@ -115,8 +117,6 @@ Todas as rotas de API vivem em `server.js`, prefixadas com `/api`. "Auth" signif
 | `/api/payment/config` | GET | Público |
 | `/api/payment/create` | POST | Público |
 | `/api/payment/status/:orderId` | GET | Público |
-| `/api/pix/automatic` | GET | Público |
-| `/api/pix/qr-mp` | POST | Público |
 | `/api/pix/webhook` | POST | Público, mas validado por assinatura (`x-signature` conferida contra `mp_webhook_secret`, não JWT) — é o Mercado Pago chamando, não o navegador do cliente |
 
 ### Frete
@@ -272,7 +272,7 @@ Nada aqui foi corrigido — é uma lista pra você decidir o que fazer com cada 
 
 3. **[RESOLVIDO 2026-08-18] Um arquivo chamado `git`** (0 bytes) na raiz do projeto, também rastreado no Git — commitado junto de um commit chamado `"animação"`, sem relação nenhuma com controle de versão. Quase certamente um acidente de terminal (`git` redirecionado pra um arquivo por engano) que acabou entrando num `git add .`. Removido.
 
-4. **`qr_backend_patch.js`** — arquivo com um único comentário: `"helper (não executa): arquivo placeholder para manter contexto."`. Não é importado por nada. Não dá pra saber, só lendo, se ainda tem alguma função (talvez um lembrete pra você mesmo) ou se pode sumir.
+4. **[RESOLVIDO 2026-08-19] `qr_backend_patch.js`** — arquivo com um único comentário: `"helper (não executa): arquivo placeholder para manter contexto."`. Não era importado por nada. Removido.
 
 5. **`buscarConfigCompleta()` sempre devolve HTTP 200, mesmo com o Mongo fora do ar** (detalhado na seção 6) — já registrado como pendência dentro do próprio código, explicitamente adiado "pra não misturar com a correção já aprovada no cliente" (a trava `configCarregado` do `admin.html`). Se decidir resolver, o comentário acima da função em `server.js` já descreve a mudança sugerida (propagar 5xx em vez de fallback silencioso).
 

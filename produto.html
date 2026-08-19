@@ -2020,12 +2020,16 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function getWishlist(){ try{ return JSON.parse(localStorage.getItem('vni_wishlist')||'[]'); }catch(e){ return []; } }
   function saveWishlist(w){ localStorage.setItem('vni_wishlist', JSON.stringify(w||[])); }
 
-  function updateHeaderDots(){
-    const cart = getCart();
-    const cartCount = cart.reduce((s,i)=>s+(i.qty||1),0);
-    const wishCount = getWishlist().length;
-    const cDot = document.getElementById('cDot'); if(cDot) cDot.textContent = cartCount?cartCount:'';
-    const wDot = document.getElementById('wDot'); if(wDot) wDot.textContent = wishCount?wishCount:'';
+  // Mesmo mecanismo do site principal (VN_IMPORTS.html): a bolinha (.nav-dot)
+  // só aparece via classe .on — escrever número em .textContent não mostra
+  // nada, porque o CSS não reserva espaço de texto nela (8x8px, display:none
+  // por padrão). Nome igual ao do site principal de propósito, mesma função,
+  // copiada — não há módulo JS compartilhado entre os arquivos ainda.
+  function syncDots(){
+    const hC = getCart().reduce((s,i)=>s+(i.qty||1),0) > 0;
+    const hW = getWishlist().length > 0;
+    const cDot = document.getElementById('cDot'); if(cDot) cDot.classList.toggle('on', hC);
+    const wDot = document.getElementById('wDot'); if(wDot) wDot.classList.toggle('on', hW);
   }
 
   let produtoAtual = null;
@@ -2059,7 +2063,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     else { wish.push(produtoAtual._id); showToast('heart','Adicionado aos favoritos!'); }
     saveWishlist(wish);
     atualizarBotaoWish();
-    updateHeaderDots();
+    syncDots();
     // efeito de pulso ao clicar
     this.classList.remove('pulse'); void this.offsetWidth; this.classList.add('pulse');
   });
@@ -2090,7 +2094,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       qty: 1
     });
     saveCart(cart);
-    updateHeaderDots();
+    syncDots();
     showToast('success','Produto adicionado ao carrinho!');
   });
 
@@ -2155,9 +2159,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
   carregarConfigLoja();
   loadProduct();
-  updateHeaderDots();
+  syncDots();
   document.getElementById('footYear').textContent = new Date().getFullYear();
-  window.addEventListener('storage', (e)=>{ if(e.key==='vn_cart' || e.key==='vni_wishlist') updateHeaderDots(); });
+  window.addEventListener('storage', (e)=>{ if(e.key==='vn_cart' || e.key==='vni_wishlist') syncDots(); });
 
 // ─── LIGHTBOX / LUPA (galeria da página de produto) ───────────────────────
 let __lbIndex = 0;

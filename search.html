@@ -2040,7 +2040,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     if(idx>-1){ list.splice(idx,1); showToast('Removido dos favoritos'); if(btnEl) btnEl.classList.remove('on'); }
     else { list.push(id); showToast('Adicionado aos favoritos'); if(btnEl) btnEl.classList.add('on'); }
     saveWishlist(list);
-    updateHeaderDots();
+    syncDots();
   }
 
   // tamanho vem sempre explícito de quem chama — nunca deduzido de estado
@@ -2072,7 +2072,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     cart.push(item);
     localStorage.setItem('vn_cart', JSON.stringify(cart));
     showToast('Produto adicionado ao carrinho');
-    updateHeaderDots();
+    syncDots();
   }
 
   /** Gera o botão/ação de "adicionar" de um card: produto sem tamanho
@@ -2119,14 +2119,19 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     t.textContent = msg; t.style.opacity = '1'; clearTimeout(t._hide); t._hide = setTimeout(()=>{ t.style.opacity='0'; },1600);
   }
 
-  function updateHeaderDots(){
+  // Mesmo mecanismo do site principal (VN_IMPORTS.html): a bolinha (.nav-dot)
+  // só aparece via classe .on — escrever número em .textContent não mostra
+  // nada, porque o CSS não reserva espaço de texto nela (8x8px, display:none
+  // por padrão). Nome igual ao do site principal de propósito, mesma função,
+  // copiada — não há módulo JS compartilhado entre os arquivos ainda.
+  function syncDots(){
     try{
       let cart = [];
       try { cart = JSON.parse(localStorage.getItem('vn_cart')||'[]'); } catch(e) { cart = []; }
-      const cartCount = cart.reduce((s,i)=>s+(i.qty||1),0);
-      const wishCount = getWishlist().length;
-      const cDot = document.getElementById('cDot'); if(cDot) cDot.textContent = cartCount?cartCount:'';
-      const wDot = document.getElementById('wDot'); if(wDot) wDot.textContent = wishCount?wishCount:'';
+      const hC = cart.reduce((s,i)=>s+(i.qty||1),0) > 0;
+      const hW = getWishlist().length > 0;
+      const cDot = document.getElementById('cDot'); if(cDot) cDot.classList.toggle('on', hC);
+      const wDot = document.getElementById('wDot'); if(wDot) wDot.classList.toggle('on', hW);
     }catch(e){/* ignore */}
   }
 
@@ -2485,9 +2490,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   carregarConfigLoja();
   popularFiltroCategorias();
   doPageSearch();
-  updateHeaderDots();
+  syncDots();
   document.getElementById('footYear').textContent = new Date().getFullYear();
-  window.addEventListener('storage', (e)=>{ if(e.key==='vn_cart' || e.key==='vni_wishlist') updateHeaderDots(); });
+  window.addEventListener('storage', (e)=>{ if(e.key==='vn_cart' || e.key==='vni_wishlist') syncDots(); });
 </script>
 </body>
 </html>

@@ -4397,36 +4397,6 @@ async function loadMegaMenu(){
 // Chama em background — não bloqueia renderização
 setTimeout(()=>{ try{ loadMegaMenu(); }catch(e){console.warn(e);} }, 200);
 
-// Header badges sync and cart confirmation drawer
-function updateHeaderDots(){
-  try{
-    const cart = JSON.parse(localStorage.getItem('vni_cart')||'[]');
-    const cartCount = cart.reduce((s,i)=>s+(i.qty||1),0);
-    const w = JSON.parse(localStorage.getItem('vni_wishlist')||'[]');
-    const wishCount = w.length;
-    const cDot = document.getElementById('cDot'); if(cDot) cDot.textContent = cartCount?cartCount:'';
-    const wDot = document.getElementById('wDot'); if(wDot) wDot.textContent = wishCount?wishCount:'';
-  }catch(e){/* ignore */}
-}
-function formatPrice(n){ const x = Number(n)||0; return x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function showCartConfirmation(item){
-  let m = document.getElementById('vniCartConfirm');
-  if(!m){
-    m = document.createElement('div'); m.id='vniCartConfirm'; m.style.cssText='position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.12);z-index:9999;padding:20px;transform:translateX(100%);transition:transform .32s';
-    const ov=document.createElement('div'); ov.id='vniCartConfirmOv'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;opacity:0;transition:opacity .25s'; ov.onclick = ()=>{ closeCartConfirm(); };
-    document.body.appendChild(ov); document.body.appendChild(m);
-  }
-  m.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div style="display:flex;align-items:center;gap:12px"><div style="width:78px;height:78px;flex:0 0 78px;border-radius:8px;overflow:hidden;background:#f6f6f6"><img src="${item.imagem||''}" style="width:100%;height:100%;object-fit:cover"></div><div><div style="font-weight:700">${escapeHtmlTexto(item.nome||'')}</div><div style="color:var(--muted);margin-top:6px">${formatPrice(item.preco||0)}</div></div></div><div style="margin-top:14px;flex:1"><div style="font-size:13px;color:#666">Item adicionado ao carrinho</div></div><div style="display:flex;gap:12px"><button id="vniGotoCart" style="flex:1;padding:12px 14px;border-radius:10px;border:none;background:#111;color:#fff">Ver Carrinho / Finalizar</button><button id="vniContinue" style="flex:1;padding:12px 14px;border-radius:10px;border:1px solid #ddd;background:#fff">Continuar Comprando</button></div></div>`;
-  document.getElementById('vniCartConfirmOv').style.opacity='1'; setTimeout(()=>{ m.style.transform='translateX(0)'; },20);
-  document.getElementById('vniGotoCart').onclick = ()=>{ if(typeof openCart === 'function') openCart(); else location.href='/cart.html'; closeCartConfirm(); };
-  document.getElementById('vniContinue').onclick = ()=>{ closeCartConfirm(); };
-}
-function closeCartConfirm(){ const m=document.getElementById('vniCartConfirm'); const ov=document.getElementById('vniCartConfirmOv'); if(m) m.style.transform='translateX(100%)'; if(ov) ov.style.opacity='0'; setTimeout(()=>{ if(ov) ov.remove(); if(m) m.remove(); },350); }
-
-// initialize badges and storage sync
-updateHeaderDots();
-window.addEventListener('storage', (e)=>{ if(e.key==='vni_cart' || e.key==='vni_wishlist') updateHeaderDots(); });
-
 // Garante que checkout consiga criar pedidos mesmo que chamado antes do DOMContentLoaded.
 // (API_URL é definida no final do arquivo, mas checkout só é acionado por clique do usuário.)
 
