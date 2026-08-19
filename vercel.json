@@ -56,6 +56,18 @@
     {
       "source": "/termos.html",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/cart.js",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/js/colors.js",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/js/theme.js",
+      "destination": "/server.js"
     }
   ]
 }

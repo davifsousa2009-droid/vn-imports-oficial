@@ -3440,6 +3440,21 @@ app.get('/termos.html', (req, res) => {
   res.send(termosHtmlCache);
 });
 
+const jsCompartilhadoCache = {};
+function servirJsCompartilhado(nomeArquivo) {
+  return (req, res) => {
+    if (!jsCompartilhadoCache[nomeArquivo]) {
+      jsCompartilhadoCache[nomeArquivo] = fs.readFileSync(path.join(__dirname, 'js', nomeArquivo), 'utf8');
+    }
+    semCacheHtml(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8');
+    res.send(jsCompartilhadoCache[nomeArquivo]);
+  };
+}
+app.get('/js/cart.js', servirJsCompartilhado('cart.js'));
+app.get('/js/colors.js', servirJsCompartilhado('colors.js'));
+app.get('/js/theme.js', servirJsCompartilhado('theme.js'));
+
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }

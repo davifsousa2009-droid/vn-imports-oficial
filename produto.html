@@ -1801,6 +1801,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   <span id="toastMsg"></span>
 </div>
 
+<script src="/js/colors.js"></script>
+<script src="/js/theme.js"></script>
+<script src="/js/cart.js"></script>
 <script>
   const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
 
@@ -1831,19 +1834,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       el.classList.add('is-ready');
     });
     document.title = document.title.replace('Minha Loja', nomeFinal);
-  }
-
-  // Aplica as cores da loja (tema de fundo + cor primária/secundária) como
-  // variáveis CSS — mesma função/lógica do VN_IMPORTS.html. Qualquer chave
-  // que não vier em `colors` simplesmente não sobrescreve o :root padrão
-  // já embutido no CSS deste arquivo.
-  function aplicarCoresDaLoja(colors){
-    if(!colors || typeof colors !== 'object') return;
-    const root = document.documentElement;
-    Object.keys(colors).forEach((k) => {
-      const v = colors[k];
-      if(typeof v === 'string' && v.trim()) root.style.setProperty('--' + k, v.trim());
-    });
   }
 
   async function carregarConfigLoja(){
@@ -1888,25 +1878,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       && resolve(p.alturaCm, window.S_alturaCmPadrao)
       && resolve(p.comprimentoCm, window.S_comprimentoCmPadrao);
   }
-
-  // ─── TEMA CLARO/ESCURO (mesma chave/lógica do site principal) ───
-  function applyTheme(theme){
-    document.documentElement.setAttribute('data-theme', theme);
-    document.querySelectorAll('.theme-icon-sun').forEach(el => el.style.display = theme==='dark' ? 'none' : '');
-    document.querySelectorAll('.theme-icon-moon').forEach(el => el.style.display = theme==='dark' ? '' : 'none');
-  }
-  function toggleTheme(){
-    const atual = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    const novo = atual === 'dark' ? 'light' : 'dark';
-    applyTheme(novo);
-    try { localStorage.setItem('vn_theme', novo); } catch(e) {}
-  }
-  (function initTheme(){
-    let salvo = null;
-    try { salvo = localStorage.getItem('vn_theme'); } catch(e) {}
-    const preferido = salvo || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    applyTheme(preferido);
-  })();
 
   // ─── TOAST real do site (mesmo componente do VN_IMPORTS.html) ───
   let toastT;
@@ -2011,26 +1982,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   }
   setTimeout(loadMegaMenu, 150);
 
-  // ─── CARRINHO / FAVORITOS ───
-  // Usa 'vn_cart' — a MESMA chave que o site principal usa de verdade
-  // (a versão anterior deste arquivo usava 'vni_cart', por isso os itens
-  // "adicionados" aqui nunca apareciam no carrinho real).
-  function getCart(){ try{ return JSON.parse(localStorage.getItem('vn_cart')||'[]'); }catch(e){ return []; } }
-  function saveCart(c){ localStorage.setItem('vn_cart', JSON.stringify(c||[])); }
-  function getWishlist(){ try{ return JSON.parse(localStorage.getItem('vni_wishlist')||'[]'); }catch(e){ return []; } }
-  function saveWishlist(w){ localStorage.setItem('vni_wishlist', JSON.stringify(w||[])); }
-
-  // Mesmo mecanismo do site principal (VN_IMPORTS.html): a bolinha (.nav-dot)
-  // só aparece via classe .on — escrever número em .textContent não mostra
-  // nada, porque o CSS não reserva espaço de texto nela (8x8px, display:none
-  // por padrão). Nome igual ao do site principal de propósito, mesma função,
-  // copiada — não há módulo JS compartilhado entre os arquivos ainda.
-  function syncDots(){
-    const hC = getCart().reduce((s,i)=>s+(i.qty||1),0) > 0;
-    const hW = getWishlist().length > 0;
-    const cDot = document.getElementById('cDot'); if(cDot) cDot.classList.toggle('on', hC);
-    const wDot = document.getElementById('wDot'); if(wDot) wDot.classList.toggle('on', hW);
-  }
+  // Carrinho, favoritos e syncDots() agora vêm de /js/cart.js (compartilhado
+  // com VN_IMPORTS.html e search.html).
 
   let produtoAtual = null;
   let tamanhoSelecionado = null;
@@ -2161,7 +2114,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   loadProduct();
   syncDots();
   document.getElementById('footYear').textContent = new Date().getFullYear();
-  window.addEventListener('storage', (e)=>{ if(e.key==='vn_cart' || e.key==='vni_wishlist') syncDots(); });
 
 // ─── LIGHTBOX / LUPA (galeria da página de produto) ───────────────────────
 let __lbIndex = 0;
