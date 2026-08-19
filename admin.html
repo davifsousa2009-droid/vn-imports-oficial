@@ -295,11 +295,19 @@ tr:hover td{background:#FAFAF8}
           <div class="stat" id="sSemPalavrasChaveBox" style="cursor:pointer" onclick="irParaProdutosSemPalavrasChave()" title="Ver produtos sem palavras-chave">
             <div class="stat-lbl">Sem Palavras-chave</div><div class="stat-val" id="sSemPalavrasChave">—</div><div class="stat-sub">busca só encontra pelo nome</div>
           </div>
+          <div class="stat"><div class="stat-lbl">Receita do Mês</div><div class="stat-val" id="sReceitaMes">—</div><div class="stat-sub">pedidos pagos</div></div>
+          <div class="stat" id="sPedidosPendentesBox" style="border-left:3px solid #C4A55A" title="Pedidos aguardando confirmação de pagamento">
+            <div class="stat-lbl">Pedidos Pendentes</div><div class="stat-val" id="sPedidosPendentes" style="color:#C4A55A">—</div><div class="stat-sub">aguardando pagamento</div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Bem-vindo ao Painel Admin</div>
           <p style="font-size:14px;color:#888;line-height:1.75">Use o menu lateral para <strong style="color:#111">cadastrar</strong> novos produtos ou <strong style="color:#111">gerenciar</strong> os existentes. Tudo que você salvar aqui aparece automaticamente na vitrine da loja.</p>
           <div style="margin-top:18px;padding:13px 15px;background:#F7F4F0;border:1px solid #E0DBD4;font-size:12px;color:#888;line-height:1.65"><strong style="color:#111">Segurança:</strong> Nunca compartilhe seu arquivo <code>.env</code> — sua senha do banco está protegida lá.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Receita — Últimos 30 dias</div>
+          <div id="graficoReceita" style="min-height:150px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:13px">Carregando…</div>
         </div>
       </div>
 
@@ -1088,6 +1096,12 @@ async function fazerLoginAdmin() {
     document.getElementById('gatePass').value = '';
     err.style.display = 'none';
     document.getElementById('loginGate').classList.add('off');
+    // loadOrdersSummary() já roda uma vez na carga da página (INIT, fim do
+    // arquivo), mas nesse momento ainda não existe JWT — sem login prévio na
+    // aba, a rota autenticada /api/orders falha e os cards de vendas ficam
+    // presos em "—". Refaz agora que o token acabou de ser salvo, senão o
+    // dashboard só mostraria dados de vendas depois de um F5 manual.
+    loadOrdersSummary();
   } catch {
     err.className = 'fmsg er';
     err.textContent = 'Não foi possível contatar o servidor.';
@@ -1420,6 +1434,105 @@ async function loadStats() {
     const semPalavrasChave = ps.filter(p => !Array.isArray(p.palavrasChave) || !p.palavrasChave.length).length;
     document.getElementById('sSemPalavrasChave').textContent = semPalavrasChave;
   } catch { /* silencioso */ }
+}
+
+// Mesmo padrão de headersComJwt/fetch de loadOrders() (linha ~2271), mas com
+// falha tratada de forma silenciosa como loadStats() acima — o dashboard de
+// vendas é um complemento, não pode derrubar os cards de catálogo se
+// /api/orders falhar ou o token estiver vencido (por isso não chama relogar()
+// aqui, diferente de loadOrders()).
+async function loadOrdersSummary() {
+  const graficoEl = document.getElementById('graficoReceita');
+  try {
+    const r = await fetch(API + '/orders', {
+      method: 'GET',
+      headers: headersComJwt({})
+    });
+    if (!r.ok) {
+      if (graficoEl) graficoEl.textContent = 'Não foi possível carregar os dados de vendas.';
+      return;
+    }
+    const list = await r.json().catch(() => []);
+    const orders = Array.isArray(list) ? list : [];
+
+    const agora = new Date();
+
+    // a) Receita do mês atual: só pedidos Pago, createdAt dentro do mês corrente.
+    let receitaMes = 0;
+    for (const o of orders) {
+      if (o.status !== 'Pago') continue;
+      const d = new Date(o.createdAt);
+      if (d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth()) {
+        receitaMes += Number(o.total) || 0;
+      }
+    }
+    const sReceitaMesEl = document.getElementById('sReceitaMes');
+    if (sReceitaMesEl) sReceitaMesEl.textContent = fmt(receitaMes);
+
+    // b) Pedidos pendentes: contagem simples, sem filtro de data.
+    const pendentes = orders.filter(o => o.status === 'Pendente').length;
+    const sPedidosPendentesEl = document.getElementById('sPedidosPendentes');
+    if (sPedidosPendentesEl) sPedidosPendentesEl.textContent = String(pendentes);
+
+    // c) Série dos últimos 30 dias (hoje incluso), só pedidos Pago, agrupados
+    // pelo dia de criação em hora local — dia sem pedido pago soma 0.
+    const chaveDia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const porDia = new Map();
+    for (const o of orders) {
+      if (o.status !== 'Pago') continue;
+      const d = new Date(o.createdAt);
+      if (isNaN(d.getTime())) continue;
+      const chave = chaveDia(d);
+      porDia.set(chave, (porDia.get(chave) || 0) + (Number(o.total) || 0));
+    }
+
+    const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    const serie = [];
+    for (let i = 29; i >= 0; i--) {
+      const dia = new Date(hoje);
+      dia.setDate(dia.getDate() - i);
+      serie.push({ data: dia, valor: porDia.get(chaveDia(dia)) || 0 });
+    }
+
+    renderGraficoReceita(serie);
+  } catch {
+    if (graficoEl) graficoEl.textContent = 'Não foi possível carregar os dados de vendas.';
+  }
+}
+
+// Gráfico de barras em SVG inline (sem lib externa) — uma barra por dia,
+// altura proporcional ao dia de maior receita da série. Hover muda a opacidade
+// e o <title> de cada barra vira tooltip nativo do navegador com data + valor.
+function renderGraficoReceita(serie) {
+  const el = document.getElementById('graficoReceita');
+  if (!el) return;
+
+  const max = Math.max(0, ...serie.map(d => d.valor));
+  if (max <= 0) {
+    el.style.display = 'flex';
+    el.textContent = 'Nenhuma venda registrada nos últimos 30 dias.';
+    return;
+  }
+
+  const slot = 10;
+  const barW = 7;
+  const chartH = 150;
+  const maxBarH = 130;
+
+  const bars = serie.map((d, i) => {
+    const h = (d.valor / max) * maxBarH;
+    const x = i * slot + (slot - barW) / 2;
+    const y = chartH - h;
+    const dataTxt = d.data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return `<rect class="receita-bar" x="${x}" y="${y}" width="${barW}" height="${h}" rx="1"><title>${dataTxt} — ${fmt(d.valor)}</title></rect>`;
+  }).join('');
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <svg viewBox="0 0 ${serie.length * slot} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="none" style="display:block">
+      <style>.receita-bar{fill:#C4A55A;transition:opacity .15s}.receita-bar:hover{opacity:.65}</style>
+      ${bars}
+    </svg>`;
 }
 
 function irParaProdutosBloqueados() {
@@ -2892,6 +3005,7 @@ async function salvarConfig() {
 checkAuthGate();
 checkStatus();
 loadStats();
+loadOrdersSummary();
 refreshCategorias();
 loadConfig();
 loadSettings();
