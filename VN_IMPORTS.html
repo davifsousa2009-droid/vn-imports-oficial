@@ -5313,6 +5313,22 @@ async function carregarProdutosDoServidor(categoria) {
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Rede de segurança: se /api/config falhar (rede, CSP, servidor fora do
+  // ar — qualquer um dos dois caminhos de erro em carregarConfigLoja()) o
+  // #heroTitle ficava com opacity:0 pra sempre, porque nem o "return"
+  // antecipado no `if (!r.ok)` nem o `catch` tratam esse elemento (só o
+  // nome da loja tem fallback). Revela do jeito simples (sem fonte custom)
+  // se, passado esse tempo, a classe is-ready ainda não tiver sido
+  // aplicada pelo caminho normal — mesma ideia do timeout de 1200ms já
+  // usado para a fonte customizada do hero, aqui como último recurso.
+  setTimeout(() => {
+    const heroTitleEl = document.getElementById('heroTitle');
+    if (heroTitleEl && !heroTitleEl.classList.contains('is-ready')) {
+      heroTitleEl.classList.add('font-ready');
+      revelarConteudoEl(heroTitleEl);
+    }
+  }, 1500);
+
   // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
   // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
   await carregarConfigLoja();
