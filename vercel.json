@@ -68,10 +68,6 @@
     {
       "source": "/js/theme.js",
       "destination": "/server.js"
-    },
-    {
-      "source": "/pagina-inventada-teste-ci.html",
-      "destination": "/server.js"
     }
   ]
 }
