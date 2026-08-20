@@ -3479,3 +3479,23 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+
+// Superfície de teste: funções puras (sem I/O de banco/rede) expostas só
+// pra suite automatizada em test/ — nenhuma rota, nenhum comportamento de
+// produção muda por causa disto (app continua sendo o export principal,
+// isto é só uma propriedade extra pendurada nele). Ver test/setup.js.
+module.exports.testables = {
+  crc16ccitt,
+  tlv,
+  gerarPixCopiaCola,
+  sanitizarChavePix,
+  removerAcentosEEspeciais,
+  resolverDadosEnvioProduto,
+  dividirNomePagador,
+  emailPagadorValido,
+  validarAssinaturaWebhookMp,
+  mergePublicConfig,
+  mergePublicSettings,
+  slugifyNome,
+  slugifyTenantTag
+};

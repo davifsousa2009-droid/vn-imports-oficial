@@ -6,6 +6,8 @@ Documento de leitura — gerado a partir de uma varredura do código em 2026-08-
 
 **Atualização 2026-08-19:** a partir dos achados de `AUDITORIA_QUALIDADE.md`, mais itens foram removidos — o item 4 abaixo (`qr_backend_patch.js`) foi resolvido. Além disso, sem chamador em nenhum front-end confirmado por busca: as rotas `POST /api/pix/qr-mp` e `GET /api/pix/automatic` (duplicavam, sem uso, o que `POST /api/payment/create` e `GET /api/payment/config` já fazem — removidas da tabela da seção 2); a dependência `mongodb` no `package.json` (nunca usada diretamente — `mongoose` já a traz como dependência própria); e, em `VN_IMPORTS.html`, um segundo mecanismo morto de contador do carrinho no cabeçalho (`updateHeaderDots`, lendo uma chave de `localStorage` que nunca era escrita) junto de uma tela de confirmação de carrinho nunca ligada a nenhum botão (`showCartConfirmation`) — `produto.html` e `search.html` também tiveram sua versão do contador corrigida para usar o mesmo mecanismo visual que já funcionava (`syncDots`, classe `.on`) em vez de escrever texto num elemento que o CSS mantém sempre invisível.
 
+**Atualização 2026-08-19 (2):** primeira suite de testes automatizados do projeto, em `test/` — ver seção 7 abaixo pra como rodar. `server.js` ganhou uma exportação nova e puramente aditiva (`module.exports.testables`) só pra isso; nenhuma rota ou comportamento existente mudou.
+
 Este é um template white-label de e-commerce (Node/Express + MongoDB Atlas + Mongoose, deploy na Vercel como função serverless, sem etapa de build). Cada cliente roda sua própria cópia do repositório, com seu próprio banco e suas próprias variáveis de ambiente.
 
 ---
@@ -259,6 +261,32 @@ Antes de assumir que um campo segue o padrão "óbvio" de 3 degraus, confira `me
 **JWT é obrigatório pra o servidor sequer iniciar.** Diferente de toda outra env var (que falha rota-a-rota), `JWT_SECRET` ausente derruba o boot inteiro (`process.exit(1)`) — decisão deliberada pra nunca rodar em "modo vulnerável" com autenticação quebrada.
 
 **Segurança: LGPD e anonimização já são parte do fluxo normal, não um extra.** Além do cron diário de retenção (seção 5), existe uma rota de admin (`POST /api/admin/orders/anonimizar-comprador`) pra anonimizar sob demanda os pedidos de um comprador específico (por CPF/e-mail), e pedidos abandonados (nunca pagos) já são anonimizados no próprio instante do cancelamento — não esperam o cron.
+
+---
+
+## 7. Testes automatizados
+
+Vivem em `test/`. Framework: `node:test` + `node:assert`, nativos do Node desde a v18 — **nenhuma dependência nova** foi adicionada ao `package.json` pra isso.
+
+### Como rodar
+- `npm test` — suite completa (33 testes). Precisa de `MONGODB_URI` acessível (a mesma variável do `.env` já usada pra rodar o servidor).
+- `npm run test:unit` — só os testes que não tocam banco (Pix/CRC16/TLV, assinatura do webhook, resolução de peso/frete). Roda em qualquer lugar, mesmo sem `MONGODB_URI` configurado.
+
+### Arquivos
+- `test/setup.js` — helper compartilhado, **não é um arquivo de teste** (não está listado nos scripts do `package.json`, não roda sozinho). Define `JWT_SECRET` (dummy, se não houver um no ambiente — `server.js` recusa iniciar sem essa variável, mesmo em teste) e força `NODE_ENV=production` antes de exigir `server.js`, só pra esse `require` não disparar o `app.listen()` interno do servidor (que abriria uma porta de verdade e colidiria com qualquer servidor de dev já rodando). Devolve `{ app, testables }`.
+- `test/pix.test.js` (12 testes) — `crc16ccitt`, `tlv`, `gerarPixCopiaCola`, `sanitizarChavePix`, `removerAcentosEEspeciais`. Sem banco.
+- `test/webhook.test.js` (8 testes) — `validarAssinaturaWebhookMp`, assinando payloads de teste com HMAC-SHA256 de verdade (mesma fórmula do Mercado Pago). Sem banco.
+- `test/frete.test.js` (6 testes) — `resolverDadosEnvioProduto` (produto próprio vs. padrão da loja vs. nenhum dos dois). Sem banco.
+- `test/orders.integration.test.js` (7 testes) — os únicos de **integração**: sobem o `app` de verdade numa porta livre escolhida pelo SO (nunca a 3000 fixa) e batem em `POST /api/orders` via HTTP real, contra o banco de `MONGODB_URI`. Cobrem decremento de estoque, produto com `estoque:null`, rejeição por estoque insuficiente, reversão (`rollbackStock`) quando um pedido de vários itens falha no meio, bloqueio por falta de peso/dimensão, e que o total do pedido é sempre recalculado no servidor (não confia no que o cliente manda).
+
+### Sobre os testes de integração escreverem no banco
+`test/orders.integration.test.js` cria produtos e pedidos de verdade — não tem banco de teste separado configurado neste projeto, é o mesmo `MONGODB_URI` do `.env`. Todo documento criado usa o nome/`customerName` `__TESTE_AUTOMATIZADO_PEDIDOS__`, e o `before()`/`after()` do arquivo apaga tudo com esse marcador (tanto antes de começar, por segurança contra uma execução anterior interrompida, quanto ao final). Rodar a suite duas vezes seguidas não deixa resíduo — já testado. **Só rode `npm test` apontando pra um banco de desenvolvimento, nunca pra produção.**
+
+### `server.js` exporta um `.testables` só pra isso
+No fim do arquivo, `module.exports.testables = { crc16ccitt, gerarPixCopiaCola, resolverDadosEnvioProduto, ... }` — pendurado na mesma exportação que já existia (`module.exports = app`, usada pelo deploy na Vercel). São só as funções puras (sem I/O), pra dar pra testar em isolamento sem precisar simular rota HTTP nem banco. Se uma função nova, igualmente pura e crítica (dinheiro, estoque, dado pessoal), for escrita depois, o padrão é adicioná-la aqui.
+
+### Uma armadilha real, já resolvida — vale saber pra não repetir
+`require('../server.js')` deixa uma conexão Mongo real aberta em segundo plano (`connectDB()` roda incondicionalmente ao carregar o módulo). Sem fechar isso, o processo de teste nunca fica ocioso sozinho. A tentação óbvia é forçar com `process.exit(0)` num hook `after()` — **não faça isso**: `node --test` roda cada arquivo como processo filho e usa a saída normal dele pra saber quais dos testes daquele arquivo passaram um a um; `process.exit()` mata o processo antes disso, e o `node --test` reporta o arquivo inteiro como **"1 teste"**, escondendo qualquer falha individual real lá dentro. Foi exatamente isso que aconteceu na primeira versão desta suite — silêncio total sobre 32 testes, achando que só havia 1. O jeito certo, usado nos 4 arquivos: `after(async () => { await mongoose.disconnect().catch(() => {}); })` — fecha só a conexão (mesmo singleton do Mongoose que `server.js` usa, acessível porque é o mesmo processo), deixa o resto do processo encerrar sozinho, e o relatório sai completo.
 
 ---
 
