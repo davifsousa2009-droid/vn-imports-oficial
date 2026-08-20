@@ -1,0 +1,37 @@
+name: CI
+
+# Roda em todo push, a qualquer branch, e em Pull Request (se algum dia
+# existir um) — nunca depende de alguém lembrar de rodar isso na mão.
+# Só avisa: nenhum passo aqui bloqueia push nem merge (não há branch
+# protection ligada nisso). Ver MAPA_DO_PROJETO.md, seção 7.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      # Só a metade da suíte que não precisa de banco (test:unit) — os
+      # testes de integração (npm test completo) exigem MONGODB_URI e
+      # escrevem/apagam pedido e produto de teste num banco real. Este
+      # projeto é um template revendido por cliente: automatizar isso no CI
+      # significaria ou dar acesso ao banco de cada implantação pro
+      # pipeline, ou manter um segredo de banco de teste à parte — decisão
+      # consciente de não fazer isso por padrão. Os testes de integração
+      # continuam existindo pra rodar manualmente (`npm test`) antes de um
+      # merge importante.
+      - run: npm run test:unit
+
+      # Sintaxe .js, <script> inline dos HTMLs, bytes de controle, JSON
+      # válido, e consistência de rotas entre vercel.json e server.js.
+      - run: npm run verificar
