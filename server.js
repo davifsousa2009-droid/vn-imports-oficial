@@ -3440,6 +3440,21 @@ app.get('/termos.html', (req, res) => {
   res.send(termosHtmlCache);
 });
 
+const jsCompartilhadoCache = {};
+function servirJsCompartilhado(nomeArquivo) {
+  return (req, res) => {
+    if (!jsCompartilhadoCache[nomeArquivo]) {
+      jsCompartilhadoCache[nomeArquivo] = fs.readFileSync(path.join(__dirname, 'js', nomeArquivo), 'utf8');
+    }
+    semCacheHtml(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8');
+    res.send(jsCompartilhadoCache[nomeArquivo]);
+  };
+}
+app.get('/js/cart.js', servirJsCompartilhado('cart.js'));
+app.get('/js/colors.js', servirJsCompartilhado('colors.js'));
+app.get('/js/theme.js', servirJsCompartilhado('theme.js'));
+
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));
 }
@@ -3464,3 +3479,23 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+
+// Superfície de teste: funções puras (sem I/O de banco/rede) expostas só
+// pra suite automatizada em test/ — nenhuma rota, nenhum comportamento de
+// produção muda por causa disto (app continua sendo o export principal,
+// isto é só uma propriedade extra pendurada nele). Ver test/setup.js.
+module.exports.testables = {
+  crc16ccitt,
+  tlv,
+  gerarPixCopiaCola,
+  sanitizarChavePix,
+  removerAcentosEEspeciais,
+  resolverDadosEnvioProduto,
+  dividirNomePagador,
+  emailPagadorValido,
+  validarAssinaturaWebhookMp,
+  mergePublicConfig,
+  mergePublicSettings,
+  slugifyNome,
+  slugifyTenantTag
+};

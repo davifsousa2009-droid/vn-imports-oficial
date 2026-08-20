@@ -2453,6 +2453,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <!-- ════════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════════ -->
+<script src="/js/colors.js"></script>
+<script src="/js/cart.js"></script>
 <script>
 /* ─── DADOS PADRÃO ─── */
 const DEF = {
@@ -2484,7 +2486,12 @@ function persistCart(){
 }
 
 
-let wl = [];
+// wl guarda só os _id (string, Mongo) dos produtos favoritados — persistido em
+// 'vni_wishlist' via getWishlist()/saveWishlist() (js/cart.js), a mesma chave
+// que produto.html/search.html já usavam. Antes ficava só em memória (nunca
+// era salva), então favoritar na home não sobrevivia a um F5 nem aparecia
+// nas outras duas páginas (ver AUDITORIA_QUALIDADE.md).
+let wl = getWishlist();
 let curProd = null;
 // categoriasVitrine: lista plana (raízes + filhas, sem indentação — mesmo
 // formato de antes) usada pelo mega menu antigo e pelos cards "Explore por
@@ -2675,7 +2682,7 @@ function renderGrid(list){
   }
 
   const productCardHTML = list.map((p, i) => {
-    const inWL = !!(wl && wl.find(w => w.id === p.id));
+    const inWL = !!(wl && wl.includes(p._id));
 
     const badgePct = (p.badge==='sale' && p.old) ? Math.round(100 - (p.price / p.old * 100)) : 0;
 
@@ -2696,7 +2703,7 @@ function renderGrid(list){
     const rotuloIndisponivel = esgotado ? 'Esgotado' : 'Indisponível';
 
     return `
-      <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p.id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
+      <div class="prod-card" onclick="openProd(${p.id})" data-pid="${p._id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
         <div class="prod-card-frame">
 
           <div class="prod-card-media${indisponivel?' esgotado':''}">
@@ -2710,7 +2717,7 @@ function renderGrid(list){
               type="button"
               class="prod-wish-btn${inWL?' on':''}"
               aria-label="Favoritar"
-              onclick="event.stopPropagation();toggleWL(${p.id})"
+              onclick="event.stopPropagation();toggleWL('${p._id}')"
             >${heartIcon}</button>
           </div>
 
@@ -2813,13 +2820,13 @@ function openProd(id){
 
   // wishlist btn
   const wb = document.getElementById('pvWishBtn');
-  const inWL = wl.find(w=>w.id===p.id);
+  const inWL = wl.includes(p._id);
   wb.innerHTML = inWL
     ? '<i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Nos Favoritos'
     : '<i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos';
   wb.onclick = ()=>{
-    toggleWL(p.id);
-    wb.innerHTML = wl.find(w=>w.id===p.id)
+    toggleWL(p._id);
+    wb.innerHTML = wl.includes(p._id)
       ? '<i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Nos Favoritos'
       : '<i class="fa-regular fa-heart ui-ico" aria-hidden="true"></i>Adicionar aos Favoritos';
   };
@@ -2973,14 +2980,16 @@ function selSize(el){
 }
 
 /* ─── WISHLIST ─── */
+// id aqui é sempre o _id (string, Mongo) do produto — nunca o índice p.id.
 function toggleWL(id){
-  const p=S.products[id], idx=wl.findIndex(w=>w.id===id);
+  const idx = wl.indexOf(id);
   if(idx>-1){ wl.splice(idx,1); showToast('heartOutline','Removido dos favoritos'); }
-  else { wl.push(p); showToast('heart','Adicionado aos favoritos!'); }
+  else { wl.push(id); showToast('heart','Adicionado aos favoritos!'); }
+  saveWishlist(wl);
   syncDots();
   // Atualiza só o coração desse produto no grid, sem re-renderizar tudo
   // (evitava que a animação de entrada dos cards repetisse a cada favorito).
-  const nowIn = wl.some(w=>w.id===id);
+  const nowIn = wl.includes(id);
   document.querySelectorAll('.prod-card[data-pid="'+id+'"] .prod-wish-btn').forEach(btn=>{
     btn.classList.toggle('on', nowIn);
     btn.innerHTML = nowIn
@@ -2990,15 +2999,19 @@ function toggleWL(id){
 }
 function renderWL(){
   const g=document.getElementById('wGrid');
-  document.getElementById('wSubtitle').textContent=wl.length+' item'+(wl.length!==1?'s':'')+' salvo'+(wl.length!==1?'s':'');
-  if(!wl.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><div style="font-size:44px;margin-bottom:12px;color:var(--muted)"><i class="fa-regular fa-heart" aria-hidden="true"></i></div><p>Nenhum favorito ainda.<br><br><button class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
-  g.innerHTML=wl.map(p=>`
+  // wl guarda só _id — resolve contra o catálogo atual pra ter os produtos
+  // completos. Um _id salvo que não existe mais no catálogo (produto
+  // removido) é descartado aqui, silenciosamente, pelo filter(Boolean).
+  const items = wl.map(id => S.products.find(x => x._id === id)).filter(Boolean);
+  document.getElementById('wSubtitle').textContent=items.length+' item'+(items.length!==1?'s':'')+' salvo'+(items.length!==1?'s':'');
+  if(!items.length){ g.innerHTML=`<div class="prod-card" style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)"><div style="font-size:44px;margin-bottom:12px;color:var(--muted)"><i class="fa-regular fa-heart" aria-hidden="true"></i></div><p>Nenhum favorito ainda.<br><br><button class="btn-fill" onclick="goHome()">Explorar produtos</button></p></div>`; return; }
+  g.innerHTML=items.map(p=>`
     <div class="prod-card" onclick="openProd(${p.id})">
       <div class="prod-img-wrap">
         ${p.img?`<img src="${escHtml(p.img)}" alt="${escHtml(p.name)}">`:`<span class="prod-img-empty">Sem imagem</span>`}
         <div class="prod-hover-btns">
           ${renderQuickAddAction(p, 'phb phb-cart', '+ Carrinho')}
-          <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL(${p.id});renderWL()"><i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Remover</button>
+          <button class="phb phb-wish on" onclick="event.stopPropagation();toggleWL('${p._id}');renderWL()"><i class="fa-solid fa-heart ui-ico" aria-hidden="true"></i>Remover</button>
         </div>
       </div>
       <div class="prod-info">
@@ -4005,11 +4018,7 @@ function showPixModal(pixValue, isEmpty, cartTotal, isCopiaECola){
 
 
 
-function syncDots(){
-  const hC=cart.length>0, hW=wl.length>0;
-  ['cDot','cDot2','cDot3','cDot4'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('on',hC); });
-  ['wDot','wDot2','wDot3'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('on',hW); });
-}
+/* syncDots() agora vem de /js/cart.js (compartilhado com produto.html e search.html) */
 
 /* ─── MENU MOBILE (off-canvas) ─── */
 function abrirMenuMobile(btn){
@@ -4427,14 +4436,7 @@ function aplicarNomeLojaCache(nome){
   });
 }
 
-function aplicarCoresDaLoja(colors) {
-  if (!colors || typeof colors !== 'object') return;
-  const root = document.documentElement;
-  Object.keys(colors).forEach((k) => {
-    const v = colors[k];
-    if (typeof v === 'string' && v.trim()) root.style.setProperty('--' + k, v.trim());
-  });
-}
+/* aplicarCoresDaLoja() agora vem de /js/colors.js (compartilhado com produto.html e search.html) */
 
 function escapeHtmlTexto(s) {
   return String(s)
@@ -5311,6 +5313,22 @@ async function carregarProdutosDoServidor(categoria) {
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Rede de segurança: se /api/config falhar (rede, CSP, servidor fora do
+  // ar — qualquer um dos dois caminhos de erro em carregarConfigLoja()) o
+  // #heroTitle ficava com opacity:0 pra sempre, porque nem o "return"
+  // antecipado no `if (!r.ok)` nem o `catch` tratam esse elemento (só o
+  // nome da loja tem fallback). Revela do jeito simples (sem fonte custom)
+  // se, passado esse tempo, a classe is-ready ainda não tiver sido
+  // aplicada pelo caminho normal — mesma ideia do timeout de 1200ms já
+  // usado para a fonte customizada do hero, aqui como último recurso.
+  setTimeout(() => {
+    const heroTitleEl = document.getElementById('heroTitle');
+    if (heroTitleEl && !heroTitleEl.classList.contains('is-ready')) {
+      heroTitleEl.classList.add('font-ready');
+      revelarConteudoEl(heroTitleEl);
+    }
+  }, 1500);
+
   // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
   // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
   await carregarConfigLoja();
