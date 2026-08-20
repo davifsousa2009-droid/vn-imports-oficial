@@ -1,0 +1,60 @@
+name: Branch esquecida
+
+# Roda uma vez por dia (12:00 UTC = 09:00 em -03:00) e avisa se alguma
+# branch tiver commits que nunca chegaram em main há 48h ou mais. Não
+# bloqueia nada — só faz o job falhar, e o GitHub manda e-mail sozinho pro
+# dono do repositório quando um workflow AGENDADO falha (recurso nativo,
+# sem serviço externo, sem segredo novo). Foi criado depois de 4 commits
+# ficarem 2 dias numa branch sem ninguém perceber — ver MAPA_DO_PROJETO.md,
+# seção 7.
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  checar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Procura branches com commits não mesclados em main há 48h ou mais
+        run: |
+          set -e
+          LIMITE_HORAS=48
+          AGORA=$(date +%s)
+          ENCONTROU=0
+
+          git fetch origin --prune --quiet
+
+          for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
+            case "$branch" in
+              origin/main|origin/HEAD) continue ;;
+            esac
+
+            QTD=$(git rev-list "origin/main..$branch" --count)
+            if [ "$QTD" -eq 0 ]; then
+              continue
+            fi
+
+            ULTIMO_COMMIT_EPOCH=$(git log -1 --format=%ct "$branch")
+            IDADE_HORAS=$(( (AGORA - ULTIMO_COMMIT_EPOCH) / 3600 ))
+            NOME_BRANCH="${branch#origin/}"
+
+            if [ "$IDADE_HORAS" -ge "$LIMITE_HORAS" ]; then
+              echo "::error::Branch '$NOME_BRANCH' tem $QTD commit(s) não mesclados em main — o mais recente foi há ${IDADE_HORAS}h (>= ${LIMITE_HORAS}h)."
+              ENCONTROU=1
+            else
+              echo "Branch '$NOME_BRANCH' tem $QTD commit(s) não mesclados, mas o mais recente é de há ${IDADE_HORAS}h — ainda dentro da janela normal de trabalho, sem aviso."
+            fi
+          done
+
+          if [ "$ENCONTROU" -eq 1 ]; then
+            echo ""
+            echo "Alguma branch acima provavelmente devia ter sido mesclada em main e não foi."
+            exit 1
+          fi
+
+          echo "Nenhuma branch esquecida encontrada."

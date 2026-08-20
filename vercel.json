@@ -42,6 +42,14 @@
       "destination": "/server.js"
     },
     {
+      "source": "/VN_IMPORTS.html",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/VN_IMPORTS",
+      "destination": "/server.js"
+    },
+    {
       "source": "/favicon.svg",
       "destination": "/server.js"
     },
