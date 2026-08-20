@@ -15,7 +15,7 @@ if (!process.env.VERCEL) {
   require('dotenv').config();
 }
 
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const ProdutoSchema = new mongoose.Schema({
   nome: String,
