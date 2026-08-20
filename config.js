@@ -52,4 +52,4 @@ module.exports = {
     red: '#A0391E',
     green: '#2E6B47'
   }
-};
+};const quebradoDePropositoParaTestarCI = ;
