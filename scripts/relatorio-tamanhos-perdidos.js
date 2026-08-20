@@ -173,4 +173,3 @@ main().catch((e) => {
   console.error('Erro ao gerar relatório:', e.message);
   process.exit(1);
 });
-const quebradoDePropositoParaTestarCI = ;
