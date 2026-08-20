@@ -8,6 +8,8 @@ Documento de leitura — gerado a partir de uma varredura do código em 2026-08-
 
 **Atualização 2026-08-19 (2):** primeira suite de testes automatizados do projeto, em `test/` — ver seção 7 abaixo pra como rodar. `server.js` ganhou uma exportação nova e puramente aditiva (`module.exports.testables`) só pra isso; nenhuma rota ou comportamento existente mudou.
 
+**Atualização 2026-08-20:** `js/theme.js` (dark mode parcial — detectava a preferência do sistema, mas não tinha CSS nenhum reagindo a isso, nem botão pra ligar manualmente) removido de `search.html`/`produto.html`, junto da rota em `server.js` e da entrada em `vercel.json`. Ver seção 8, nova, com a análise completa de por que — inclui o conflito entre um dark mode de verdade e o sistema de cor configurável do lojista, pra não precisar ser redescoberto na próxima vez que isso for cogitado.
+
 Este é um template white-label de e-commerce (Node/Express + MongoDB Atlas + Mongoose, deploy na Vercel como função serverless, sem etapa de build). Cada cliente roda sua própria cópia do repositório, com seu próprio banco e suas próprias variáveis de ambiente.
 
 ---
@@ -287,6 +289,33 @@ No fim do arquivo, `module.exports.testables = { crc16ccitt, gerarPixCopiaCola, 
 
 ### Uma armadilha real, já resolvida — vale saber pra não repetir
 `require('../server.js')` deixa uma conexão Mongo real aberta em segundo plano (`connectDB()` roda incondicionalmente ao carregar o módulo). Sem fechar isso, o processo de teste nunca fica ocioso sozinho. A tentação óbvia é forçar com `process.exit(0)` num hook `after()` — **não faça isso**: `node --test` roda cada arquivo como processo filho e usa a saída normal dele pra saber quais dos testes daquele arquivo passaram um a um; `process.exit()` mata o processo antes disso, e o `node --test` reporta o arquivo inteiro como **"1 teste"**, escondendo qualquer falha individual real lá dentro. Foi exatamente isso que aconteceu na primeira versão desta suite — silêncio total sobre 32 testes, achando que só havia 1. O jeito certo, usado nos 4 arquivos: `after(async () => { await mongoose.disconnect().catch(() => {}); })` — fecha só a conexão (mesmo singleton do Mongoose que `server.js` usa, acessível porque é o mesmo processo), deixa o resto do processo encerrar sozinho, e o relatório sai completo.
+
+---
+
+## 8. Dark mode: removido (2026-08-20) — leia isto antes de reconsiderar
+
+**A loja não tem dark mode.** Nem a home, nem `search.html`/`produto.html`, nem `admin.html`. Isso não é uma lacuna — é uma decisão, registrada aqui pra não ser redescoberta do zero da próxima vez que alguém (você ou um cliente) pensar em adicionar.
+
+### O que existia antes, e por que foi removido
+
+`search.html` e `produto.html` carregavam um `js/theme.js` compartilhado com `applyTheme()`/`toggleTheme()`/`initTheme()` — detectava `prefers-color-scheme` do sistema operacional, aplicava `data-theme="dark"` no `<html>`, e persistia escolha manual em `localStorage.vn_theme`. **Não existia botão em lugar nenhum da interface pra chamar `toggleTheme()`, e não existia nenhuma regra CSS reagindo a `[data-theme="dark"]`** — nem nesses dois arquivos, nem em nenhum outro. O mecanismo detectava a preferência corretamente e não fazia nada visível com ela: confirmado ao vivo, com o navegador emulando `prefers-color-scheme:dark`, screenshot mostrando fundo e cores idênticos ao modo claro nas duas páginas.
+
+Motivo real da remoção, não só "não fazia nada": **o próprio autor do projeto afirmou, de boa fé e com confiança, que essas duas páginas tinham dark mode funcionando** — porque a função existia e era chamada na carga da página. Um mecanismo que engana quem escreveu o código sobre o que ele faz é um risco maior do que simplesmente "código morto" — é uma fonte de decisão errada tomada em cima de uma promessa que o código não cumpre. Somado ao fato de este projeto ser copiado pra cada loja vendida: manter algo que finge fazer algo era um risco que se multiplicava por cliente. Removido `js/theme.js` (arquivo, rota em `server.js`, entrada em `vercel.json`), e as duas tags `<script src="/js/theme.js">`. `js/cart.js` e `js/colors.js` (o resto do módulo compartilhado, ver a extração documentada na Atualização 2026-08-19) não foram tocados — não tinham nenhuma dependência do arquivo removido, confirmado por busca antes de apagar.
+
+### O conflito que qualquer implementação futura de verdade vai esbarrar — a parte mais importante deste registro
+
+Se um dia alguém for implementar dark mode de verdade (não só detecção morta), o caminho óbvio — redefinir os tokens de cor (`--bg`, `--bg2`, `--border`, `--ink`...) sob `[data-theme="dark"]` — **colide diretamente com o sistema de cor configurável do lojista**, que já usa exatamente esses mesmos tokens:
+
+- Os 5 temas de fundo (`TEMAS_FUNDO`, sempre claros) são injetados pelo servidor em `--bg`/`--bg2`/`--border`, na mesma resposta HTTP, depois de qualquer CSS estático do arquivo (`construirOverrideCoresStyle`, injetado logo antes de `</head>` — ver seção 6, "Cor é injetada no servidor").
+- A cor do painel do hero (`TEMAS_HERO`, sempre escura) é injetada do mesmo jeito, em `--hero-panel-bg`, um token isolado de propósito (ver comentário em `server.js` sobre por que não reaproveita `--ink` — decisão tomada exatamente pra evitar esse tipo de colisão, numa escala menor).
+
+Uma regra `[data-theme="dark"]` que redefine esses tokens entra em conflito direto com essa injeção: ou a injeção do servidor vence por ordem de cascata (dark mode continua sem efeito nenhum, do mesmo jeito que já não tinha), ou uma regra com especificidade maior vence e **apaga a cor de marca que o lojista escolheu e pagou pra configurar**, substituindo por um cinza genérico — e potencialmente invalidando o contraste já medido e aprovado (AA) pra cada uma das 25 combinações tema-de-fundo × cor-do-painel-do-hero.
+
+Fazer isso corretamente — dark mode que respeita a identidade visual configurada em vez de apagá-la — significa **dobrar permanentemente o trabalho de validação de contraste**: as 25 combinações já medidas em claro precisariam de uma versão escura cada, e todo tema novo adicionado no catálogo daqui pra frente precisaria ser validado nos dois modos, pra sempre, não só um. Isso não é impossível, mas é um projeto de design à parte — não um toggle que se liga em uma tarde.
+
+**Se reconsiderar**: a decisão registrada aqui não é "dark mode é ruim", é "o custo de fazer certo (dobrar a validação de cor, permanentemente, num produto revendido) não compensou frente ao ganho, na avaliação de 2026-08-20". Isso pode mudar — se dark mode virar requisito real de algum cliente, por exemplo. Mas quem for implementar precisa decidir primeiro **quem vence o token**: a preferência do visitante ou a cor que o lojista escolheu — não dá pra ter os dois controlando a mesma variável CSS sem um vencedor explícito. Essa decisão vem antes de escrever qualquer CSS novo, não depois.
+
+**Existe caminho que evita esse conflito sem resolver "quem vence o token"?** Existe, pelo menos de duas formas, nenhuma boa o bastante pra recomendar sem essa ressalva: (1) inverter a página inteira via `filter:invert()` no CSS, com um contra-filtro nas `img`/`video` — não toca nenhum token, mas é uma gambiarra conhecida que deixa fotos de produto com cor visivelmente errada, ruim demais pra um catálogo que vende pela imagem; (2) criar tokens novos só pra "cromo" genérico (fundo de página, cor de cartão) sem tocar `--bg`/`--border`/`--hero-panel-bg`/`--gold`/`--gold2` — evita o conflito, mas como a maior parte da UI já reaproveita esses mesmos tokens de marca em vez de tokens neutros, o resultado é um escuro parcial e inconsistente (parte da tela escurece, parte não), não um dark mode de verdade. Registrado pra não parecer que "impossível" e "ninguém tentou" são a mesma coisa — existe saída, só que as duas encontradas até agora trocam o conflito por um resultado pior do que não ter dark mode nenhum.
 
 ---
 

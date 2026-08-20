@@ -72,10 +72,6 @@
     {
       "source": "/js/colors.js",
       "destination": "/server.js"
-    },
-    {
-      "source": "/js/theme.js",
-      "destination": "/server.js"
     }
   ]
 }

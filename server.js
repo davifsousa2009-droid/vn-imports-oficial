@@ -3453,7 +3453,6 @@ function servirJsCompartilhado(nomeArquivo) {
 }
 app.get('/js/cart.js', servirJsCompartilhado('cart.js'));
 app.get('/js/colors.js', servirJsCompartilhado('colors.js'));
-app.get('/js/theme.js', servirJsCompartilhado('theme.js'));
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));

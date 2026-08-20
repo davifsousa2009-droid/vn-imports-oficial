@@ -1893,7 +1893,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 </footer>
 
 <script src="/js/colors.js"></script>
-<script src="/js/theme.js"></script>
 <script src="/js/cart.js"></script>
 <script>
   const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
@@ -1999,9 +1998,9 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       && resolve(p.comprimentoCm, window.S_comprimentoCmPadrao);
   }
 
-  // Tema claro/escuro, carrinho, favoritos e syncDots() agora vêm de
-  // /js/theme.js e /js/cart.js (compartilhados com VN_IMPORTS.html e
-  // produto.html).
+  // Carrinho, favoritos e syncDots() agora vêm de /js/cart.js (compartilhado
+  // com VN_IMPORTS.html e produto.html). A loja não tem tema claro/escuro —
+  // ver MAPA_DO_PROJETO.md, seção "Dark mode: removido".
 
   // tamanho vem sempre explícito de quem chama — nunca deduzido de estado
   // global. Produto sem tamanho cadastrado: '' passa direto. Produto com
