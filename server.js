@@ -489,6 +489,11 @@ const produtoSchema = new mongoose.Schema(
   {
     nome: { type: String, required: true },
     preco: { type: Number, required: true },
+    // Preço "de" (riscado na vitrine) quando o produto está em promoção.
+    // null = sem promoção, mostra só `preco`. Quando preenchido, deve ser
+    // maior que `preco` — validado nas rotas de escrita (POST/PUT), não só
+    // aqui, porque findByIdAndUpdate não roda validação custom sozinha.
+    precoOriginal: { type: Number, default: null },
     imagem: { type: String, default: '' },
     // Galeria de fotos adicionais (a imagem "de capa" continua sendo `imagem`,
     // essa lista é o restante das fotos mostradas na página do produto).
@@ -541,7 +546,15 @@ function slugifyNome(nome) {
 const CategorySchema = new mongoose.Schema(
   {
     nome: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, trim: true, lowercase: true }
+    slug: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    // Classifica o TIPO de medida dos produtos desta categoria — não é
+    // hierarquia (categorias continuam flat, ver MAPA_DO_PROJETO.md seção 6),
+    // é só o que o filtro da vitrine usa pra decidir se mostra "Tamanho de
+    // Roupa" (aro/letra P-GG) ou "Medida de Joia" (aro em mm) pros produtos
+    // dessa categoria — sem isso os dois tipos de medida ficavam misturados
+    // numa lista só. 'outro' é o default pra categoria que não é nenhum dos
+    // dois (ex: acessórios sem medida).
+    tipo: { type: String, enum: ['roupa', 'joia', 'outro'], default: 'outro' }
   },
   { timestamps: true }
 );
@@ -677,7 +690,7 @@ const ConfigSchema = new mongoose.Schema({
   corSecundaria: { type: String, default: configPadrao.corSecundaria },
   // Chave de um tema pré-calibrado em TEMAS_FUNDO — nunca um hex livre (ver
   // comentário acima do catálogo).
-  temaFundo: { type: String, default: 'creme' },
+  temaFundo: { type: String, default: 'neblina' },
   // Chave de um tom pré-calibrado em TEMAS_HERO (cor do painel de texto do
   // hero) — mesmo princípio do temaFundo acima, nunca hex livre. Default vem
   // de configPadrao (config.js), mesmo padrão de usaTamanhosPadrao: cada
@@ -844,12 +857,17 @@ function mergePublicConfig(doc) {
   const alturaCmPadrao = numeroPositivoOuNull(doc?.alturaCmPadrao);
   const comprimentoCmPadrao = numeroPositivoOuNull(doc?.comprimentoCmPadrao);
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
-  const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'creme';
+  const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'neblina';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
   const corPainelHeroFallback = TEMAS_HERO[configPadrao.corPainelHero] ? configPadrao.corPainelHero : 'preto';
   const corPainelHeroKey = TEMAS_HERO[doc?.corPainelHero] ? doc.corPainelHero : corPainelHeroFallback;
   const corPainelHero = TEMAS_HERO[corPainelHeroKey];
   const colorsMerged = {
+    // ink/accent (e todo o resto de "fixo, mesmo valor pra qualquer loja")
+    // já chegam aqui por este spread — nunca precisam de uma linha própria
+    // abaixo, só bg/bg2/border/hero-panel-bg/gold/gold2 realmente variam
+    // por loja/tema. Ver construirOverrideCoresStyle() pra onde ink/accent
+    // também são injetados no SSR (mesmo valor, só pra fechar o flash).
     ...(configPadrao.colors || {}),
     bg: temaFundo.bg,
     bg2: temaFundo.bg2,
@@ -1255,9 +1273,21 @@ function lerCampoEnvioOpcional(valor, rotulo) {
 app.post('/api/produtos', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco, sizes, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
+    const { nome, preco, precoOriginal, sizes, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
     if (!nome?.trim()) return res.status(400).json({ erro: 'Nome é obrigatório' });
     if (!preco || isNaN(preco)) return res.status(400).json({ erro: 'Preço inválido' });
+
+    // precoOriginal vazio/null é válido (sem promoção); quando preenchido,
+    // precisa ser um número positivo maior que `preco` — menor ou igual não
+    // é desconto, é um valor sem sentido pro "de/por" da vitrine.
+    let precoOriginalNormalizado = null;
+    if (precoOriginal !== undefined && precoOriginal !== '' && precoOriginal !== null) {
+      const po = Number(precoOriginal);
+      if (!Number.isFinite(po) || po <= Number(preco)) {
+        return res.status(400).json({ erro: 'Preço original inválido — deve ser maior que o preço atual, ou deixado em branco.' });
+      }
+      precoOriginalNormalizado = po;
+    }
 
     // Garante que sizes/palavrasChave cheguem como array
     const normalizedSizes = Array.isArray(sizes)
@@ -1283,6 +1313,7 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
       ...req.body,
       sizes: normalizedSizes,
       palavrasChave: normalizedPalavrasChave,
+      precoOriginal: precoOriginalNormalizado,
       ...campos
     });
 
@@ -1296,7 +1327,7 @@ app.post('/api/produtos', verificarJWT, async (req, res) => {
 app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
   if (!(await ensureDbConnected(res))) return;
   try {
-    const { nome, preco, imagem, imagens, descricao, categoria, estoque, sizes, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
+    const { nome, preco, precoOriginal, imagem, imagens, descricao, categoria, estoque, sizes, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm } = req.body;
 
     // nome/preco são obrigatórios no schema, mas findByIdAndUpdate não roda
     // validators do Mongoose por padrão (só runValidators:true abaixo cobre o
@@ -1307,6 +1338,26 @@ app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
     }
     if (preco !== undefined && (preco === '' || preco == null || isNaN(preco))) {
       return res.status(400).json({ erro: 'Preço inválido' });
+    }
+    // precoOriginal:'' ou null é válido (apaga a promoção). Quando preenchido,
+    // precisa ser número positivo. Só compara com `preco` quando os dois vêm
+    // juntos no mesmo corpo (é o que o formulário do admin sempre faz) — sem
+    // isso, validar contra o `preco` já salvo exigiria uma leitura extra no
+    // banco antes do update; documentado aqui pra não ser "corrigido" à toa.
+    let precoOriginalNormalizado;
+    if (precoOriginal !== undefined) {
+      if (precoOriginal === '' || precoOriginal == null) {
+        precoOriginalNormalizado = null;
+      } else {
+        const po = Number(precoOriginal);
+        if (!Number.isFinite(po) || po <= 0) {
+          return res.status(400).json({ erro: 'Preço original inválido' });
+        }
+        if (preco !== undefined && po <= Number(preco)) {
+          return res.status(400).json({ erro: 'Preço original inválido — deve ser maior que o preço atual, ou deixado em branco.' });
+        }
+        precoOriginalNormalizado = po;
+      }
     }
     // estoque:'' e estoque:null são valores válidos (viram "sem controle de
     // estoque" abaixo) — só rejeita algo que não é número e também não é um
@@ -1340,6 +1391,7 @@ app.put('/api/produtos/:id', verificarJWT, async (req, res) => {
     const dados = {};
     if (nome !== undefined) dados.nome = String(nome).trim();
     if (preco !== undefined) dados.preco = Number(preco);
+    if (precoOriginal !== undefined) dados.precoOriginal = precoOriginalNormalizado;
     if (imagem !== undefined) dados.imagem = String(imagem || '').trim();
     if (descricao !== undefined) dados.descricao = String(descricao || '').trim();
     if (categoria !== undefined) dados.categoria = String(categoria || '').trim() || 'geral';
@@ -1438,11 +1490,49 @@ app.post('/api/categories', verificarJWT, async (req, res) => {
     const slug = req.body.slug?.trim() ? slugifyNome(req.body.slug) : slugifyNome(nome);
     const exists = await Category.findOne({ slug });
     if (exists) return res.status(409).json({ erro: 'Já existe uma categoria com este nome/slug.' });
-    const cat = await Category.create({ nome, slug });
+    // tipo só é gravado quando é uma das 3 chaves conhecidas — um valor
+    // arbitrário vindo direto da API (fora da UI do admin) é ignorado
+    // silenciosamente e cai no default do schema ('outro'), em vez de
+    // rejeitar a criação da categoria inteira por causa de um campo
+    // secundário.
+    const tiposValidos = ['roupa', 'joia', 'outro'];
+    const dadosCategoria = { nome, slug };
+    if (tiposValidos.includes(req.body.tipo)) dadosCategoria.tipo = req.body.tipo;
+    const cat = await Category.create(dadosCategoria);
     res.status(201).json({ mensagem: 'Categoria criada!', categoria: cat });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ erro: 'Slug já cadastrado.' });
     res.status(500).json({ erro: 'Erro ao criar categoria', detalhe: err.message });
+  }
+});
+
+// Só o campo `tipo` é editável por aqui, de propósito — nome/slug ficam de
+// fora porque o slug é o que liga produto<->categoria (Produto.categoria
+// guarda o slug, não um id), então editar o slug de uma categoria já usada
+// silenciosamente "descolaria" todo produto que já a referencia. `tipo` não
+// tem esse problema (não é referenciado em nenhum outro lugar do banco),
+// então é seguro deixar editável sem essa restrição. Rota nova, motivada
+// pelo rebrand navy: categorias criadas antes do campo `tipo` existir não
+// ganham o default do schema retroativamente (Mongoose só aplica default na
+// criação do documento) — sem esta rota, uma categoria antiga como "Joias"
+// ficaria pra sempre com tipo ausente (cai em 'outro' no client), sem
+// nenhuma forma de corrigir isso pelo painel.
+app.put('/api/categories/:id', verificarJWT, async (req, res) => {
+  if (!(await ensureDbConnected(res))) return;
+  try {
+    const tiposValidos = ['roupa', 'joia', 'outro'];
+    if (!tiposValidos.includes(req.body.tipo)) {
+      return res.status(400).json({ erro: 'Tipo inválido — use roupa, joia ou outro.' });
+    }
+    const atualizado = await Category.findByIdAndUpdate(
+      req.params.id,
+      { $set: { tipo: req.body.tipo } },
+      { new: true, runValidators: true }
+    );
+    if (!atualizado) return res.status(404).json({ erro: 'Categoria não encontrada' });
+    res.json({ mensagem: 'Categoria atualizada!', categoria: atualizado });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao atualizar categoria', detalhe: err.message });
   }
 });
 
@@ -2348,7 +2438,7 @@ app.post('/api/config', verificarJWT, async (req, res) => {
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
     // Só grava se for uma chave conhecida do catálogo — barra tentativa de
     // salvar um valor arbitrário direto na API, não só na UI do admin.
-    if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'creme';
+    if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'neblina';
     if (corPainelHero !== undefined) {
       dados.corPainelHero = TEMAS_HERO[corPainelHero]
         ? corPainelHero
@@ -3135,12 +3225,20 @@ function escapeParaCss(v) {
   return String(v || '').replace(/[<>"'`]/g, '').replace(/\/style/gi, '');
 }
 
-// Monta o <style> de override com as cores que realmente podem divergir do
-// :root estático do arquivo (bg/bg2/border do tema de fundo, gold/gold2 da
-// cor da marca, heroPanelBg do tom do painel do hero) — usado por toda
-// página pública pra evitar o "flash" de cor padrão -> cor real da loja. Os
-// outros tokens (ink, muted, etc.) nunca divergem do que já está no arquivo,
-// não precisam de override.
+// Monta o <style> de override com as cores que podem divergir do :root
+// estático do arquivo (bg/bg2/border do tema de fundo, gold/gold2 da cor da
+// marca, heroPanelBg do tom do painel do hero, e ink/accent — ver comentário
+// abaixo) — usado por toda página pública pra evitar o "flash" de cor padrão
+// -> cor real da loja. Os demais tokens (muted, silver, etc.) nunca divergem
+// do que já está no arquivo, não precisam de override.
+//
+// ink/accent entraram aqui no rebrand pra navy (2026): são "fixos, mesmo
+// valor pra qualquer loja" (nunca vêm do painel — só de config.js, igual
+// antes), mas agora que config.js deixou de usar os valores de fábrica
+// originais, sem override SSR o primeiro paint mostraria a cor antiga até
+// aplicarCoresDaLoja() rodar no cliente. Incluir aqui não muda a regra de
+// "nunca variam por loja no painel" — só fecha a janela de flash, seguindo
+// o mesmo caminho já usado por bg/gold/heroPanelBg.
 function construirOverrideCoresStyle(cfg) {
   const bg = escapeParaCss(cfg?.colors?.bg);
   const bg2 = escapeParaCss(cfg?.colors?.bg2);
@@ -3148,13 +3246,17 @@ function construirOverrideCoresStyle(cfg) {
   const gold = escapeParaCss(cfg?.colors?.gold);
   const gold2 = escapeParaCss(cfg?.colors?.gold2);
   const heroPanelBg = escapeParaCss(cfg?.colors?.['hero-panel-bg']);
+  const ink = escapeParaCss(cfg?.colors?.ink);
+  const accent = escapeParaCss(cfg?.colors?.accent);
   const decls =
     (bg ? `--bg:${bg};` : '') +
     (bg2 ? `--bg2:${bg2};` : '') +
     (border ? `--border:${border};` : '') +
     (gold ? `--gold:${gold};` : '') +
     (gold2 ? `--gold2:${gold2};` : '') +
-    (heroPanelBg ? `--hero-panel-bg:${heroPanelBg};` : '');
+    (heroPanelBg ? `--hero-panel-bg:${heroPanelBg};` : '') +
+    (ink ? `--ink:${ink};` : '') +
+    (accent ? `--accent:${accent};` : '');
   return decls ? `<style>:root{${decls}}</style>\n</head>` : null;
 }
 
@@ -3453,6 +3555,22 @@ function servirJsCompartilhado(nomeArquivo) {
 }
 app.get('/js/cart.js', servirJsCompartilhado('cart.js'));
 app.get('/js/colors.js', servirJsCompartilhado('colors.js'));
+
+// CSS compartilhado entre devolucao.html/privacidade.html/termos.html — ao
+// contrário dos js/*.js acima (no-store, mesmo padrão das páginas HTML
+// templadas por requisição), este arquivo nunca muda com base em quem
+// pediu: cache público curto (mesmo raciocínio do /favicon.svg) em vez de
+// no-store, para quem olha mais de uma página legal na mesma visita não
+// buscar o mesmo CSS de novo a cada uma.
+let legalCssCache = null;
+app.get('/css/legal.css', (req, res) => {
+  if (!legalCssCache) {
+    legalCssCache = fs.readFileSync(path.join(__dirname, 'css', 'legal.css'), 'utf8');
+  }
+  res.set('Content-Type', 'text/css; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.send(legalCssCache);
+});
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname)));

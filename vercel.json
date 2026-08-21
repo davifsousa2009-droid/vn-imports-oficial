@@ -72,6 +72,10 @@
     {
       "source": "/js/colors.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/css/legal.css",
+      "destination": "/server.js"
     }
   ]
 }

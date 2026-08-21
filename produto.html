@@ -6,7 +6,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Produto — Minha Loja</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
 
   /* Ícones Font Awesome — alinhamento com texto */
@@ -60,14 +60,14 @@
 /* ─── RESET ─── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:#111;overflow-x:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);overflow-x:hidden}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:#ece9e4}
 ::-webkit-scrollbar-thumb{background:#bbb}
 img{display:block;max-width:100%;object-fit:cover}
-button{font-family:'Barlow',sans-serif;cursor:pointer}
+button{font-family:var(--sans);cursor:pointer}
 a{text-decoration:none;color:inherit}
-input,textarea,select{font-family:'Barlow',sans-serif}
+input,textarea,select{font-family:var(--sans)}
 
 /* ─── SKELETON (injetado logo após RESET) ─── */
 @keyframes sk-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
@@ -93,23 +93,25 @@ input,textarea,select{font-family:'Barlow',sans-serif}
 
 /* ─── TOKENS ─── */
 :root{
-  --bg:#F0E9DC;
-  --bg2:#E8DCC7;
-  --ink:#111111;
+  /* Mesmo tema/paleta de VN_IMPORTS.html — hex copiados literal de
+     TEMAS_FUNDO.neblina/TEMAS_HERO.marinho em server.js, não redigitados. */
+  --bg:#E1E8EF;
+  --bg2:#D4DEE9;
+  --ink:#0E2233;
   --ink2:#1E1E1E;
   --mid:#444;
   --muted:#5C5C5C;
   --silver:#BBB;
-  --border:#C9B896;
+  --border:#A8BDD1;
   --border2:#C8C2B8;
   --white:#FFFFFF;
-  --accent:#2B2B2B;
-  --gold:#9A7A3A;
-  --gold2:#C4A55A;
+  --accent:#1C6FA0;
+  --gold:#16598A;
+  --gold2:#103F63;
   --red:#A0391E;
   --green:#2E6B47;
-  --serif:'Libre Baskerville',serif;
-  --sans:'Barlow',sans-serif;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'IBM Plex Sans',sans-serif;
   --sh:0 2px 20px rgba(0,0,0,.07);
   --sh2:0 8px 40px rgba(0,0,0,.12);
 }
@@ -299,8 +301,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   letter-spacing:2px;
   text-transform:uppercase;
   color:var(--gold);
-  background:rgba(154,122,58,.08);
-  border:1px solid rgba(154,122,58,.2);
+  background:rgba(22,89,138,.08);
+  border:1px solid rgba(22,89,138,.2);
   padding:8px 18px;
   border-radius:999px;
   width:fit-content;
@@ -446,7 +448,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .btn-cta-premium::after{
   content:'';
   position:absolute;inset:-2px;
-  background:radial-gradient(circle at 30% 20%, rgba(196,165,90,.35), transparent 45%),
+  background:radial-gradient(circle at 30% 20%, rgba(16,63,99,.35), transparent 45%),
              radial-gradient(circle at 70% 80%, rgba(0,0,0,.08), transparent 55%);
   opacity:.0;
   transition:opacity .25s;
@@ -858,7 +860,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 /* Luxo preto + dourado (vitrine de depoimentos) */
 .reviews-lux{
   background:#0F0F0F;
-  border:1px solid rgba(196,165,90,.35);
+  border:1px solid rgba(16,63,99,.35);
   border-radius:18px;
   padding:26px;
   box-shadow:0 18px 70px rgba(0,0,0,.25);
@@ -882,8 +884,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .reviews-lux .rc-name{color:rgba(247,244,240,.92)}
 .reviews-lux .rc-badge{color:rgba(46,107,71,.95)}
 .reviews-lux .rc-av{
-  border-color:rgba(196,165,90,.28);
-  background:rgba(196,165,90,.08);
+  border-color:rgba(16,63,99,.28);
+  background:rgba(16,63,99,.08);
 }
 
 /* Form público */
@@ -1250,7 +1252,7 @@ footer{background:var(--ink);color:var(--white)}
   font-size:13px;font-weight:500;color:var(--ink);transition:all .2s;
   border-radius:10px;
 }
-.pv-size:hover,.pv-size.on{background:var(--ink2);color:var(--white);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(196,165,90,.25) inset}
+.pv-size:hover,.pv-size.on{background:var(--ink2);color:var(--white);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(16,63,99,.25) inset}
 .pv-size.on{transform:translateY(-1px)}
 .pv-desc{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:24px;font-weight:300}
 .pv-btns{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}

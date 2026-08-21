@@ -318,6 +318,7 @@ tr:hover td{background:#FAFAF8}
           <div class="fg2">
             <div class="fg fw"><label class="fl">Nome do Produto *</label><input class="fi" id="f-nome" placeholder="Ex: Vestido Midi Floral" type="text"></div>
             <div class="fg"><label class="fl">Preço (R$) *</label><input class="fi" id="f-preco" placeholder="Ex: 299.90" type="number" step="0.01" min="0"></div>
+            <div class="fg"><label class="fl">Preço original (opcional — mostra desconto)</label><input class="fi" id="f-preco-original" placeholder="Ex: 349.90" type="number" step="0.01" min="0"></div>
             <div class="fg"><label class="fl">Categoria</label>
               <select class="fsel" id="f-cat"></select>
             </div>
@@ -399,9 +400,17 @@ tr:hover td{background:#FAFAF8}
           <div class="card-title">Gerenciar Categorias</div>
           <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Cada nome vira um filtro na vitrine e uma opção ao cadastrar produtos. O identificador técnico (slug) é gerado automaticamente a partir do nome.</p>
           <div class="fg2">
-            <div class="fg fw">
+            <div class="fg">
               <label class="fl">Nova categoria</label>
               <input class="fi" id="cat-nova" placeholder="Ex: Vestidos, Acessórios" type="text" maxlength="80">
+            </div>
+            <div class="fg">
+              <label class="fl">Tipo de medida</label>
+              <select class="fsel" id="cat-tipo">
+                <option value="outro" selected>Outro (sem medida)</option>
+                <option value="roupa">Roupa (P/M/G/GG)</option>
+                <option value="joia">Joia (aro em mm)</option>
+              </select>
             </div>
           </div>
           <div class="form-btns" style="border-top:none;padding-top:0;margin-top:0">
@@ -852,6 +861,7 @@ tr:hover td{background:#FAFAF8}
       <div class="fg2">
         <div class="fg fw"><label class="fl">Nome *</label><input class="fi" id="enome" type="text"></div>
         <div class="fg"><label class="fl">Preço (R$) *</label><input class="fi" id="epreco" type="number" step="0.01"></div>
+        <div class="fg"><label class="fl">Preço original (opcional — mostra desconto)</label><input class="fi" id="epreco-original" type="number" step="0.01" min="0"></div>
         <div class="fg"><label class="fl">Categoria</label>
           <select class="fsel" id="ecat"></select>
         </div>
@@ -1253,12 +1263,19 @@ function renderListaCategorias() {
   }
   el.innerHTML = `
     <table>
-      <thead><tr><th>Nome</th><th>Slug</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Slug</th><th>Tipo</th><th>Ações</th></tr></thead>
       <tbody>
         ${adminCategorias.map(c => `
           <tr>
             <td class="td-name">${escHtml(c.nome)}</td>
             <td><span class="td-cat">${escHtml(c.slug)}</span></td>
+            <td>
+              <select class="fsel" style="min-height:36px;padding:4px 8px" data-id="${escHtml(String(c._id))}" onchange="atualizarTipoCategoria(this)">
+                <option value="outro"${c.tipo!=='roupa'&&c.tipo!=='joia'?' selected':''}>Outro</option>
+                <option value="roupa"${c.tipo==='roupa'?' selected':''}>Roupa</option>
+                <option value="joia"${c.tipo==='joia'?' selected':''}>Joia</option>
+              </select>
+            </td>
             <td>
               <button class="btn btn-d btn-sm" onclick="removerCategoria(this.dataset.id,this.dataset.nome)" data-id="${escHtml(String(c._id))}" data-nome="${escHtml(c.nome)}">Remover</button>
             </td>
@@ -1267,19 +1284,50 @@ function renderListaCategorias() {
     </table>`;
 }
 
+// Categorias criadas antes do campo `tipo` existir ficam sem esse dado
+// salvo (Mongoose não retroalimenta default em documento já existente) —
+// este select corrige isso pelo painel, sem precisar apagar/recriar a
+// categoria (o que "descolaria" produtos já cadastrados nela).
+async function atualizarTipoCategoria(sel) {
+  const id = sel.dataset.id;
+  const tipo = sel.value;
+  try {
+    const r = await fetch(API + '/categories/' + id, {
+      method: 'PUT',
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ tipo })
+    });
+    if (r.ok) {
+      toast('Tipo atualizado');
+      await loadListaCategorias();
+    } else if (r.status === 401) {
+      relogar();
+    } else {
+      const d = await r.json();
+      toast(d.erro || 'Erro ao atualizar tipo');
+      await loadListaCategorias();
+    }
+  } catch {
+    toast('Servidor offline. Rode: node server.js');
+    await loadListaCategorias();
+  }
+}
+
 async function adicionarCategoria() {
   const nome = document.getElementById('cat-nova').value.trim();
+  const tipo = document.getElementById('cat-tipo').value;
   const msg = document.getElementById('catmsg');
   if (!nome) { showMsg(msg, 'Informe o nome da categoria.', 'er'); return; }
   try {
       const r = await fetch(API + '/categories', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome })
+      body: JSON.stringify({ nome, tipo })
     });
     const d = await r.json();
     if (r.ok) {
       document.getElementById('cat-nova').value = '';
+      document.getElementById('cat-tipo').selectedIndex = 0;
       showMsg(msg, 'Categoria criada.', 'ok');
       toast('Categoria adicionada');
       await loadListaCategorias();
@@ -1581,10 +1629,16 @@ const descricao = document.getElementById('f-desc').value.trim();
   const categoria = document.getElementById('f-cat').value;
   const estoqueRaw = document.getElementById('f-est').value;
   const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
+  const precoOriginalRaw = document.getElementById('f-preco-original').value.trim();
+  const precoOriginal = precoOriginalRaw !== '' ? parseFloat(precoOriginalRaw) : null;
   const msg = document.getElementById('fmsg');
 
   if (!nome)            { showMsg(msg, 'Nome é obrigatório.', 'er'); return; }
   if (!preco || preco <= 0) { showMsg(msg, 'Informe um preço válido.', 'er'); return; }
+  if (precoOriginal !== null && (!(precoOriginal > 0) || precoOriginal <= preco)) {
+    showMsg(msg, 'Preço original deve ser maior que o preço atual, ou deixado em branco.', 'er');
+    return;
+  }
 
   let imagem = '';
   const ff = document.getElementById('f-file');
@@ -1621,7 +1675,7 @@ const descricao = document.getElementById('f-desc').value.trim();
     const r = await fetch(API + '/produtos', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
+      body: JSON.stringify({ nome, preco, precoOriginal, imagem, imagens, descricao, categoria, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 
@@ -1645,7 +1699,7 @@ const descricao = document.getElementById('f-desc').value.trim();
 }
 
 async function limpar() {
-  ['f-nome', 'f-preco', 'f-desc', 'f-est', 'f-peso', 'f-largura', 'f-altura', 'f-comprimento', 'f-palavraschave'].forEach(id => {
+  ['f-nome', 'f-preco', 'f-preco-original', 'f-desc', 'f-est', 'f-peso', 'f-largura', 'f-altura', 'f-comprimento', 'f-palavraschave'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-file').value = '';
@@ -1876,6 +1930,7 @@ async function editar(id) {
   document.getElementById('eid').value    = p._id;
   document.getElementById('enome').value  = p.nome;
   document.getElementById('epreco').value = p.preco;
+  document.getElementById('epreco-original').value = p.precoOriginal ?? '';
   const slug = p.categoria || 'geral';
   const ecat = document.getElementById('ecat');
   if (![...ecat.options].some(o => o.value === slug)) {
@@ -1943,6 +1998,8 @@ async function salvarEdicaoInterno() {
 const descricao = document.getElementById('edesc').value.trim();
   const estoqueRaw = document.getElementById('eest').value;
   const estoque = estoqueRaw !== '' ? parseInt(estoqueRaw) : null;
+  const precoOriginalRaw = document.getElementById('epreco-original').value.trim();
+  const precoOriginal = precoOriginalRaw !== '' ? parseFloat(precoOriginalRaw) : null;
 
   const tamanhos = getTamanhosFromUI('e');
   const palavrasChave = getPalavrasChaveFromUI('e');
@@ -1952,6 +2009,10 @@ const descricao = document.getElementById('edesc').value.trim();
   const comprimentoCm = document.getElementById('ecomprimento').value.trim();
 
   if (!nome || !preco) { toast('Nome e preço são obrigatórios'); return; }
+  if (precoOriginal !== null && (!(precoOriginal > 0) || precoOriginal <= preco)) {
+    toast('Preço original deve ser maior que o preço atual, ou deixado em branco.');
+    return;
+  }
 
   const ef = document.getElementById('e-file');
   if (ef.files && ef.files[0]) {
@@ -1981,7 +2042,7 @@ const descricao = document.getElementById('edesc').value.trim();
     const r = await fetch(`${API}/produtos/${id}`, {
       method: 'PUT',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, preco, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
+      body: JSON.stringify({ nome, preco, precoOriginal, categoria, imagem, imagens, descricao, estoque, sizes: tamanhos, palavrasChave, pesoKg, larguraCm, alturaCm, comprimentoCm })
     });
 
 

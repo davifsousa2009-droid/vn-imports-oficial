@@ -3,9 +3,9 @@
  * Para um novo cliente, altere apenas este arquivo.
  */
 module.exports = {
-  nomeLoja: 'Minha Loja',
-  corPrimaria: '#9A7A3A',
-  corSecundaria: '#C4A55A',
+  nomeLoja: 'UpSites',
+  corPrimaria: '#16598A',
+  corSecundaria: '#103F63',
   whatsappContato: '',
   instagramLink: '',
   emailContato: '',
@@ -28,7 +28,7 @@ module.exports = {
    *  painel de texto do hero. 'preto' mantém a aparência de hoje (mesmo hex
    *  de --ink). Troque aqui se quiser que um cliente novo já nasça com outro
    *  tom (grafite/marinho/verde/vinho) sem precisar configurar no painel. */
-  corPainelHero: 'preto',
+  corPainelHero: 'marinho',
   /** Título e texto da seção "Sobre" da vitrine — mesmo padrão de nomeLoja
    *  acima: valor de fábrica genérico, trocado por loja aqui ou sobrescrito
    *  a qualquer momento pelo painel (Configurações → Conteúdo do Site). */
@@ -38,7 +38,7 @@ module.exports = {
   colors: {
     bg: '#F7F4F0',
     bg2: '#EDE9E3',
-    ink: '#111111',
+    ink: '#0E2233',
     ink2: '#1E1E1E',
     mid: '#444444',
     muted: '#5C5C5C',
@@ -46,9 +46,9 @@ module.exports = {
     border: '#D9D4CC',
     border2: '#C8C2B8',
     white: '#FFFFFF',
-    accent: '#2B2B2B',
-    gold: '#9A7A3A',
-    gold2: '#C4A55A',
+    accent: '#1C6FA0',
+    gold: '#16598A',
+    gold2: '#103F63',
     red: '#A0391E',
     green: '#2E6B47'
   }

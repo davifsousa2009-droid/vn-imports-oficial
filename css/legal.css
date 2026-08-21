@@ -1,0 +1,44 @@
+/* CSS compartilhado entre devolucao.html, privacidade.html e termos.html —
+   antes existiam 3 cópias idênticas deste bloco, uma por página (~90 linhas
+   coladas à mão em cada uma). O :root abaixo tem os valores de fábrica
+   (tema "Creme Clássico") — cada página sobrescreve isso via JS depois de
+   buscar /api/config (aplicarDadosLegal/carregarDadosLegal, inline em cada
+   HTML — ainda não extraído, ver MAPA_DO_PROJETO.md). Regras específicas de
+   cada página (.aviso-escopo só em devolucao.html; h3/table só em
+   privacidade.html) continuam num <style> pequeno dentro do próprio HTML,
+   não aqui. */
+:root{
+  /* Valores de fábrica atualizados no rebrand navy (2026) — mesma paleta de
+     VN_IMPORTS.html/search.html/produto.html (TEMAS_FUNDO.neblina/
+     TEMAS_HERO em server.js). Estas 3 páginas legais não recebem override
+     server-side de cor (servidas cruas do cache, ver MAPA_DO_PROJETO.md
+     seção 9) — o valor real chega via JS depois do fetch de /api/config,
+     que já resolve pra esta mesma paleta; manter o :root em sincronia aqui
+     é só pra o "flash" antes do JS rodar não mostrar a paleta antiga. */
+  --bg:#E1E8EF;--bg2:#D4DEE9;--ink:#0E2233;--ink2:#1E1E1E;--mid:#444;--muted:#5C5C5C;
+  --border:#A8BDD1;--white:#FFFFFF;--accent:#1C6FA0;--gold:#16598A;--gold2:#103F63;--red:#A0391E;
+  --serif:'Cormorant Garamond',serif;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.7}
+a{color:var(--gold);text-decoration:none}
+a:hover{text-decoration:underline}
+header{background:var(--white);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink)}
+.voltar{font-size:13px;font-weight:600;letter-spacing:.04em}
+.disclaimer{
+  max-width:760px;margin:24px auto 0;padding:14px 18px;background:#fff8e6;
+  border:1px solid #e6c869;border-radius:10px;font-size:13px;color:#6b5400;line-height:1.6;
+}
+main{max-width:760px;margin:0 auto;padding:32px 24px 64px}
+h1{font-family:var(--serif);font-size:32px;font-weight:400;margin:0 0 6px}
+.atualizado{font-size:12px;color:var(--muted);margin-bottom:32px}
+h2{font-family:var(--serif);font-size:21px;font-weight:400;margin:36px 0 12px;color:var(--ink2)}
+p,li{font-size:15px;color:var(--mid)}
+ul{padding-left:20px}
+li{margin-bottom:6px}
+.aviso-cnpj{display:none;font-size:12px;color:var(--red);margin-top:4px}
+.empresa{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer{background:var(--ink);color:rgba(247,244,240,.6);text-align:center;padding:24px;font-size:12px}
+footer a{color:rgba(247,244,240,.85)}
+footer .links{margin-bottom:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}

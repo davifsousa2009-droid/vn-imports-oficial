@@ -6,7 +6,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Busca — Minha Loja</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
 
   /* Ícones Font Awesome — alinhamento com texto */
@@ -60,14 +60,14 @@
 /* ─── RESET ─── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:#111;overflow-x:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);overflow-x:hidden}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:#ece9e4}
 ::-webkit-scrollbar-thumb{background:#bbb}
 img{display:block;max-width:100%;object-fit:cover}
-button{font-family:'Barlow',sans-serif;cursor:pointer}
+button{font-family:var(--sans);cursor:pointer}
 a{text-decoration:none;color:inherit}
-input,textarea,select{font-family:'Barlow',sans-serif}
+input,textarea,select{font-family:var(--sans)}
 
 /* ─── SKELETON (injetado logo após RESET) ─── */
 @keyframes sk-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
@@ -93,23 +93,26 @@ input,textarea,select{font-family:'Barlow',sans-serif}
 
 /* ─── TOKENS ─── */
 :root{
-  --bg:#F0E9DC;
-  --bg2:#E8DCC7;
-  --ink:#111111;
+  /* Mesmo tema/paleta de VN_IMPORTS.html — hex copiados literal de
+     TEMAS_FUNDO.neblina/TEMAS_HERO.marinho em server.js, não redigitados. */
+  --bg:#E1E8EF;
+  --bg2:#D4DEE9;
+  --ink:#0E2233;
   --ink2:#1E1E1E;
   --mid:#444;
   --muted:#5C5C5C;
   --silver:#BBB;
-  --border:#C9B896;
+  --border:#A8BDD1;
   --border2:#C8C2B8;
   --white:#FFFFFF;
-  --accent:#2B2B2B;
-  --gold:#9A7A3A;
-  --gold2:#C4A55A;
+  --accent:#1C6FA0;
+  --gold:#16598A;
+  --gold2:#103F63;
   --red:#A0391E;
   --green:#2E6B47;
-  --serif:'Libre Baskerville',serif;
-  --sans:'Barlow',sans-serif;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'IBM Plex Sans',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
   --sh:0 2px 20px rgba(0,0,0,.07);
   --sh2:0 8px 40px rgba(0,0,0,.12);
 }
@@ -299,8 +302,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   letter-spacing:2px;
   text-transform:uppercase;
   color:var(--gold);
-  background:rgba(154,122,58,.08);
-  border:1px solid rgba(154,122,58,.2);
+  background:rgba(22,89,138,.08);
+  border:1px solid rgba(22,89,138,.2);
   padding:8px 18px;
   border-radius:999px;
   width:fit-content;
@@ -446,7 +449,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .btn-cta-premium::after{
   content:'';
   position:absolute;inset:-2px;
-  background:radial-gradient(circle at 30% 20%, rgba(196,165,90,.35), transparent 45%),
+  background:radial-gradient(circle at 30% 20%, rgba(16,63,99,.35), transparent 45%),
              radial-gradient(circle at 70% 80%, rgba(0,0,0,.08), transparent 55%);
   opacity:.0;
   transition:opacity .25s;
@@ -676,8 +679,9 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 }
 .fblk-title:hover{color:var(--ink)}
 .fblk.open .fblk-title{color:var(--ink)}
-.fblk-chev{transition:transform .32s cubic-bezier(.2,.9,.2,1);flex:none;color:var(--muted)}
-.fblk.open .fblk-chev{transform:rotate(180deg)}
+.fblk-plus{flex:none;width:16px;text-align:center;font-size:17px;font-weight:400;line-height:1;color:var(--accent)}
+.fblk-plus::before{content:'+'}
+.fblk.open .fblk-plus::before{content:'\2212'}
 /* Accordion content: smooth open/close */
 .fblk-list{display:flex;flex-direction:column;gap:2px;padding-bottom:0;max-height:0;overflow:hidden;opacity:0;transition:max-height .36s ease,opacity .28s ease,padding .28s}
 .fblk.open .fblk-list{max-height:600px;padding-bottom:18px;opacity:1}
@@ -840,7 +844,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
      ícone — o svg dentro tem width/height fixos em 16px, então crescer o
      botão só adiciona respiro ao redor do mesmo ícone visual. */
   position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:999px;
-  border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:#111;
+  border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:var(--ink);
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:0 8px 18px rgba(17,17,17,.10);
   transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .2s ease;
@@ -852,14 +856,28 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-wish-btn.on svg{transform:scale(1.15)}
 
 .prod-card-body{padding:14px 10px 16px}
-.prod-card-sub{font-size:.85rem;color:#757575;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prod-card-name{font-size:1rem;font-weight:600;color:#111;margin-top:6px;line-height:1.25;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod-card-sub{font-family:var(--mono);font-size:.68rem;font-weight:600;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-card-name{font-size:1rem;font-weight:600;color:var(--ink);margin-top:6px;line-height:1.25;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .prod-card-price-row{display:flex;gap:8px;align-items:center;margin-top:10px}
 .prod-old-price{text-decoration:line-through;color:#b0b0b0;font-weight:500;font-size:.95rem}
-.prod-price{color:#111;font-weight:700;font-size:1.05rem}
+.prod-price{color:var(--ink);font-weight:700;font-size:1.05rem}
+.prod-price-deal{color:var(--accent)}
 .prod-off{color:#00875a;font-weight:700;font-size:.9rem}
 
-.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden}
+.prod-badge-new{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:var(--accent);color:#fff;
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 10px;border-radius:4px;pointer-events:none;
+}
+
+.prod-thumbs{display:flex;gap:6px;padding:8px 10px 0}
+.prod-thumb{width:34px;height:34px;flex-shrink:0;border-radius:6px;overflow:hidden;padding:0;border:1px solid rgba(0,0,0,.12);cursor:pointer;background:none;transition:border-color .15s ease}
+.prod-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.prod-thumb:hover{border-color:var(--accent)}
+.prod-thumb.on{border-color:var(--accent);border-width:2px}
+
+.prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
@@ -952,7 +970,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 /* Luxo preto + dourado (vitrine de depoimentos) */
 .reviews-lux{
   background:#0F0F0F;
-  border:1px solid rgba(196,165,90,.35);
+  border:1px solid rgba(16,63,99,.35);
   border-radius:18px;
   padding:26px;
   box-shadow:0 18px 70px rgba(0,0,0,.25);
@@ -976,8 +994,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .reviews-lux .rc-name{color:rgba(247,244,240,.92)}
 .reviews-lux .rc-badge{color:rgba(46,107,71,.95)}
 .reviews-lux .rc-av{
-  border-color:rgba(196,165,90,.28);
-  background:rgba(196,165,90,.08);
+  border-color:rgba(16,63,99,.28);
+  background:rgba(16,63,99,.08);
 }
 
 /* Form público */
@@ -1339,7 +1357,7 @@ footer{background:var(--ink);color:var(--white)}
   font-size:13px;font-weight:500;color:var(--ink);transition:all .2s;
   border-radius:10px;
 }
-.pv-size:hover,.pv-size.on{background:var(--ink2);color:var(--white);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(196,165,90,.25) inset}
+.pv-size:hover,.pv-size.on{background:var(--ink2);color:var(--white);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(16,63,99,.25) inset}
 .pv-size.on{transform:translateY(-1px)}
 .pv-desc{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:24px;font-weight:300}
 .pv-btns{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
@@ -1723,9 +1741,41 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 /* ─── SEARCH.HTML — específico desta página ─── */
 .search-page-wrap{max-width:1240px;margin:0 auto;padding:32px 36px 80px;display:grid;grid-template-columns:260px 1fr;gap:40px;align-items:start}
 @media(max-width:900px){.search-page-wrap{grid-template-columns:1fr;padding:24px 20px 60px}}
+.prod-breadcrumb{font-size:12.5px;color:var(--muted);margin-bottom:10px}
 .search-page-top{margin-bottom:8px}
 .search-page-title{font-family:var(--sans);font-size:26px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
 .search-page-count{color:var(--muted);font-size:13px;margin-top:4px}
+
+/* ─── UTIL ROW (toggle de filtros + ordenação) ─── */
+.prod-util-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+.filters-toggle-btn{
+  display:flex;align-items:center;gap:9px;min-height:44px;padding:10px 18px;
+  background:var(--white);border:1px solid var(--ink);border-radius:6px;
+  color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .15s ease;
+}
+.filters-toggle-btn:hover{background:var(--bg2)}
+.sort-wrap{display:flex;align-items:center;gap:10px}
+.sort-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sort-select{
+  min-height:44px;padding:8px 34px 8px 14px;border:1px solid var(--border);border-radius:6px;
+  font-family:var(--sans);font-size:13.5px;color:var(--ink);background:var(--white);
+  appearance:none;cursor:pointer;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="%230E2233" stroke-width="1.5"/></svg>');
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+/* "Ocultar Filtros" — desktop-only. Esta página colapsa a sidebar pra gaveta
+   mobile em 900px (não 768px como VN_IMPORTS.html — os dois arquivos têm
+   mecanismos de filtro mobile diferentes, ver abrirFiltrosMobile), então o
+   breakpoint aqui acompanha esse valor, não o do arquivo irmão. */
+@media(min-width:901px){
+  #secProdWrap.filters-hidden .filters{display:none}
+  #secProdWrap.filters-hidden{grid-template-columns:1fr}
+  #secProdWrap.filters-hidden .prod-grid{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:900px){
+  .filters-toggle-btn{display:none}
+}
 .page-search-box{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:10px 18px;margin-bottom:28px;max-width:480px}
 .page-search-box input{flex:1;border:none;background:transparent;outline:none;font-family:var(--sans);font-size:14px;color:var(--ink)}
 .page-search-box svg{flex:none;color:var(--muted)}
@@ -1776,7 +1826,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="fecharMenuMobile()"></div>
 <div class="filters-overlay" id="filtersOverlay" onclick="fecharFiltrosMobile()"></div>
 
-<div class="search-page-wrap">
+<div class="search-page-wrap" id="secProdWrap">
   <aside class="filters" id="filtersAside" aria-label="Filtros">
     <div class="filters-head">
       <div class="filters-title">Filtros</div>
@@ -1786,18 +1836,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       </div>
     </div>
 
-    <div class="fblk open">
-      <div class="fblk-title" onclick="toggleFblk(this)">Categorias<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <div class="fblk">
+      <div class="fblk-title" onclick="toggleFblk(this)">Categorias<span class="fblk-plus"></span></div>
       <div class="fblk-list" id="fltCats"><div style="font-size:12px;color:var(--muted)">Carregando…</div></div>
     </div>
 
-    <div class="fblk open">
-      <div class="fblk-title" onclick="toggleFblk(this)">Tamanho<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-      <div class="size-grid" id="fltSizes"></div>
+    <div class="fblk" data-size-group="roupa" style="display:none">
+      <div class="fblk-title" onclick="toggleFblk(this)">Tamanho de Roupa<span class="fblk-plus"></span></div>
+      <div class="size-grid" id="fltSizesRoupa"></div>
     </div>
 
-    <div class="fblk open">
-      <div class="fblk-title" onclick="toggleFblk(this)">Preço<svg class="fblk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <div class="fblk" data-size-group="joia" style="display:none">
+      <div class="fblk-title" onclick="toggleFblk(this)">Medida de Joia<span class="fblk-plus"></span></div>
+      <div class="size-grid" id="fltSizesJoia"></div>
+    </div>
+
+    <div class="fblk">
+      <div class="fblk-title" onclick="toggleFblk(this)">Preço<span class="fblk-plus"></span></div>
       <div class="price-wrap">
         <div class="price-hint" id="priceHint">—</div>
         <div class="price-slider">
@@ -1816,9 +1871,25 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </aside>
 
   <section>
+    <nav class="prod-breadcrumb" id="prodBreadcrumb" aria-label="Breadcrumb">Início / Produtos</nav>
     <div class="search-page-top">
       <div class="search-page-title" id="qtitle">Resultados</div>
       <div class="search-page-count" id="qcount"></div>
+    </div>
+    <div class="prod-util-row">
+      <button type="button" class="filters-toggle-btn" id="filtersToggleBtn" onclick="toggleFiltersVisibility()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="6" cy="4" r="1.6" fill="var(--bg)"/><circle cx="11" cy="8" r="1.6" fill="var(--bg)"/><circle cx="5" cy="12" r="1.6" fill="var(--bg)"/></svg>
+        <span id="filtersToggleLabel">Ocultar Filtros</span>
+      </button>
+      <div class="sort-wrap">
+        <label class="sort-label" for="prodSortSelect">Ordenar por</label>
+        <select id="prodSortSelect" class="sort-select" onchange="onProdSortChange(this.value)">
+          <option value="relevancia">Relevância</option>
+          <option value="menor">Menor preço</option>
+          <option value="maior">Maior preço</option>
+          <option value="recentes">Mais recentes</option>
+        </select>
+      </div>
     </div>
 
     <div class="page-search-box">
@@ -1965,13 +2036,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       name: p.nome,
       brand: vitrineNomeLoja,
       cat: p.categoria || 'geral',
+      // Tipo de medida da categoria ('roupa'|'joia'|'outro') — separa o
+      // filtro "Tamanho de Roupa" de "Medida de Joia" (ver categoriaTipoMap).
+      kind: categoriaTipoMap.get(p.categoria) || 'outro',
       price: Number(p.preco),
-      old: null,
+      // Preço "de" (riscado), só quando há promoção real — ver precoOriginal
+      // no schema (server.js). null = sem promoção.
+      old: p.precoOriginal != null ? Number(p.precoOriginal) : null,
       img: p.imagem || '',
       imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
       desc: p.descricao || p.nome,
       sizes: normalizedSizes,
-      badge: null,
+      // "Novo" = cadastrado há menos de 30 dias, deriva de createdAt (todo
+      // produto já tem, timestamps:true no schema).
+      badge: (p.createdAt && (Date.now() - new Date(p.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000) ? 'new' : null,
+      createdAt: p.createdAt || null,
       // null = controle de estoque desativado (nunca esgotado); um número é a
       // quantidade real — só 0 significa esgotado de verdade.
       stock: p.estoque != null ? Number(p.estoque) : null,
@@ -2164,6 +2243,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   // hierárquico (expandirSlugsComFilhos). A lista renderizada nos botões
   // continua plana (flattenCategoryTree), sem indentação nem mudança visual.
   let categoriasTree = [];
+  // categoria.slug -> categoria.tipo ('roupa'|'joia'|'outro') — mesmo padrão
+  // de VN_IMPORTS.html: reconstruído toda vez que popularFiltroCategorias()
+  // recarrega, consultado por converterProduto pra separar o filtro
+  // "Tamanho de Roupa" de "Medida de Joia". Chave sempre o slug (é o que
+  // p.cat guarda em todo o resto deste arquivo), nunca o nome.
+  let categoriaTipoMap = new Map();
 
   function flattenCategoryTree(tree){
     const out = [];
@@ -2206,6 +2291,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const dados = await res.json();
       categoriasTree = Array.isArray(dados) ? dados.filter(c=>c && c.slug && c.nome) : [];
       const lista = flattenCategoryTree(categoriasTree);
+      categoriaTipoMap = new Map(lista.map(c => [c.slug, c.tipo || 'outro']));
       if(!lista.length){ box.innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhuma categoria</div>'; return; }
       box.innerHTML = lista.map(c => `<button type="button" class="fcat-item${filtroState.categorias.includes(c.slug)?' active':''}" data-slug="${escapeHtmlTexto(c.slug)}" onclick="setFiltroCategoria('${escapeHtmlTexto(c.slug)}',this)">${escapeHtmlTexto(c.nome)}</button>`).join('');
     }catch(e){ box.innerHTML = '<div style="font-size:12px;color:var(--red)">Erro ao carregar</div>'; }
@@ -2243,13 +2329,44 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     return String(a).localeCompare(String(b));
   }
 
+  // Dividido em dois pools por p.kind (ver converterProduto/categoriaTipoMap)
+  // — "Tamanho de Roupa" só pega produtos de categoria tipo 'roupa',
+  // "Medida de Joia" só 'joia'. Escopado pela categoria selecionada, igual
+  // ao padrão já usado em VN_IMPORTS.html (expandirSlugsComFilhos) — trazido
+  // pra paridade aqui, esta função não tinha esse escopo antes.
   function popularFiltroTamanhos(base){
-    const set = new Set();
-    (base||[]).forEach(p => (p.sizes||[]).forEach(s => set.add(s)));
-    const box = document.getElementById('fltSizes');
-    if(!set.size){ box.innerHTML = ''; return; }
-    const sizeList = [...set].sort(compararTamanhos);
-    box.innerHTML = sizeList.map(s => `<button type="button" class="prod-size-chip${filtroState.tamanhos.includes(s)?' on':''}" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
+    const catsSelecionadas = expandirSlugsComFilhos(categoriasTree, filtroState.categorias);
+    let poolSource = base || [];
+    if (filtroState.categorias.length) {
+      poolSource = poolSource.filter(p => catsSelecionadas.has(p.cat));
+    }
+
+    const montarLista = (produtos) => {
+      const set = new Set();
+      produtos.forEach(p => (p.sizes||[]).forEach(s => set.add(s)));
+      return [...set].sort(compararTamanhos);
+    };
+    const listaRoupa = montarLista(poolSource.filter(p => p.kind === 'roupa'));
+    const listaJoia = montarLista(poolSource.filter(p => p.kind === 'joia'));
+
+    // Filtro fantasma: tamanho marcado que não existe mais em nenhum dos
+    // dois pools atuais é removido do estado, não só escondido do menu.
+    const disponiveis = new Set([...listaRoupa, ...listaJoia]);
+    const tamanhosValidos = filtroState.tamanhos.filter(s => disponiveis.has(s));
+    if (tamanhosValidos.length !== filtroState.tamanhos.length) {
+      filtroState.tamanhos = tamanhosValidos;
+    }
+
+    const montarHtml = (lista) => lista.map(s => `<button type="button" class="prod-size-chip${filtroState.tamanhos.includes(s)?' on':''}" onclick="setFiltroTamanho('${escapeHtmlTexto(s)}',this)">${escapeHtmlTexto(s)}</button>`).join('');
+
+    const boxRoupa = document.getElementById('fltSizesRoupa');
+    const boxJoia = document.getElementById('fltSizesJoia');
+    if (boxRoupa) boxRoupa.innerHTML = montarHtml(listaRoupa);
+    if (boxJoia) boxJoia.innerHTML = montarHtml(listaJoia);
+
+    // Grupo inteiro some quando não há produto desse tipo nos resultados atuais.
+    document.querySelectorAll('[data-size-group="roupa"]').forEach(el => { el.style.display = listaRoupa.length ? '' : 'none'; });
+    document.querySelectorAll('[data-size-group="joia"]').forEach(el => { el.style.display = listaJoia.length ? '' : 'none'; });
   }
   function setFiltroTamanho(s, el){
     // Multi-select: alterna só o tamanho clicado, os outros já marcados continuam.
@@ -2296,7 +2413,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function resetSearchFilters(){
     filtroState = { categorias: [], tamanhos: [], precoMin: 0, precoMax: Infinity };
     document.querySelectorAll('#fltCats .fcat-item').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('#fltSizes .prod-size-chip').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('#fltSizesRoupa .prod-size-chip, #fltSizesJoia .prod-size-chip').forEach(b=>b.classList.remove('on'));
     const maxEl = document.getElementById('priceMaxRange');
     const minEl = document.getElementById('priceMinRange');
     if(maxEl) maxEl.value = maxEl.max;
@@ -2307,13 +2424,49 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function aplicarFiltrosNaBase(){
     const base = window._searchBase || [];
     const catsSelecionadas = expandirSlugsComFilhos(categoriasTree, filtroState.categorias);
-    const filtrado = base.filter(p => {
+    let filtrado = base.filter(p => {
       if(filtroState.categorias.length && !catsSelecionadas.has(p.cat)) return false;
       if(filtroState.tamanhos.length && !(p.sizes||[]).some(sz => filtroState.tamanhos.includes(sz))) return false;
       if(p.price < filtroState.precoMin || p.price > filtroState.precoMax) return false;
       return true;
     });
+
+    // Re-popula os pools de tamanho escopados pela categoria selecionada
+    // (a categoria pode ter mudado desde a última chamada) antes de ordenar
+    // e desenhar a grade.
+    popularFiltroTamanhos(base);
+
+    const sortValue = window.prodSortValue || 'relevancia';
+    filtrado = filtrado.slice();
+    if (sortValue === 'menor') filtrado.sort((a,b) => a.price - b.price);
+    else if (sortValue === 'maior') filtrado.sort((a,b) => b.price - a.price);
+    else if (sortValue === 'recentes') filtrado.sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+
+    atualizarBreadcrumb(filtroState.categorias);
     renderGrid(filtrado);
+  }
+
+  function atualizarBreadcrumb(selectedCatSlugs){
+    let titulo = 'Produtos';
+    if (selectedCatSlugs.length === 1) {
+      const catObj = flattenCategoryTree(categoriasTree).find(c => c.slug === selectedCatSlugs[0]);
+      if (catObj) titulo = catObj.nome;
+    }
+    const bc = document.getElementById('prodBreadcrumb');
+    if (bc) bc.textContent = 'Início / ' + titulo;
+  }
+
+  function onProdSortChange(value){
+    window.prodSortValue = value;
+    aplicarFiltrosNaBase();
+  }
+
+  function toggleFiltersVisibility(){
+    const wrap = document.getElementById('secProdWrap');
+    if (!wrap) return;
+    const hidden = wrap.classList.toggle('filters-hidden');
+    const label = document.getElementById('filtersToggleLabel');
+    if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
   }
 
   // ─── GRID (mesmo card do site principal) ────────────────────────
@@ -2345,20 +2498,33 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const semDadosEnvio = !esgotado && !temDadosEnvio(p);
       const indisponivel = esgotado || semDadosEnvio;
       const rotuloIndisponivel = esgotado ? 'Esgotado' : 'Indisponível';
+      // % de desconto — mesma fórmula de VN_IMPORTS.html, não existia aqui antes.
+      const badgePct = (p.old && p.old > p.price) ? Math.round(100 - (p.price / p.old * 100)) : 0;
+      // Miniaturas de variação: capa + galeria, só quando há mais de uma foto.
+      const galeria = [p.img, ...p.imgs].filter(Boolean);
+      const temMiniaturas = !indisponivel && p.imgs.length > 0 && galeria.length > 1;
+      const thumbsHtml = temMiniaturas
+        ? `<div class="prod-thumbs">${galeria.map((src, gi) => `<button type="button" class="prod-thumb${gi===0?' on':''}" data-src="${escapeHtmlTexto(src)}" aria-label="Ver foto ${gi+1}" onclick="event.stopPropagation();trocarImagemPrincipalCard(this)"><img src="${escapeHtmlTexto(src)}" alt="" loading="lazy"></button>`).join('')}</div>`
+        : '';
       return `
         <div class="prod-card" data-pid="${p._id}" style="animation-delay:${Math.min(i*0.05,0.45)}s">
           <div class="prod-card-frame" onclick="window.location.href='/produto.html?id=${encodeURIComponent(p._id)}'">
             <div class="prod-card-media${indisponivel?' esgotado':''}">
-              ${indisponivel ? `<span class="prod-badge-esgotado">${rotuloIndisponivel}</span>` : ''}
+              ${indisponivel
+                ? `<span class="prod-badge-esgotado">${rotuloIndisponivel}</span>`
+                : (p.badge==='new' ? `<span class="prod-badge-new">Novo</span>` : '')
+              }
               ${p.img ? `<img src="${escapeHtmlTexto(p.img)}" alt="${escapeHtmlTexto(p.name)}" loading="lazy" />` : `<div class="prod-card-empty">Sem imagem</div>`}
               <button class="prod-wish-btn${inWish}" onclick="event.stopPropagation();toggleWishlist('${p._id}', this)"><i class="fa-regular fa-heart"></i></button>
             </div>
+            ${thumbsHtml}
             <div class="prod-card-body">
               <div class="prod-card-sub">${escapeHtmlTexto(subTxt)}</div>
               <div class="prod-card-name">${escapeHtmlTexto(p.name)}</div>
               <div class="prod-card-price-row">
                 ${p.old?`<span class="prod-old-price">${R$(p.old)}</span>`:''}
-                <span class="prod-price">${R$(p.price)}</span>
+                <span class="prod-price${p.old?' prod-price-deal':''}">${R$(p.price)}</span>
+                ${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}
               </div>
               ${indisponivel
                 ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
@@ -2368,6 +2534,19 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
           </div>
         </div>`;
     }).join('');
+  }
+
+  // Clique numa miniatura de variação (.prod-thumb) troca só o src da <img>
+  // principal do card — sem estado em JS, o próprio DOM (qual botão tem
+  // .on) é a fonte da verdade. Mesmo comportamento de VN_IMPORTS.html
+  // (cópia própria: os dois arquivos não compartilham JS além de cart.js/colors.js).
+  function trocarImagemPrincipalCard(btn){
+    const src = btn.dataset.src;
+    if(!src) return;
+    const media = btn.closest('.prod-card-frame')?.querySelector('.prod-card-media');
+    const img = media?.querySelector('img');
+    if(img) img.src = src;
+    btn.parentElement?.querySelectorAll('.prod-thumb').forEach(t => t.classList.toggle('on', t === btn));
   }
 
   function goToSearchPage(q){
@@ -2383,11 +2562,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     document.getElementById('qtitle').textContent = categoria ? `Categoria: "${categoria}"` : (q ? `Resultados para "${q}"` : 'Todos os produtos');
     document.getElementById('pageSearchInp').value = q;
     if(categoria){
-      // Só define o estado aqui — popularFiltroCategorias() (chamada junto,
-      // em paralelo) já renderiza os botões lendo filtroState.categorias,
-      // então não depende de o DOM dos botões já existir nesse momento.
+      // popularFiltroCategorias() já rodou antes desta função (ver o
+      // .then() no fim do arquivo), então os botões de categoria já existem
+      // no DOM quando isto roda — só falta marcar o estado.
       filtroState.categorias = [categoria];
     }
+    atualizarBreadcrumb(filtroState.categorias);
     document.getElementById('qcount').textContent = 'Carregando…';
     document.getElementById('prodGrid').innerHTML = '<div class="search-loading">Carregando produtos…</div>';
     try{
@@ -2431,8 +2611,13 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   }
 
   carregarConfigLoja();
-  popularFiltroCategorias();
-  doPageSearch();
+  // categorias precisam resolver ANTES de doPageSearch converter os produtos
+  // — converterProduto() lê categoriaTipoMap (montado em popularFiltroCategorias)
+  // pra decidir o "kind" de cada produto; sem essa ordem, kind cai em 'outro'
+  // pra todo mundo na primeira carga (ver risco documentado no rebrand navy).
+  // popularFiltroCategorias() nunca rejeita (try/catch interno), então
+  // .then() sempre dispara doPageSearch mesmo se a busca de categorias falhar.
+  popularFiltroCategorias().then(doPageSearch);
   syncDots();
   document.getElementById('footYear').textContent = new Date().getFullYear();
 </script>
