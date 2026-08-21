@@ -1674,7 +1674,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <button class="nav-btn nav-btn-search" onclick="toggleSearch()" title="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <button class="nav-btn" onclick="location.href='/'" title="Favoritos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg><span class="nav-dot" id="wDot"></span></button>
       <button class="nav-btn" onclick="location.href='/'" title="Carrinho">
-        <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
         <span class="nav-dot" id="cDot"></span>
       </button>
     </div>
@@ -1722,7 +1722,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
           <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
-          <button class="pv-wish-btn" id="pvWishBtn"><i class="fa-regular fa-heart ui-ico" id="pvWishIco" aria-hidden="true"></i><span id="pvWishTxt">Adicionar aos Favoritos</span></button>
+          <button class="pv-wish-btn" id="pvWishBtn"><span class="ui-ico" id="pvWishIco"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg></span><span id="pvWishTxt">Adicionar aos Favoritos</span></button>
         </div>
         <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
         <div class="pv-feats">
@@ -2002,10 +2002,15 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     tamanhoSelecionado = s;
   }
 
+  // Mesmo par de SVG (preenchido/contorno) usado no coração do cabeçalho e
+  // dos cards — unifica com o resto do site em vez de trocar classe
+  // fa-regular/fa-solid.
+  const PV_HEART_FILLED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>';
+  const PV_HEART_OUTLINE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>';
   function atualizarBotaoWish(){
     const wish = getWishlist();
     const is = produtoAtual && wish.includes(produtoAtual._id);
-    document.getElementById('pvWishIco').className = is ? 'fa-solid fa-heart ui-ico' : 'fa-regular fa-heart ui-ico';
+    document.getElementById('pvWishIco').innerHTML = is ? PV_HEART_FILLED : PV_HEART_OUTLINE;
     document.getElementById('pvWishTxt').textContent = is ? 'Nos Favoritos' : 'Adicionar aos Favoritos';
   }
 
