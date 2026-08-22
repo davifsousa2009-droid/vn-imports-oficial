@@ -196,7 +196,9 @@ Existem duas fontes de configuração, com papéis diferentes:
 A regra geral (ver seção 6 para a cadeia completa): **painel → `config.js` → fallback fixo no código**, mas cada campo individual pode ter um número de degraus diferente.
 
 ### Editável pelo lojista no painel (`Config`/`ConfigSchema`)
-`nomeLoja`, `chavePix`, `corPrimaria`, `corSecundaria`, `temaFundo` (só a *chave* de um tema pré-calibrado — nunca hex livre), `whatsappContato`, `instagramLink`, `emailContato`, `clienteTag`, `cidadeLoja`, `cepOrigem`, `pageTitleSuffix`, `cnpj`, `retencaoPedidosPagosAnos`, `pesoKgPadrao`/`larguraCmPadrao`/`alturaCmPadrao`/`comprimentoCmPadrao`, `usaTamanhosPadrao`, `freteGratisAtivo`/`freteGratisValor`, `parcelamentoAtivo`/`parcelamentoMax`, `promoAtiva`/`promoEyebrow`/`promoTitulo`/`promoSubtitulo`/`promoCtaTexto`, `heroImagem`/`heroImagemUrl`/`heroTitle`/`heroFont`/`heroEyebrow`/`heroSubtitulo`, `sobreTitulo`/`sobreTexto`, `benef1..4Titulo`/`Texto`/`IcoEnabled`/`Ico`.
+`nomeLoja`, `chavePix`, `corPrimaria`, `corSecundaria`, `temaFundo` (só a *chave* de um tema pré-calibrado — nunca hex livre), `whatsappContato`, `instagramLink`, `emailContato`, `clienteTag`, `cidadeLoja`, `cepOrigem`, `pageTitleSuffix`, `cnpj`, `retencaoPedidosPagosAnos`, `pesoKgPadrao`/`larguraCmPadrao`/`alturaCmPadrao`/`comprimentoCmPadrao`, `usaTamanhosPadrao`, `freteGratisAtivo`/`freteGratisValor`, `parcelamentoAtivo`/`parcelamentoMax`, `promoAtiva`/`promoEyebrow`/`promoTitulo`/`promoSubtitulo`/`promoCtaTexto`, `heroTitle`/`heroFont`/`heroEyebrow`/`heroSubtitulo`, `sobreTitulo`/`sobreTexto`, `benef1..4Titulo`/`Texto`/`IcoEnabled`/`Ico`.
+
+`heroImagem`/`heroImagemUrl` (foto única do hero) foram removidos — a imagem do hero vem só de `Banner` (coleção própria, gerenciada em "Gerenciar Banners"), não mais de `Config`. Ver `models/Banner.js`/`routes/banners.js`.
 
 Também no banco, mas em outra coleção (`Settings`, não `Config`): `mp_token`, `mp_public_key`, `me_token`, `pix_key`, `mp_webhook_secret` — configurados em "Sua Integração" no painel, nunca em `config.js`.
 

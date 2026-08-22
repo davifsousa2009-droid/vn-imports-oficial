@@ -881,7 +881,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option,.filters,.fbar-1,.fbar-2,.fbar-3{animation:none !important;transition:none !important}
 }
 
 /* Chips de tamanho revelados no card — mesma linguagem visual do seletor de
@@ -1748,24 +1748,45 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 
 /* ─── UTIL ROW (toggle de filtros + ordenação) ─── */
 .prod-util-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+/* Dois estados de verdade, não só cor de hover: padrão (filtros visíveis)
+   é discreto — contorno fino, sem competir com os CTAs de compra; ativo
+   (filtros escondidos) é preenchimento sólido em --accent (a cor de marca,
+   não o gradiente pesado do "Adicionar ao Carrinho" — este botão é ação
+   secundária). Branco sobre --accent mede ~5.48:1 de contraste (WCAG AA
+   pede 4.5:1 pra texto normal). aria-pressed no próprio botão (setado por
+   toggleFiltersVisibility), não um ancestral — .filters-toggle-btn não
+   fica sempre dentro de #secProdWrap (não fica em VN_IMPORTS.html), então
+   esse estado não pode depender de posição no DOM. */
 .filters-toggle-btn{
   display:flex;align-items:center;gap:10px;min-height:44px;padding:11px 20px;
-  background:var(--white);border:1px solid var(--ink);border-radius:4px;
-  color:var(--ink);font-family:var(--sans);font-size:11.5px;font-weight:700;
+  background:transparent;border:1px solid var(--border);border-radius:4px;
+  color:var(--muted);font-family:var(--sans);font-size:11.5px;font-weight:700;
   letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-  transition:border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
 }
 .filters-toggle-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,34,51,.10)}
-.filters-toggle-btn:active{transform:translateY(0);box-shadow:none}
+.filters-toggle-btn:active{transform:translateY(0) scale(.97);box-shadow:none}
 .filters-toggle-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,111,160,.15)}
-/* Filtros ocultos = estado "ativo" do toggle — cor de destaque no botão em
-   vez de trocar o preenchimento (o svg do ícone usa fill:var(--bg) nos
-   círculos pra "furar" contra o fundo do botão; manter background sempre
-   var(--white) evita ter que sincronizar essa cor também). aria-pressed no
-   próprio botão (setado por toggleFiltersVisibility), não um ancestral —
-   .filters-toggle-btn não fica sempre dentro de #secProdWrap (não fica em
-   VN_IMPORTS.html), então esse estado não pode depender de posição no DOM. */
-.filters-toggle-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.filters-toggle-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--white)}
+/* Sem isto, o :hover genérico acima trocaria o texto branco por
+   --accent — invisível sobre o próprio fundo --accent do estado ativo. */
+.filters-toggle-btn[aria-pressed="true"]:hover{border-color:var(--accent);color:var(--white)}
+/* Micro-animação das barras do ícone ao clicar (qualquer direção, abrir
+   ou fechar) — dispara via toggleFiltersVisibility()/pulseFilterIcon(),
+   reiniciável mesmo em cliques rápidos seguidos (força reflow antes de
+   readicionar a classe, ver JS). transform-box:fill-box é necessário pra
+   <line> dentro de svg escalar a partir do próprio centro, não do canto
+   (0,0) do viewport do svg. */
+.filters-toggle-btn .fbar{transform-box:fill-box;transform-origin:center}
+@keyframes fbarPulse{
+  0%{transform:scaleY(1)}
+  35%{transform:scaleY(.7)}
+  65%{transform:scaleY(1.15)}
+  100%{transform:scaleY(1)}
+}
+.filters-toggle-btn.fbar-pulse .fbar-1{animation:fbarPulse .18s ease}
+.filters-toggle-btn.fbar-pulse .fbar-2{animation:fbarPulse .18s ease .02s}
+.filters-toggle-btn.fbar-pulse .fbar-3{animation:fbarPulse .18s ease .04s}
 .sort-wrap{display:flex;align-items:center;gap:10px}
 .sort-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sort-select-wrap{position:relative;display:inline-flex}
@@ -1839,6 +1860,17 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
    mecanismos de filtro mobile diferentes, ver abrirFiltrosMobile), então o
    breakpoint aqui acompanha esse valor, não o do arquivo irmão. */
 @media(min-width:901px){
+  .filters{
+    opacity:1;transform:translateX(0);pointer-events:auto;
+    transition:opacity .2s cubic-bezier(.2,.8,.2,1),transform .2s cubic-bezier(.2,.8,.2,1);
+  }
+  /* Fade+slide (mesma curva do dropdown "Ordenar por") dispara ANTES do
+     grid recolher a coluna — setFiltersVisualState() no JS agenda
+     #secProdWrap.filters-hidden só depois dos 200ms da transição acima.
+     grid-template-columns não anima em CSS puro; se as duas mudanças
+     fossem juntas, o grid reflowiria instantâneo enquanto o painel ainda
+     estaria visível, cortando a animação pela metade. */
+  .filters.fh-hiding{opacity:0;transform:translateX(-12px);pointer-events:none}
   #secProdWrap.filters-hidden .filters{display:none}
   #secProdWrap.filters-hidden{grid-template-columns:1fr}
   #secProdWrap.filters-hidden .prod-grid{grid-template-columns:repeat(4,1fr)}
@@ -1948,7 +1980,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
     <div class="prod-util-row">
       <button type="button" class="filters-toggle-btn" id="filtersToggleBtn" aria-pressed="false" onclick="toggleFiltersVisibility()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="6" cy="4" r="1.6" fill="var(--bg)"/><circle cx="11" cy="8" r="1.6" fill="var(--bg)"/><circle cx="5" cy="12" r="1.6" fill="var(--bg)"/></svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line class="fbar fbar-1" x1="4" y1="12" x2="4" y2="7"/><line class="fbar fbar-2" x1="8" y1="13" x2="8" y2="3"/><line class="fbar fbar-3" x1="12" y1="11" x2="12" y2="5"/></svg>
         <span id="filtersToggleLabel">Ocultar Filtros</span>
       </button>
       <div class="sort-wrap">
@@ -2677,17 +2709,73 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     }
   }
 
-  function toggleFiltersVisibility(){
+  // Dispara a micro-animação das barras do ícone (equalizador) — reiniciável
+  // mesmo em cliques rápidos seguidos: remove a classe, força reflow
+  // (void ...offsetWidth), readiciona. Sem o reflow forçado, re-adicionar a
+  // mesma classe que o elemento já tem não reinicia a @keyframes.
+  function pulseFilterIcon(btn){
+    if (!btn) return;
+    btn.classList.remove('fbar-pulse');
+    void btn.offsetWidth;
+    btn.classList.add('fbar-pulse');
+  }
+
+  function prefersReducedMotionFilters(){
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  let filtersHideTimer = null;
+
+  // Troca de estado em duas fases, sempre lendo o estado real do DOM (nunca
+  // uma variável paralela) — clicar rápido várias vezes nunca desincroniza:
+  // cada chamada cancela qualquer timer pendente da chamada anterior antes
+  // de agendar o seu próprio.
+  //   Escondendo: o painel foge (fade+translateX) primeiro, com a coluna do
+  //   grid ainda ocupada; só depois de 200ms (a transição de verdade
+  //   terminar) o JS recolhe a coluna do grid (display:none via
+  //   #secProdWrap.filters-hidden) — se as duas mudanças fossem juntas, o
+  //   reflow do grid (instantâneo, não anima) cortaria a animação do painel
+  //   pela metade.
+  //   Mostrando: a coluna do grid volta primeiro (o painel reaparece no
+  //   lugar certo, mas ainda transparente/deslocado por .fh-hiding), só
+  //   então o fade+translateX de entrada é disparado — na ordem inversa,
+  //   pelo mesmo motivo.
+  function setFiltersVisualState(hidden){
     const wrap = document.getElementById('secProdWrap');
-    if (!wrap) return;
-    const hidden = wrap.classList.toggle('filters-hidden');
-    const label = document.getElementById('filtersToggleLabel');
-    if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
-    // aria-pressed também dirige o estilo do botão (ver CSS) — não depende de
-    // onde .filters-toggle-btn fica no DOM em relação a #secProdWrap, o que
-    // varia entre este arquivo e VN_IMPORTS.html.
     const btn = document.getElementById('filtersToggleBtn');
-    if (btn) btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+    const label = document.getElementById('filtersToggleLabel');
+    if (!wrap || !btn) return;
+    const filtersEl = wrap.querySelector('.filters');
+
+    clearTimeout(filtersHideTimer);
+    pulseFilterIcon(btn);
+    btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+    if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
+
+    if (hidden) {
+      if (filtersEl) filtersEl.classList.add('fh-hiding');
+      const collapseGrid = () => wrap.classList.add('filters-hidden');
+      if (prefersReducedMotionFilters()) collapseGrid();
+      else filtersHideTimer = setTimeout(collapseGrid, 200);
+    } else {
+      wrap.classList.remove('filters-hidden');
+      if (filtersEl) {
+        void filtersEl.offsetWidth; // força reflow antes de tirar .fh-hiding, senão o navegador pode fundir as duas mudanças sem transição
+        filtersEl.classList.remove('fh-hiding');
+      }
+    }
+  }
+
+  function toggleFiltersVisibility(){
+    const btn = document.getElementById('filtersToggleBtn');
+    if (!btn) return;
+    // Lê aria-pressed, não #secProdWrap.filters-hidden: o recolhimento do
+    // grid é deliberadamente atrasado 200ms (ver setFiltersVisualState),
+    // mas aria-pressed é setado na hora — cliques rápidos repetidos
+    // continuam lendo o estado "de intenção" mais recente, não o estado
+    // "de layout" ainda em trânsito.
+    const willHide = btn.getAttribute('aria-pressed') !== 'true';
+    setFiltersVisualState(willHide);
   }
 
   // ─── GRID (mesmo card do site principal) ────────────────────────

@@ -45,8 +45,6 @@
   .btop{display:flex;align-items:center;justify-content:center}
   .pay-method-ico{margin-right:8px;opacity:.9}
   .fsuccess{display:flex;align-items:center;gap:8px}
-  .hero-season{display:inline-flex;align-items:center;gap:8px}
-  .hero-season::before{content:none !important;display:none}
 
   /* --- ESTILO DOS PRODUTOS REAIS --- */
 #lista-produtos-real {
@@ -304,160 +302,31 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 [data-loja="nome"]{opacity:0;transition:opacity .3s ease}
 [data-loja="nome"].is-ready{opacity:1}
 
-/* ─── HERO (texto e foto lado a lado, sem sobreposição) ───
-   Decisão registrada: o layout antigo (foto de largura total + camada escura
-   + texto por cima) exigia uma foto muito específica — horizontal, alta
-   resolução, com a área esquerda vazia pro texto caber — inviável pra um
-   lojista pequeno subindo foto de celular. Aqui a área é dividida: texto
-   sobre --ink (cor sólida, fixa, nunca varia por tema — ver .hero-split-text)
-   à esquerda, foto à direita, sem nenhum um por cima do outro.
-   Isso elimina a camada escura por construção, não por ajuste fino: não há
-   mais foto atrás do texto pra precisar escurecer, então a cor real do
-   produto aparece sem filtro. E o contraste do texto deixa de depender de
-   qual foto o lojista subiu — é texto branco sobre --ink, sempre o mesmo
-   contraste (medido: ~18.9:1 título, ~16:1 descrição — bem acima do mínimo
-   AA de 4.5:1), nos 5 temas, porque --ink nunca é sobrescrito por tema
-   (só bg/bg2/border variam com temaFundo — ver TEMAS_FUNDO em server.js).
-   Proporção 42% texto / 58% foto: o texto ganhou 2 pontos a mais que a
-   divisão meio a meio óbvia porque um título peso 900 em fonte grande
-   precisa de largura própria pra não quebrar em muitas linhas; o tamanho do
-   título (.hero-title) também foi recalibrado pra essa coluna mais estreita
-   em vez de mantido do layout antigo, que era calibrado pra ocupar a tela
-   inteira.
-   Altura por min-height (não height fixo): título/descrição comuns rendem
-   exatamente na altura alvo; texto anormalmente longo cresce o container
-   (texto E foto juntos, é a mesma linha) em vez de estourar ou cortar — ver
-   comentário na regra mobile sobre dvh. */
+/* ─── HERO (container) ───
+   O texto do hero único antigo (nome da loja, tagline, botões "Ver
+   Coleção"/"Categorias", stats) foi removido por completo nesta etapa —
+   estrutura pura de remoção, o design definitivo do carrossel entra depois.
+   .hero-split continua existindo, agora com um único filho
+   (.hero-split-media, sempre presente e vazio, preenchido só pelo gradiente
+   de marca abaixo) — é nele que o carrossel de banners (.hero-carousel,
+   ver mais abaixo) vai se sobrepor quando houver banner cadastrado. */
 .hero-split{
   position:relative;
-  display:flex;
   overflow:hidden;
   min-height:70vh;
   min-height:70dvh; /* dvh desconta a barra de endereço do navegador no celular — só some no fallback vh em browser muito antigo, que não reconhece dvh e ignora esta linha */
   background:var(--ink);
 }
-.hero-split-text{
-  position:relative;
-  flex:0 0 42%;
-  min-width:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  /* 14px -> 20px: mais respiro entre eyebrow/título/linha de acento/descrição/
-     botões (pedido explícito de hierarquia — ver .hero-title abaixo). */
-  gap:20px;
-  padding:48px clamp(28px,4vw,64px);
-  background:var(--hero-panel-bg);
-}
-/* Fundo de marca visível nas bordas/letterbox mesmo com foto carregada —
-   ver .hero-media-compact abaixo pro modo letterbox de verdade (foto de
-   baixa resolução). Mesmo par de tons do botão CTA (--gold/--gold2), pra
-   a mídia nunca "piscar" uma cor genérica antes da foto (ou a extração de
-   cor) assumir. */
+/* Painel de fundo do hero único — usado quando não há nenhum banner
+   cadastrado (ver #heroCarousel/montarHeroCarousel no script): fica sempre
+   vazio, sem <img> nenhum dentro, então este gradiente é tudo que aparece.
+   Preenche o container inteiro agora que não divide mais espaço com a
+   coluna de texto (removida). Mesmo par de tons do botão CTA (--gold/--gold2). */
 .hero-split-media{
-  position:relative;
-  flex:0 0 58%;
-  min-width:0;
+  position:absolute;
+  inset:0;
   background:linear-gradient(155deg, var(--gold), var(--gold2));
 }
-.hero-split-media img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:center;
-  display:block;
-}
-/* Modo compacto/letterbox — aplicado via JS (ver script) quando a foto do
-   hero carrega com resolução baixa (naturalWidth/naturalHeight < 800px).
-   Trocar de cover pra contain evita esticar/pixelizar uma foto pequena pra
-   preencher a coluna inteira; o gradiente de marca (regra acima) preenche
-   a área que sobra ao redor, em vez de deixar espaço vazio/branco. */
-.hero-split-media.hero-media-compact img{
-  object-fit:contain;
-  padding:7%;
-  box-sizing:border-box;
-}
-
-.hero-season{
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:2px;
-  text-transform:uppercase;
-  /* Branco sobre pílula translúcida — testado junto do resto do texto do
-     hero contra o mesmo piso de contraste; o tom dourado original era
-     calibrado pra fundo claro (--bg) e não foi testado contra foto escurecida. */
-  color:#fff;
-  background:rgba(255,255,255,.14);
-  border:1px solid rgba(255,255,255,.32);
-  padding:8px 18px;
-  border-radius:999px;
-  width:fit-content;
-  margin-bottom:0;
-}
-.hero-season::before{content:none;display:none}
-
-.hero-title{
-  font-family:var(--sans);
-  /* Escala aumentada (era clamp(24px,3.1vw,42px)) — mais contraste de
-     tamanho com o eyebrow (10px) acima, título mais confiante. Ainda
-     recalibrado pra coluna de 42%, não a tela inteira (ver comentário
-     original abaixo sobre a proporção 42/58). */
-  font-size:clamp(32px,4.4vw,60px);
-  font-weight:900;
-  line-height:1.03;
-  letter-spacing:-.03em;
-  margin-bottom:0;
-  /* Branco fixo sobre --ink (superfície escura fixa, não mais foto) — medido:
-     ~18.9:1, bem acima do mínimo AA de 4.5:1, e vale pros 5 temas porque
-     --ink nunca muda com temaFundo. */
-  color:#fff;
-  /* Inicialmente escondemos o título para evitar FOUC enquanto a fonte carrega */
-  opacity: 0;
-  transition: opacity 0.4s ease-in;
-}
-.hero-title.font-ready, .hero-title.is-ready { opacity: 1; }
-
-.hero-title em,
-.hero-title i,
-.hero-title strong {
-  font-style: italic;
-  /* Era var(--gold2) — testado e reprovado: contraste ~2.37:1 mesmo no valor
-     padrão do template, bem abaixo de AA (a cor de marca é hex livre do
-     lojista, sem validação de contraste — não dá pra confiar nela aqui).
-     Sem cor diferenciada, só itálico — branco garantido sempre passa. */
-  color: inherit;
-  font-weight: 900;
-}
-
-/* Linha fina de acento — cor dinâmica extraída da foto do hero (ver script,
-   garantirContraste), aplicada via --hero-dynamic-color no ancestral
-   .hero-split. É decoração pura, sem texto em cima, então não precisa do
-   mesmo piso de contraste do botão CTA (só ele lê o texto branco); ainda
-   assim reaproveita a MESMA cor já ajustada, por simplicidade. Sem foto
-   real configurada, a var nunca é definida e cai no fallback translúcido —
-   nunca invisível, nunca crua. */
-.hero-accent-line{
-  width:48px;
-  height:2px;
-  background:var(--hero-dynamic-color, rgba(255,255,255,.35));
-  transition:background-color .3s ease;
-}
-
-.hero-lead{
-  font-size:15px;
-  /* Branco com leve transparência (não var(--muted), calibrado pra fundo
-     claro) sobre --ink — medido: ~16:1, bem acima do mínimo AA. */
-  color:rgba(255,255,255,.92);
-  line-height:1.8;
-  max-width:520px;
-  font-weight:300;
-  margin-top:2px;
-}
-
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 
 /* Botões clean */
 .btn-fill{
@@ -492,70 +361,6 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 }
 .btn-line:hover{border-color:var(--ink);color:var(--ink)}
 
-/* .btn-line é reaproveitado em outras seções sobre fundo claro (texto
-   escuro, borda clara) — achado ao montar o hero: sem esta sobrescrita
-   escopada, o botão "Categorias" ficaria com texto escuro sobre --ink,
-   quase ilegível. Não toquei na regra base, só o comportamento dela dentro
-   do hero. */
-.hero-split .btn-line{
-  color:#fff;
-  border-color:rgba(255,255,255,.5);
-}
-.hero-split .btn-line:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.1)}
-
-/* .btn-fill (botão "Ver Coleção") tinha o mesmo problema que motivou a
-   sobrescrita de .btn-line acima, só que nunca foi corrigido: preenchimento
-   fixo em --ink, então mesmo no painel padrão (Preto Absoluto = --ink) o
-   botão já era preto sobre preto, diferenciado só pelo texto branco dentro
-   — borda e sombra, ambas também --ink, ficavam invisíveis. Não é regressão
-   da cor do painel configurável, é um problema que sempre existiu e que só
-   ficou impossível de ignorar com painéis Vinho/Verde Floresta.
-   Preenchimento = cor de marca (corPrimaria/corSecundaria) foi descartado:
-   é hex livre sem catálogo validado, e branco sobre o gold/gold2 padrão do
-   próprio template já reprova AA (medido: 4.02:1 e 2.37:1) — sem garantia
-   possível pra qualquer hex que o lojista escolher depois. Preenchimento =
-   --hero-panel-bg também foi descartado: perpetuaria o mesmo problema
-   (bloco preenchido igual ao fundo, sem forma visível) em qualquer cor.
-   Branco fixo invertido (mesmo princípio do .btn-line acima) garante
-   diferenciação de forma contra qualquer um dos 5 tons do catálogo, sem
-   depender de matiz nenhum.
-   Escopo: .hero-split .btn-fill (2 classes, especificidade 0,2,0) sempre
-   vence .btn-fill sozinho (1 classe, especificidade 0,1,0) — não importa
-   qual das duas definições duplicadas de .btn-fill estiver mais abaixo no
-   cascade, nem a ordem entre elas. Fora do hero, .btn-fill continua escuro
-   sobre fundo claro (correto lá) — esta regra só aplica dentro de
-   .hero-split, nenhum outro .btn-fill do site tem esse ancestral. */
-.hero-split .btn-fill{
-  background:#fff;
-  color:var(--ink);
-  border-color:#fff;
-}
-.hero-split .btn-fill:hover{
-  background:rgba(255,255,255,.85);
-  border-color:rgba(255,255,255,.85);
-}
-
-/* Cor dinâmica do CTA principal, extraída da foto do hero (ver script,
-   garantirContraste) — só quando há foto real configurada (id="heroCtaPrimary"
-   ganha esta classe via JS). Resolve o MESMO problema que motivou o branco
-   fixo acima (cor de marca livre reprovava AA, medido 4.02:1/2.37:1), só
-   que agora com uma cor calculada e testada em tempo real por foto, em vez
-   de um hex fixo de catálogo sem garantia — por isso é seguro usar aqui e
-   não era antes. #heroCtaPrimary (id) vence a especificidade de
-   .hero-split .btn-fill (duas classes) sem precisar de !important.
-   Transição suave: a cor não troca bruscamente assim que a extração termina. */
-#heroCtaPrimary{
-  transition:background-color .3s ease, border-color .3s ease, color .3s ease;
-}
-#heroCtaPrimary.hero-cta-dynamic{
-  background:var(--hero-dynamic-color);
-  border-color:var(--hero-dynamic-color);
-  color:#fff;
-}
-#heroCtaPrimary.hero-cta-dynamic:hover{
-  filter:brightness(1.1);
-}
-
 /* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
   max-width:1240px;
@@ -589,96 +394,317 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 /* remover estilos antigos do hero poluído */
 .hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
 
-/* ─── ENTRADA DO HERO (fade + leve deslocamento, em sequência curta) ───
-   Duas variantes: .hero-anim (fade+slide, pros elementos que hoje não têm
-   nenhum controle de opacidade próprio) e .hero-anim-title (só slide, SEM
-   tocar opacity) — o título já tem seu próprio mecanismo de fade
-   (.hero-title/.font-ready acima, ligado ao carregamento da fonte
-   escolhida no admin, às vezes assíncrono) que não pode ser duplicado nem
-   competir com uma segunda transição de opacity na mesma propriedade.
-   backwards: mantém o estado "from" visível até o delay de cada item
-   começar, evitando um flash no estado final antes da animação disparar. */
-@keyframes heroFadeSlideUp{
-  from{ opacity:0; transform:translateY(14px); }
-  to{ opacity:1; transform:translateY(0); }
-}
-@keyframes heroSlideUpOnly{
-  from{ transform:translateY(14px); }
-  to{ transform:translateY(0); }
-}
-.hero-anim{
-  animation:heroFadeSlideUp .5s cubic-bezier(.16,1,.3,1) backwards;
-}
-.hero-anim-title{
-  animation:heroSlideUpOnly .5s cubic-bezier(.16,1,.3,1) backwards;
-}
-/* Atraso escalonado — ~80-100ms entre itens, do primeiro ao último soma
-   320ms, bem abaixo do teto de 600ms pedido. */
-.hero-anim-1{ animation-delay:0ms; }
-.hero-anim-title{ animation-delay:100ms; }
-.hero-anim-2{ animation-delay:180ms; }
-.hero-anim-3{ animation-delay:240ms; }
-.hero-anim-4{ animation-delay:320ms; }
-
-@media(prefers-reduced-motion:reduce){
-  .hero-anim,.hero-anim-title{ animation:none !important; }
-}
+/* .hero-anim/.hero-anim-title (animação de entrada do texto do hero único,
+   removido) e suas @keyframes heroFadeSlideUp/heroSlideUpOnly foram
+   removidas junto com o bloco de texto — eram exclusivas dele. */
 
 @media(max-width:768px){
-  /* Empilhado: faixa de texto (altura de conteúdo, cresce se o texto for
-     longo) em cima, foto embaixo. Sem min-height/max-height no container —
-     diferente do layout antigo (foto+scrim+texto sobrepostos, que precisava
-     de um teto de altura porque tudo vivia numa única camada) — aqui texto e
-     foto são blocos separados na mesma coluna, então a altura total é só a
-     soma das duas, sem risco de um cortar o outro. */
-  .hero-split{
-    flex-direction:column;
-    min-height:0;
-  }
-  .hero-split-text{
-    flex:none;
-    padding:32px 24px 28px;
-  }
-  .hero-split-media{
-    flex:none;
-    /* Mais larga que alta — oposto do desktop (mais alta que larga). Teto
-       previsível de corte (ver comentário no CSS do .hero-split-media img)
-       em vez de uma fração arbitrária de tela. */
-    aspect-ratio:16/10;
-  }
   .hero-benefits-bar{padding:0 20px;margin-top:0}
   .hero-benefits{flex-direction:row;gap:10px;overflow:auto;justify-content:flex-start}
   .hero-benefit{flex:none}
 }
 
+/* ─── HERO CARROSSEL (múltiplos banners) ───
+   Ativado só quando GET /api/banners devolve 1+ item (ver montarHeroCarousel
+   no script) — nesse caso .hero-split (id="heroSplitSingle") fica escondido
+   e este carrossel assume o lugar dele. Sem nenhum banner cadastrado, este
+   bloco inteiro nunca é populado nem exibido: .hero-split fica visível,
+   mostrando só o painel de gradiente vazio (o texto do hero único antigo —
+   título/eyebrow/descrição/CTAs/stats — e a foto única antiga — heroImagem/
+   heroImagemUrl — foram ambos removidos; o design definitivo desta área
+   pro caso sem banner ainda não foi definido, ver .hero-split-media acima).
 
+   Layout aqui é full-bleed com texto sobreposto (estilo Nike.com.br), texto
+   ancorado na metade inferior, alinhado à esquerda. Tem seu próprio scrim
+   (.hero-car-scrim), construído seguindo o mesmo piso de contraste (AA
+   4.5:1) do resto do hero. O que é reaproveitado do hero único de foto (já
+   removido), por banner individual, é a detecção de baixa resolução (ver
+   .slide-media-compact abaixo) e a extração de cor dominante da foto (ver
+   amostrarCorDominante/garantirContrasteComBranco no script) — chamadas
+   uma vez por slide, não recriadas.
 
-.btn-cta-premium{
-  box-shadow:0 14px 45px rgba(0,0,0,.12);
+   Transição entre slides, duas camadas independentes (ver comentários
+   pontuais abaixo pra cada uma): a de IMAGEM faz cross-dissolve puro em
+   .hero-car-media/.hero-car-scrim (550ms ease-in-out, as duas pintando ao
+   mesmo tempo durante a troca); a de TEXTO anima a entrada de cada item
+   (.hero-car-text-item) em sequência (eyebrow -> título -> subtítulo ->
+   botão), fade + leve translateY, escalonada por JS (ver marcarEntrada em
+   montarHeroCarousel) — a saída do texto não tem coreografia, só um fade
+   rápido do bloco inteiro (.hero-car-text). Tipografia: eyebrow em
+   var(--mono) (mesma receita de .sort-label/.prod-card-sub), título em
+   var(--serif) — Cormorant Garamond, salto de escala grande sobre o
+   subtítulo, que segue sans-serif normal. */
+.hero-carousel{
   position:relative;
+  min-height:70vh;
+  min-height:70dvh;
+  overflow:hidden;
+  background:var(--ink);
 }
-.btn-cta-premium::after{
-  content:'';
-  position:absolute;inset:-2px;
-  background:radial-gradient(circle at 30% 20%, rgba(16,63,99,.35), transparent 45%),
-             radial-gradient(circle at 70% 80%, rgba(0,0,0,.08), transparent 55%);
-  opacity:.0;
-  transition:opacity .25s;
+/* .hero-car-slide não anima mais a si mesmo (opacity/visibility) — só
+   controla interatividade (pointer-events). O cross-dissolve de verdade
+   acontece na CAMADA DE IMAGEM (.hero-car-media/.hero-car-scrim, cada uma
+   com sua própria transition abaixo): assim o slide que sai e o que entra
+   ficam pintados SIMULTANEAMENTE durante a transição (nenhum dos dois vira
+   visibility:hidden no meio do caminho), produzindo o cross-dissolve real
+   pedido — imagem de saída desaparecendo enquanto a de entrada aparece,
+   sobrepostas. O texto (.hero-car-text) tem sua própria camada de
+   animação, independente, logo abaixo. */
+.hero-car-slide{
+  position:absolute;
+  inset:0;
   pointer-events:none;
-  border-radius:0;
 }
-.btn-cta-premium:hover::after{opacity:1}
+.hero-car-slide.on{
+  pointer-events:auto;
+}
+.hero-car-media{
+  position:absolute;
+  inset:0;
+  /* Mesmo par gold/gold2 do letterbox do hero único (ver .hero-split-media)
+     — fundo de marca visível atrás de foto pequena, nunca um vazio genérico. */
+  background:linear-gradient(155deg, var(--gold), var(--gold2));
+  opacity:0;
+  transition:opacity .55s ease-in-out;
+}
+.hero-car-slide.on .hero-car-media{
+  opacity:1;
+}
+.hero-car-media img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+}
+/* Modo compacto/letterbox — mesmo critério herdado do hero único de foto
+   (naturalWidth ou naturalHeight abaixo de 600px, ver script). */
+.hero-car-media.slide-media-compact img{
+  object-fit:contain;
+  padding:7%;
+  box-sizing:border-box;
+}
+.hero-car-scrim{
+  position:absolute;
+  inset:0;
+  /* Mais escuro embaixo (onde o texto fica) e transparente no topo — deixa a
+     foto respirar acima da metade e ainda garante piso de contraste AA pro
+     texto branco por cima, qualquer que seja a foto. Mesma transição da
+     imagem (.hero-car-media acima): escurece/clareia junto com a foto
+     daquele slide, nunca descasado dela. */
+  background:linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.4) 40%, rgba(0,0,0,0) 70%);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .55s ease-in-out;
+}
+.hero-car-slide.on .hero-car-scrim{
+  opacity:1;
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-car-media,
+  .hero-car-scrim,
+  .hero-car-text{
+    transition:none !important;
+  }
+}
+/* Camada de TEXTO — independente da camada de imagem acima. O bloco inteiro
+   (.hero-car-text) só liga/desliga opacity num fade curto (saída rápida,
+   sem coreografia: "o texto que sai pode simplesmente sumir"); é o filho
+   .hero-car-text-item (abaixo) que carrega a entrada com capricho, só
+   quando o slide fica ativo. */
+.hero-car-text{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  /* 36px laterais: mesmo valor de padding usado no resto do site pras
+     faixas de conteúdo (.cats-inner/.sec/.reviews-inner/.pv-inner, todas
+     com padding:...36px), não um valor inventado só pro hero. */
+  padding:0 36px 64px;
+  max-width:640px;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+  opacity:0;
+  transition:opacity .15s ease;
+}
+.hero-car-slide.on .hero-car-text{
+  opacity:1;
+}
+/* Entrada escalonada (eyebrow -> título -> subtítulo -> botão), aplicada só
+   quando o slide fica ativo — ver marcarEntrada() no script, que dá a cada
+   item existente (alguns são opcionais) um animation-delay crescente na
+   ordem em que realmente aparecem. backwards: item fica no estado "from"
+   (invisível, 12px abaixo) durante o delay, sem flash na posição final
+   antes da vez dele. O seletor .hero-car-slide.on reaplica a animação toda
+   vez que o slide volta a ficar ativo (troca de .on é sempre uma
+   transição nova, não uma classe que "gruda"). */
+@keyframes heroCarTextIn{
+  from{ opacity:0; transform:translateY(12px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.hero-car-text-item{
+  opacity:0;
+  transform:translateY(12px);
+}
+.hero-car-slide.on .hero-car-text-item{
+  animation:heroCarTextIn .32s cubic-bezier(.16,1,.3,1) backwards;
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-car-text-item{ animation:none !important; }
+  .hero-car-slide.on .hero-car-text-item{
+    opacity:1 !important;
+    transform:none !important;
+  }
+}
+/* Eyebrow do banner — mesma receita já usada em .sort-label/.prod-card-sub
+   (mono, letter-spacing, uppercase, "como já é padrão no site"), cor
+   adaptada pro contexto escuro (foto + scrim) em vez do var(--muted) que
+   essas duas regras usam sobre fundo claro. */
+.hero-car-eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.82);
+  margin:0;
+}
+/* Título em Cormorant Garamond (var(--serif), mesma fonte de .sec-title),
+   não mais a sans-serif do hero único antigo. Peso 600: só 500/600/700
+   estão carregados pro Cormorant Garamond (ver <link> de fonts no <head>)
+   — 900 não existe nessa família aqui, cairia num fallback sem peso.
+   Tamanho bem maior que o subtítulo (clamp de até 64px contra 16-17px do
+   subtítulo) — salto de escala perceptível, não incremental, pedido
+   explícito. */
+.hero-car-title{
+  font-family:var(--serif);
+  font-size:clamp(34px,5.5vw,64px);
+  font-weight:600;
+  line-height:1.05;
+  color:#fff;
+  margin:0;
+}
+.hero-car-subtitle{
+  font-size:16px;
+  color:rgba(255,255,255,.92);
+  line-height:1.6;
+  font-weight:300;
+  margin:0;
+  max-width:520px;
+}
+/* Botão do slide: estilo próprio, não reaproveita .btn-fill de propósito —
+   este arquivo já tem duas definições de .btn-fill concorrentes no cascade
+   (ver comentário em .hero-split .btn-fill sobre a primeira delas), então
+   herdar a classe genérica aqui deixaria a aparência do CTA do carrossel
+   dependente de qual das duas vence, imprevisível. Mesma filosofia de cor do
+   CTA do hero único (branco fixo por padrão, cor extraída da foto quando
+   disponível, sempre testada contra 4.5:1 — ver .hero-car-cta-dynamic). */
+.hero-car-cta{
+  width:fit-content;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  color:var(--ink);
+  border:1px solid #fff;
+  padding:14px 32px;
+  /* Pílula (999px) — só o CTA do banner, pedido explícito de diferenciar do
+     botão padrão quadrado/pouco arredondado do resto do site (.btn-fill/
+     .btn-line não são tocados). */
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  text-decoration:none;
+  cursor:pointer;
+  margin-top:4px;
+  transition:background-color .2s ease, border-color .2s ease, filter .2s ease;
+}
+.hero-car-cta:hover{
+  background:rgba(255,255,255,.85);
+  border-color:rgba(255,255,255,.85);
+}
+.hero-car-cta.hero-car-cta-dynamic{
+  background:var(--hero-car-color, #fff);
+  border-color:var(--hero-car-color, #fff);
+  color:#fff;
+}
+.hero-car-cta.hero-car-cta-dynamic:hover{
+  filter:brightness(1.1);
+}
+
+/* Controles — mesmo padrão visual de botão-círculo translúcido já usado no
+   lightbox de fotos do produto (ver .pv-lightbox-nav/.pv-lightbox-close),
+   reaproveitado aqui em vez de inventar um novo estilo de botão. */
+.hero-car-arrow,
+.hero-car-pause{
+  position:absolute;
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(247,244,240,.1);border:1px solid rgba(247,244,240,.25);color:#F7F4F0;
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+  z-index:2;
+}
+.hero-car-arrow:hover,
+.hero-car-pause:hover{background:rgba(247,244,240,.2)}
+.hero-car-prev{left:24px;top:50%;transform:translateY(-50%)}
+.hero-car-next{right:24px;top:50%;transform:translateY(-50%)}
+.hero-car-pause{top:24px;right:24px}
+.hero-car-dots{
+  position:absolute;
+  bottom:22px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+  z-index:2;
+}
+.hero-car-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:rgba(247,244,240,.4);
+  border:none;padding:0;cursor:pointer;
+  transition:background .2s,transform .2s;
+}
+.hero-car-dot[aria-current="true"]{
+  background:#F7F4F0;
+  transform:scale(1.25);
+}
+/* Foco visível (requisito de acessibilidade) — anel branco, não o azul de
+   --accent usado nos formulários: aqueles pressupõem fundo claro, e estes
+   controles ficam sobre foto/scrim escuro, onde um anel escuro sumiria. */
+.hero-car-arrow:focus-visible,
+.hero-car-pause:focus-visible,
+.hero-car-dot:focus-visible{
+  outline:2px solid #fff;
+  outline-offset:2px;
+}
+/* Região só pra leitor de tela anunciar a troca de slide (ver
+   anunciarSlideHero no script) — mesmo padrão clip-rect(0,0,0,0) do WAI-ARIA
+   APG pra conteúdo invisível-mas-lido. */
+.hero-car-sr{
+  position:absolute;
+  width:1px;height:1px;
+  padding:0;margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+@media(max-width:768px){
+  .hero-carousel{min-height:60vh;min-height:60dvh}
+  .hero-car-text{padding:0 20px 44px;max-width:none;gap:16px}
+  .hero-car-arrow{width:36px;height:36px;font-size:14px}
+  .hero-car-prev{left:12px}
+  .hero-car-next{right:12px}
+  .hero-car-pause{top:12px;right:12px;width:36px;height:36px;font-size:14px}
+}
+
 
 /* glassmorphism search */
 #main-nav{background:rgba(255,255,255,.85);}
 .search-wrap{background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.06)}
-/* Esta regra vem DEPOIS da primeira definição de .hero-lead no cascade —
-   sem repetir a cor branca aqui, ela venceria e apagaria a mudança de lá. */
-.hero-lead{
-  font-size:16px;color:rgba(255,255,255,.92);line-height:1.8;
-  max-width:640px;margin-bottom:0;font-weight:300;
-}
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
 .btn-fill{
   background:var(--ink);color:var(--white);
   border:1.5px solid var(--ink);padding:14px 36px;
@@ -697,11 +723,6 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   border-radius:8px;
 }
 .btn-line:hover{border-color:var(--ink);background:rgba(17,17,17,.03)}
-.hero-stats{
-  display:none;
-}
-.stat-val{font-family:var(--sans);font-size:30px;font-weight:900;line-height:1;display:block;margin-bottom:6px;letter-spacing:-.02em}
-.stat-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
 .hero-feat-card{
   border:1px solid var(--border);background:var(--white);
@@ -787,23 +808,44 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   max-width:1240px;margin:-24px auto 32px;padding:0 36px;
 }
+/* Dois estados de verdade, não só cor de hover: padrão (filtros visíveis)
+   é discreto — contorno fino, sem competir com os CTAs de compra; ativo
+   (filtros escondidos) é preenchimento sólido em --accent (a cor de marca,
+   não o gradiente pesado do "Adicionar ao Carrinho" — este botão é ação
+   secundária). Branco sobre --accent mede ~5.48:1 de contraste (WCAG AA
+   pede 4.5:1 pra texto normal). aria-pressed no próprio botão (setado por
+   toggleFiltersVisibility), não um ancestral — aqui .prod-util-row é irmã
+   de #secProdWrap, não descendente. */
 .filters-toggle-btn{
   display:flex;align-items:center;gap:10px;min-height:44px;padding:11px 20px;
-  background:var(--white);border:1px solid var(--ink);border-radius:4px;
-  color:var(--ink);font-family:var(--sans);font-size:11.5px;font-weight:700;
+  background:transparent;border:1px solid var(--border);border-radius:4px;
+  color:var(--muted);font-family:var(--sans);font-size:11.5px;font-weight:700;
   letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-  transition:border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
 }
 .filters-toggle-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,34,51,.10)}
-.filters-toggle-btn:active{transform:translateY(0);box-shadow:none}
+.filters-toggle-btn:active{transform:translateY(0) scale(.97);box-shadow:none}
 .filters-toggle-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,111,160,.15)}
-/* Filtros ocultos = estado "ativo" do toggle — cor de destaque no botão em
-   vez de trocar o preenchimento (o svg do ícone usa fill:var(--bg) nos
-   círculos pra "furar" contra o fundo do botão; manter background sempre
-   var(--white) evita ter que sincronizar essa cor também). aria-pressed no
-   próprio botão (setado por toggleFiltersVisibility), não um ancestral —
-   aqui .prod-util-row é irmã de #secProdWrap, não descendente. */
-.filters-toggle-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.filters-toggle-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--white)}
+/* Sem isto, o :hover genérico acima trocaria o texto branco por
+   --accent — invisível sobre o próprio fundo --accent do estado ativo. */
+.filters-toggle-btn[aria-pressed="true"]:hover{border-color:var(--accent);color:var(--white)}
+/* Micro-animação das barras do ícone ao clicar (qualquer direção, abrir
+   ou fechar) — dispara via toggleFiltersVisibility()/pulseFilterIcon(),
+   reiniciável mesmo em cliques rápidos seguidos (força reflow antes de
+   readicionar a classe, ver JS). transform-box:fill-box é necessário pra
+   <line> dentro de svg escalar a partir do próprio centro, não do canto
+   (0,0) do viewport do svg. */
+.filters-toggle-btn .fbar{transform-box:fill-box;transform-origin:center}
+@keyframes fbarPulse{
+  0%{transform:scaleY(1)}
+  35%{transform:scaleY(.7)}
+  65%{transform:scaleY(1.15)}
+  100%{transform:scaleY(1)}
+}
+.filters-toggle-btn.fbar-pulse .fbar-1{animation:fbarPulse .18s ease}
+.filters-toggle-btn.fbar-pulse .fbar-2{animation:fbarPulse .18s ease .02s}
+.filters-toggle-btn.fbar-pulse .fbar-3{animation:fbarPulse .18s ease .04s}
 .sort-wrap{display:flex;align-items:center;gap:10px}
 .sort-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sort-select-wrap{position:relative;display:inline-flex}
@@ -1102,6 +1144,17 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    mobile (toggleMobileFilters/showMobileFiltersOverlay), que já esconde
    .filters via a media query de 768px acima, sem depender desta classe. */
 @media(min-width:769px){
+  .filters{
+    opacity:1;transform:translateX(0);pointer-events:auto;
+    transition:opacity .2s cubic-bezier(.2,.8,.2,1),transform .2s cubic-bezier(.2,.8,.2,1);
+  }
+  /* Fade+slide (mesma curva do dropdown "Ordenar por") dispara ANTES do
+     grid recolher a coluna — setFiltersVisualState() no JS agenda
+     #secProdWrap.filters-hidden só depois dos 200ms da transição acima.
+     grid-template-columns não anima em CSS puro; se as duas mudanças
+     fossem juntas, o grid reflowiria instantâneo enquanto o painel ainda
+     estaria visível, cortando a animação pela metade. */
+  .filters.fh-hiding{opacity:0;transform:translateX(-12px);pointer-events:none}
   #secProdWrap.filters-hidden .filters{display:none}
   #secProdWrap.filters-hidden{grid-template-columns:1fr}
   #secProdWrap.filters-hidden .prod-grid{grid-template-columns:repeat(4,1fr)}
@@ -1179,7 +1232,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option,.filters,.fbar-1,.fbar-2,.fbar-3{animation:none !important;transition:none !important}
 }
 
 /* Chips de tamanho revelados no card (destaques, favoritos, grid) — mesma
@@ -2035,9 +2088,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .feats-inner{grid-template-columns:1fr}
   .feat{border-right:none;border-bottom:1px solid var(--border)}
   .feat:last-child{border-bottom:none}
-  .hero-stats{gap:24px}
   .frow{grid-template-columns:1fr}
-  .hero-btns{flex-direction:column}
   .btn-fill,.btn-line{width:100%;justify-content:center}
   .ep-2{grid-template-columns:1fr}
 }
@@ -2112,35 +2163,30 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </nav>
 
-<!-- HERO: texto (--ink sólido) e foto lado a lado, sem sobreposição — ver
-     comentário no CSS (.hero-split) pro raciocínio completo. Ordem no DOM é
-     texto primeiro, foto depois: em row (desktop) isso já posiciona texto à
-     esquerda/foto à direita; em column (mobile, ver media query) a mesma
-     ordem vira texto em cima/foto embaixo — nenhum order/reverse necessário. -->
-<div class="hero-split">
-  <div class="hero-split-text">
-    <div class="hero-season hero-anim hero-anim-1" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
-    <h1 class="hero-title hero-anim-title" id="heroTitle">
-      Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
-    </h1>
-    <div class="hero-accent-line hero-anim hero-anim-2" id="heroAccentLine"></div>
-    <p class="hero-lead hero-anim hero-anim-3" id="heroDesc">Produtos selecionados com qualidade e cuidado em cada detalhe.</p>
-
-    <div class="hero-btns hero-anim hero-anim-4">
-      <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção <i class="fa-solid fa-arrow-right ui-ico ui-ico-gap-l" aria-hidden="true"></i></button>
-      <button class="btn-line" onclick="scrollTo_('sec-cats')" id="heroCtaSecondary">Categorias</button>
-    </div>
-
-    <div class="hero-stats">
-      <div><span class="stat-val" id="stProdutos">—</span><span class="stat-label">Produtos</span></div>
-      <div><span class="stat-val" id="stAvaliacao">—</span><span class="stat-label">Avaliação</span></div>
-      <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
-    </div>
-  </div>
-  <div class="hero-split-media" id="heroSplitMedia">
-    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyMxNjU5OEEnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyMxMDNGNjMnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
-  </div>
+<!-- Hero único (fallback pra quando não há nenhum banner cadastrado, ver
+     #heroCarousel logo abaixo). Texto (nome da loja, tagline, botões "Ver
+     Coleção"/"Categorias", stats) removido nesta etapa — remoção pura, sem
+     substituir por nada ainda; o design definitivo do carrossel entra num
+     próximo passo. Container principal (.hero-split) e o painel de mídia
+     (.hero-split-media) continuam existindo, só esvaziados — é o mesmo
+     espaço que o carrossel de banners vai ocupar quando houver banner. -->
+<div class="hero-split" id="heroSplitSingle">
+  <div class="hero-split-media" id="heroSplitMedia"></div>
 </div>
+
+<!-- HERO CARROSSEL: montado por JS (montarHeroCarousel) só quando
+     GET /api/banners devolve 1+ item — nesse caso o hero único acima
+     (#heroSplitSingle) é escondido e este assume o lugar dele. Com 0
+     banners, fica sempre hidden e vazio (ver comentário no CSS,
+     .hero-carousel, e no DOMContentLoaded). -->
+<section class="hero-carousel" id="heroCarousel" hidden aria-roledescription="carrossel" aria-label="Banners promocionais">
+  <div id="heroCarouselTrack"></div>
+  <p class="hero-car-sr" id="heroCarLive" role="status" aria-live="polite"></p>
+  <div class="hero-car-dots" id="heroCarDots" hidden></div>
+  <button type="button" class="hero-car-arrow hero-car-prev" id="heroCarPrev" hidden aria-label="Banner anterior"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+  <button type="button" class="hero-car-arrow hero-car-next" id="heroCarNext" hidden aria-label="Próximo banner"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+  <button type="button" class="hero-car-pause" id="heroCarPause" hidden aria-pressed="false" aria-label="Pausar troca automática"><i class="fa-solid fa-pause" aria-hidden="true" id="heroCarPauseIcon"></i></button>
+</section>
 
 
 <!-- CATS -->
@@ -2167,7 +2213,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     </div>
     <div class="prod-util-row">
       <button type="button" class="filters-toggle-btn" id="filtersToggleBtn" aria-pressed="false" onclick="toggleFiltersVisibility()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="6" cy="4" r="1.6" fill="var(--bg)"/><circle cx="11" cy="8" r="1.6" fill="var(--bg)"/><circle cx="5" cy="12" r="1.6" fill="var(--bg)"/></svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line class="fbar fbar-1" x1="4" y1="12" x2="4" y2="7"/><line class="fbar fbar-2" x1="8" y1="13" x2="8" y2="3"/><line class="fbar fbar-3" x1="12" y1="11" x2="12" y2="5"/></svg>
         <span id="filtersToggleLabel">Ocultar Filtros</span>
       </button>
       <div class="sort-wrap">
@@ -2706,6 +2752,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 <script src="/js/colors.js"></script>
 <script src="/js/cart.js"></script>
 <script>
+// Intervalo de troca automática do carrossel de banners do hero (ver
+// montarHeroCarousel/iniciarAutoplayHero mais abaixo) — uma única constante
+// no topo do script, não hardcoded em cada lugar que usa o valor.
+const HERO_CAROUSEL_INTERVAL_MS = 6000;
+
 /* ─── DADOS PADRÃO ─── */
 const DEF = {
   // slogan/herodesc/tel/email/footdesc/parctxt/paylink existiam aqui mas
@@ -4791,14 +4842,14 @@ function aplicarBeneficioDinamico(n, d) {
 }
 
 // ─── COR DINÂMICA DO HERO (extraída da própria foto) ───
-// Só roda quando existe uma foto real de hero configurada (chamada só de
-// dentro do `if (heroImgFinal)`, ver aplicarConfiguracaoDaLoja) — sem foto
-// real, o hero fica na cor de marca padrão, sem nenhuma extração (item 4).
+// Usada pelo carrossel de banners (ver montarHeroCarousel mais abaixo),
+// uma vez por slide — cada banner tem sua própria cor extraída, aplicada só
+// no CTA daquele slide. Sem banner cadastrado, nenhuma extração roda.
 
 // Luminância relativa (WCAG 2.x) e contraste contra branco puro — mesma
-// fórmula/piso (4.5:1, AA) já usado pra validar as outras cores do hero
-// (ver comentários acima em .hero-title/.hero-season/.btn-fill: nenhuma
-// cor de marca livre tinha essa garantia antes, por isso ficavam de fora).
+// fórmula/piso (4.5:1, AA) já usado pra validar as demais cores do site
+// (ex.: .btn-fill): nenhuma cor de marca livre tinha essa garantia antes,
+// por isso ficavam de fora.
 function luminanciaRelativa(rgb) {
   const linear = (c) => {
     const cs = c / 255;
@@ -4837,14 +4888,14 @@ function rgbParaHex(rgb) {
 
 // Amostra a cor média de uma foto via <canvas> oculto (nunca inserido no
 // DOM) numa cópia SEPARADA da imagem, com crossOrigin — decisão deliberada:
-// a <img id="heroImage"> visível NUNCA leva crossOrigin, porque isso faria
-// o navegador recusar exibir a foto inteira caso o host não mande cabeçalho
-// CORS (comum em URL externa colada pelo lojista em heroImagemUrl; já
-// funciona por padrão nas fotos enviadas por upload, hospedadas no
-// Cloudinary). Com a amostragem numa imagem própria e descartável, uma
-// falha de CORS aqui derruba só a extração de cor (cai no catch, cor de
-// marca padrão continua valendo) — a foto real exibida ao cliente nunca é
-// afetada de jeito nenhum.
+// as <img class="hero-car-img"> visíveis do carrossel NUNCA levam
+// crossOrigin, porque isso faria o navegador recusar exibir a foto inteira
+// caso o host não mande cabeçalho CORS (comum em URL externa colada pelo
+// lojista no banner; já funciona por padrão nas fotos enviadas por upload,
+// hospedadas no Cloudinary). Com a amostragem numa imagem própria e
+// descartável, uma falha de CORS aqui derruba só a extração de cor (cai no
+// catch, cor de marca padrão continua valendo) — a foto real exibida ao
+// cliente nunca é afetada de jeito nenhum.
 function amostrarCorDominante(url, aoSucesso, aoFalhar) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
@@ -4875,23 +4926,282 @@ function amostrarCorDominante(url, aoSucesso, aoFalhar) {
   img.src = url;
 }
 
-// Aplica a cor ajustada no CTA principal do hero e na linha de acento —
-// var(--hero-dynamic-color) no ancestral .hero-split, lido pelas duas
-// regras de CSS (ver .hero-accent-line e #heroCtaPrimary.hero-cta-dynamic).
-// Falha de amostragem (CORS, rede) é engolida aqui de propósito: o hero
-// continua funcionando normalmente com a cor de marca padrão, nunca quebra.
-function aplicarCorDinamicaHero(url) {
-  amostrarCorDominante(url, function (corMedia) {
-    const corAjustada = garantirContrasteComBranco(corMedia, 4.5);
-    const hex = rgbParaHex(corAjustada);
-    const heroSplitEl = document.querySelector('.hero-split');
-    const ctaEl = document.getElementById('heroCtaPrimary');
-    if (heroSplitEl) heroSplitEl.style.setProperty('--hero-dynamic-color', hex);
-    if (ctaEl) ctaEl.classList.add('hero-cta-dynamic');
-  }, function (erro) {
-    console.warn('Cor dinâmica do hero: extração não disponível, mantendo cor de marca padrão.', erro && erro.message);
-  });
+// aplicarCorDinamicaHero (aplicava a cor extraída no hero único de foto só —
+// #heroCtaPrimary/.hero-split) foi removida junto com o hero único. As
+// funções acima (amostrarCorDominante/garantirContrasteComBranco/
+// rgbParaHex) continuam em uso — agora só pelo carrossel, uma vez por
+// banner (ver montarHeroCarousel abaixo).
+
+// ─── HERO CARROSSEL (múltiplos banners) ───
+// Busca GET /api/banners (já vem ordenado por `ordem` do backend) e decide
+// entre o hero único (0 ou 1 banner, tratamento normal) e o carrossel
+// completo (2+ banners) — ver chamada em DOMContentLoaded.
+async function carregarListaBannersHero() {
+  try {
+    const r = await fetch(API_URL + '/banners');
+    if (!r.ok) return [];
+    const lista = await r.json();
+    return Array.isArray(lista) ? lista : [];
+  } catch {
+    return [];
+  }
 }
+
+let heroCarouselState = null;
+
+function prefersReducedMotionHero() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Monta o carrossel completo a partir da lista de banners. Chamada só se
+// banners.length >= 1 (ver DOMContentLoaded) — o hero único já foi escondido
+// antes de qualquer coisa aqui rodar, então não há os dois visíveis ao
+// mesmo tempo em nenhum momento.
+function montarHeroCarousel(banners) {
+  const secao = document.getElementById('heroCarousel');
+  const track = document.getElementById('heroCarouselTrack');
+  const dotsWrap = document.getElementById('heroCarDots');
+  const btnPrev = document.getElementById('heroCarPrev');
+  const btnNext = document.getElementById('heroCarNext');
+  const btnPause = document.getElementById('heroCarPause');
+  if (!secao || !track) return;
+
+  const total = banners.length;
+  // Item único: mostra com o mesmo tratamento adaptativo (letterbox + cor),
+  // mas sem seta/bolinha/pausar — não faz sentido controle de carrossel pra
+  // um item só (requisito explícito).
+  const comControles = total >= 2;
+
+  track.innerHTML = '';
+  dotsWrap.innerHTML = '';
+
+  banners.forEach((banner, i) => {
+    const eyebrow = banner.eyebrow ? String(banner.eyebrow).trim() : '';
+    const titulo = banner.titulo ? String(banner.titulo).trim() : '';
+    const subtitulo = banner.subtitulo ? String(banner.subtitulo).trim() : '';
+    const textoBotao = banner.textoBotao ? String(banner.textoBotao).trim() : '';
+    const linkBotao = banner.linkBotao ? String(banner.linkBotao).trim() : '';
+    const temTexto = !!(eyebrow || titulo || subtitulo || textoBotao);
+
+    const slide = document.createElement('div');
+    slide.className = 'hero-car-slide' + (i === 0 ? ' on' : '');
+    slide.setAttribute('role', 'group');
+    slide.setAttribute('aria-roledescription', 'slide');
+    slide.setAttribute('aria-label', (i + 1) + ' de ' + total);
+    slide.setAttribute('aria-hidden', i === 0 ? 'false' : 'true');
+
+    const mediaEl = document.createElement('div');
+    mediaEl.className = 'hero-car-media';
+    const imgEl = document.createElement('img');
+    // Alt: título do banner quando existe, senão texto genérico (requisito
+    // de acessibilidade explícito) — nunca alt vazio, a foto é conteúdo, não
+    // decoração (é o próprio banner promocional).
+    imgEl.alt = titulo || ('Banner promocional ' + (i + 1) + ' de ' + total);
+    mediaEl.appendChild(imgEl);
+    slide.appendChild(mediaEl);
+
+    let ctaEl = null;
+    if (temTexto) {
+      const scrim = document.createElement('div');
+      scrim.className = 'hero-car-scrim';
+      slide.appendChild(scrim);
+
+      const textoWrap = document.createElement('div');
+      textoWrap.className = 'hero-car-text';
+
+      // Coreografia de entrada (eyebrow -> título -> subtítulo -> botão):
+      // cada item recebe .hero-car-text-item + um animation-delay crescente,
+      // na ordem em que REALMENTE aparece nesse slide (um banner sem
+      // eyebrow começa a sequência já no título, não fica esperando um
+      // atraso "reservado" pra um elemento que não existe).
+      let atrasoIndex = 0;
+      const marcarEntrada = (el) => {
+        el.classList.add('hero-car-text-item');
+        el.style.animationDelay = (atrasoIndex * 70) + 'ms';
+        atrasoIndex++;
+      };
+
+      if (eyebrow) {
+        const eyebrowEl = document.createElement('div');
+        eyebrowEl.className = 'hero-car-eyebrow';
+        eyebrowEl.textContent = eyebrow;
+        marcarEntrada(eyebrowEl);
+        textoWrap.appendChild(eyebrowEl);
+      }
+      if (titulo) {
+        const h2 = document.createElement('h2');
+        h2.className = 'hero-car-title';
+        h2.textContent = titulo;
+        marcarEntrada(h2);
+        textoWrap.appendChild(h2);
+      }
+      if (subtitulo) {
+        const p = document.createElement('p');
+        p.className = 'hero-car-subtitle';
+        p.textContent = subtitulo;
+        marcarEntrada(p);
+        textoWrap.appendChild(p);
+      }
+      if (textoBotao) {
+        ctaEl = document.createElement('a');
+        ctaEl.className = 'hero-car-cta';
+        ctaEl.textContent = textoBotao;
+        // linkBotao é opcional mesmo com textoBotao preenchido (schema não
+        // exige os dois juntos) — sem link, o botão aparece mas não navega
+        // pra lugar nenhum, em vez de virar um href quebrado ou "#" que
+        // pula a página pro topo.
+        if (linkBotao) {
+          ctaEl.href = linkBotao;
+        } else {
+          ctaEl.href = '#';
+          ctaEl.addEventListener('click', (e) => e.preventDefault());
+        }
+        marcarEntrada(ctaEl);
+        textoWrap.appendChild(ctaEl);
+      }
+      slide.appendChild(textoWrap);
+    }
+
+    track.appendChild(slide);
+
+    // Tratamento adaptativo POR SLIDE (requisito 2): mesma detecção de baixa
+    // resolução e mesma extração de cor dominante do hero único, uma vez pra
+    // cada banner — a cor do CTA de cada slide reflete a foto daquele slide,
+    // não uma cor fixa compartilhada.
+    const ctaFinal = ctaEl;
+    imgEl.addEventListener('load', function onSlideImgLoad() {
+      imgEl.removeEventListener('load', onSlideImgLoad);
+      const baixaResolucao = imgEl.naturalWidth < 600 || imgEl.naturalHeight < 600;
+      mediaEl.classList.toggle('slide-media-compact', baixaResolucao);
+
+      if (!ctaFinal) return; // sem botão neste slide, não há CTA pra colorir
+      amostrarCorDominante(banner.imagem, function (corMedia) {
+        const corAjustada = garantirContrasteComBranco(corMedia, 4.5);
+        const hex = rgbParaHex(corAjustada);
+        slide.style.setProperty('--hero-car-color', hex);
+        ctaFinal.classList.add('hero-car-cta-dynamic');
+      }, function (erro) {
+        console.warn('Cor dinâmica do banner ' + (i + 1) + ': extração não disponível, mantendo cor padrão.', erro && erro.message);
+      });
+    }, { once: true });
+    imgEl.src = banner.imagem;
+
+    if (comControles) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'hero-car-dot';
+      dot.setAttribute('aria-label', 'Ir para banner ' + (i + 1));
+      dot.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+      dot.addEventListener('click', () => irParaSlideHero(i, true));
+      dotsWrap.appendChild(dot);
+    }
+  });
+
+  heroCarouselState = { banners, total, index: 0, timerId: null, pausadoManualmente: false };
+
+  dotsWrap.hidden = !comControles;
+  btnPrev.hidden = !comControles;
+  btnNext.hidden = !comControles;
+  btnPause.hidden = !comControles;
+
+  if (comControles) {
+    atualizarBotaoPausaHero(false);
+    iniciarAutoplayHero();
+  }
+
+  secao.hidden = false;
+}
+
+function irParaSlideHero(novoIndex, viaInteracaoUsuario) {
+  if (!heroCarouselState) return;
+  const { total } = heroCarouselState;
+  const idx = ((novoIndex % total) + total) % total;
+
+  if (idx !== heroCarouselState.index) {
+    const track = document.getElementById('heroCarouselTrack');
+    const slides = track ? track.querySelectorAll('.hero-car-slide') : [];
+    slides.forEach((s, i) => {
+      const ativo = i === idx;
+      s.classList.toggle('on', ativo);
+      s.setAttribute('aria-hidden', ativo ? 'false' : 'true');
+    });
+    document.querySelectorAll('#heroCarDots .hero-car-dot').forEach((d, i) => {
+      d.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    });
+    heroCarouselState.index = idx;
+    anunciarSlideHero(idx);
+  }
+
+  // Clique manual (seta/bolinha) sempre pausa a troca automática — requisito
+  // explícito: "não compete com o clique do usuário".
+  if (viaInteracaoUsuario) pausarAutoplayHero();
+}
+
+function anunciarSlideHero(idx) {
+  const liveEl = document.getElementById('heroCarLive');
+  if (!liveEl || !heroCarouselState) return;
+  const banner = heroCarouselState.banners[idx];
+  const titulo = banner && banner.titulo ? String(banner.titulo).trim() : '';
+  const rotulo = titulo || ('banner promocional ' + (idx + 1) + ' de ' + heroCarouselState.total);
+  liveEl.textContent = 'Mostrando ' + rotulo + ' (' + (idx + 1) + ' de ' + heroCarouselState.total + ')';
+}
+
+function iniciarAutoplayHero() {
+  if (!heroCarouselState || heroCarouselState.total < 2) return;
+  // WCAG 2.2.2 / requisito explícito: com prefers-reduced-motion, a troca
+  // automática nunca inicia — só seta/bolinha (navegação manual) funciona.
+  if (prefersReducedMotionHero()) return;
+  if (heroCarouselState.timerId) clearInterval(heroCarouselState.timerId);
+  heroCarouselState.timerId = setInterval(() => {
+    irParaSlideHero(heroCarouselState.index + 1, false);
+  }, HERO_CAROUSEL_INTERVAL_MS);
+}
+
+function pararAutoplayHero() {
+  if (heroCarouselState && heroCarouselState.timerId) {
+    clearInterval(heroCarouselState.timerId);
+    heroCarouselState.timerId = null;
+  }
+}
+
+function pausarAutoplayHero() {
+  if (!heroCarouselState) return;
+  pararAutoplayHero();
+  heroCarouselState.pausadoManualmente = true;
+  atualizarBotaoPausaHero(true);
+}
+
+function retomarAutoplayHero() {
+  if (!heroCarouselState) return;
+  heroCarouselState.pausadoManualmente = false;
+  atualizarBotaoPausaHero(false);
+  iniciarAutoplayHero();
+}
+
+function alternarPausaHero() {
+  if (!heroCarouselState) return;
+  if (heroCarouselState.pausadoManualmente) retomarAutoplayHero();
+  else pausarAutoplayHero();
+}
+
+// aria-pressed sincronizado (requisito explícito de acessibilidade) — único
+// lugar que muda o estado visual/ARIA do botão, chamado por toda ação que
+// pausa/retoma (clique direto no botão, ou indireto via seta/bolinha).
+function atualizarBotaoPausaHero(pausado) {
+  const btn = document.getElementById('heroCarPause');
+  const icon = document.getElementById('heroCarPauseIcon');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', pausado ? 'true' : 'false');
+  btn.setAttribute('aria-label', pausado ? 'Retomar troca automática' : 'Pausar troca automática');
+  if (icon) {
+    icon.classList.toggle('fa-pause', !pausado);
+    icon.classList.toggle('fa-play', pausado);
+  }
+}
+
+document.getElementById('heroCarPrev')?.addEventListener('click', () => irParaSlideHero((heroCarouselState?.index ?? 0) - 1, true));
+document.getElementById('heroCarNext')?.addEventListener('click', () => irParaSlideHero((heroCarouselState?.index ?? 0) + 1, true));
+document.getElementById('heroCarPause')?.addEventListener('click', alternarPausaHero);
 
 /** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
@@ -4977,23 +5287,17 @@ async function carregarConfigLoja() {
     // como reforço (ex.: se o template server-side falhar por algum motivo,
     // ainda corrige assim que o /api/config carregar no navegador).
     const _ogTitle   = document.querySelector('meta[property="og:title"]');
-    const _ogImg     = document.querySelector('meta[property="og:image"]');
     const _twTitle   = document.querySelector('meta[name="twitter:title"]');
-    const _twImg     = document.querySelector('meta[name="twitter:image"]');
 
     const _lojaTitle = nome + ' — ' + suf;
 
     if (_ogTitle)  _ogTitle.setAttribute('content', _lojaTitle);
     if (_twTitle)  _twTitle.setAttribute('content', _lojaTitle);
 
-    // Atualiza imagem OG com a hero image da loja (se existir)
-    const _heroImgFile = d.heroImagem ? String(d.heroImagem).trim() : '';
-    const _heroImgUrl  = d.heroImagemUrl ? String(d.heroImagemUrl).trim() : '';
-    const _heroFinal   = _heroImgFile || _heroImgUrl;
-    if (_heroFinal) {
-      if (_ogImg)  _ogImg.setAttribute('content', _heroFinal);
-      if (_twImg)  _twImg.setAttribute('content', _heroFinal);
-    }
+    // og:image/twitter:image: sem reforço client-side (a imagem, diferente
+    // do título, só é injetada no servidor — ver renderLojaHtmlComConfig em
+    // routes/paginas.js, que usa o primeiro banner do carrossel). Antes lia
+    // d.heroImagem/d.heroImagemUrl daqui, removidos junto com o hero único.
 
     document.querySelectorAll('[data-loja="nome"]').forEach((el) => {
       el.textContent = nome;
@@ -5023,106 +5327,14 @@ async function carregarConfigLoja() {
     const pix = (d.chavePix && String(d.chavePix).trim()) || '';
     S.chavePix = pix;
 
-    // HERO imagem (split): prioriza upload (heroImagem), depois URL direta (heroImagemUrl).
-    // Se ambos vierem vazios, mantém o fallback que já está no HTML — e,
-    // de propósito, NENHUMA das duas rotinas abaixo (letterbox, cor
-    // dinâmica) roda nesse caso: item 4 do pedido original é explícito que
-    // sem foto real configurada, a cor de marca padrão fica intocada.
-    const heroImgFile = d.heroImagem ? String(d.heroImagem).trim() : '';
-    const heroImgUrl = d.heroImagemUrl ? String(d.heroImagemUrl).trim() : '';
-
-    const heroImgFinal = heroImgFile || heroImgUrl;
-    if (heroImgFinal) {
-      const heroImgEl = document.getElementById('heroImage');
-      if (heroImgEl) {
-        heroImgEl.addEventListener('load', function onHeroImgLoad() {
-          heroImgEl.removeEventListener('load', onHeroImgLoad);
-
-          // 1) Modo compacto/letterbox pra foto de baixa resolução — evita
-          // esticar/pixelizar uma foto pequena pra preencher a coluna
-          // inteira (ver .hero-media-compact no CSS). Lida com a IMAGEM
-          // REAL, já visível (nunca falha por CORS — isso só afeta a
-          // leitura de pixel abaixo, não a exibição da foto em si).
-          // Piso de 600px (não 800): testado contra foto real de produto do
-          // catálogo (735x922) — 800px classificava uma foto normal, de
-          // qualidade razoável, como "baixa resolução" incorretamente.
-          const heroMediaEl = document.getElementById('heroSplitMedia');
-          if (heroMediaEl) {
-            const baixaResolucao = heroImgEl.naturalWidth < 600 || heroImgEl.naturalHeight < 600;
-            heroMediaEl.classList.toggle('hero-media-compact', baixaResolucao);
-          }
-
-          // 2) Cor dominante da foto -> acento do hero (CTA + linha).
-          aplicarCorDinamicaHero(heroImgFinal);
-        }, { once: true });
-        heroImgEl.src = heroImgFinal;
-      }
-    }
-
-    // Hero título dinâmico + fonte escolhida pelo admin
-    try {
-      const heroTitleEl = document.getElementById('heroTitle');
-      if (heroTitleEl && d.heroTitle && String(d.heroTitle).trim()) {
-        // Atualiza o conteúdo do título (pode conter <em>)
-        heroTitleEl.innerHTML = d.heroTitle;
-      }
-
-      // Selo "Coleção Exclusiva" e subtítulo — só sobrescreve se vier algo do
-      // admin; sem isso, o texto original do HTML permanece como fallback.
-      const heroEyebrowEl = document.getElementById('heroEyebrowText');
-      if (heroEyebrowEl && d.heroEyebrow && String(d.heroEyebrow).trim()) {
-        heroEyebrowEl.textContent = String(d.heroEyebrow).trim();
-      }
-
-      const heroDescEl = document.getElementById('heroDesc');
-      if (heroDescEl && d.heroSubtitulo && String(d.heroSubtitulo).trim()) {
-        heroDescEl.textContent = String(d.heroSubtitulo).trim();
-      }
-
-      const fontName = d.heroFont ? String(d.heroFont).trim() : '';
-      if (fontName) {
-        const fontId = 'dynamicHeroFont';
-        if (!document.getElementById(fontId)) {
-          const familyParam = fontName.replace(/\s+/g, '+');
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.id = fontId;
-          link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(familyParam) + ':wght@400;700&display=swap';
-          document.head.appendChild(link);
-        }
-
-        // Mantemos o título invisível até a fonte carregar para evitar FOUC.
-        if (heroTitleEl) {
-          heroTitleEl.classList.remove('font-ready');
-          // tenta usar Font Loading API quando disponível
-          const familyForLoad = '1em "' + fontName + '"';
-          const loadPromise = (document.fonts && document.fonts.load)
-            ? document.fonts.load(familyForLoad)
-            : Promise.resolve();
-
-          // Aplica a família e mostra o título quando a fonte estiver pronta (ou em timeout)
-          const timeout = new Promise((resolve) => setTimeout(resolve, 1200));
-          Promise.race([loadPromise, timeout]).then(() => {
-            if (heroTitleEl) {
-              heroTitleEl.style.fontFamily = '"' + fontName + '", var(--serif)';
-              heroTitleEl.classList.add('font-ready');
-              revelarConteudoEl(heroTitleEl);
-            }
-          }).catch(() => {
-            if (heroTitleEl) {
-              heroTitleEl.classList.add('font-ready');
-              revelarConteudoEl(heroTitleEl);
-            }
-          });
-        }
-      } else if (heroTitleEl) {
-        // sem fonte custom, apenas revela o título
-        heroTitleEl.classList.add('font-ready');
-        revelarConteudoEl(heroTitleEl);
-      }
-    } catch (e) {
-      // não crítico — fallback preservado
-    }
+    // Texto do hero único (título/eyebrow/descrição/fonte custom, lidos de
+    // d.heroTitle/d.heroEyebrow/d.heroSubtitulo/d.heroFont) e a foto única
+    // (heroImagem/heroImagemUrl, já removida numa etapa anterior) foram
+    // ambos removidos — #heroSplitMedia fica vazio, mostrando só seu
+    // próprio fundo em gradiente (ver CSS). A imagem do hero agora vem só
+    // do carrossel de banners (ver montarHeroCarousel/carregarListaBannersHero
+    // mais abaixo, que reaproveitam a MESMA detecção de baixa resolução e a
+    // MESMA extração de cor do hero único de foto, por banner individual).
 
     // Barra de anúncio (frete grátis / parcelamento): só aparece se o admin
     // realmente ativou. Antes era texto fixo prometendo algo que a loja podia
@@ -5755,19 +5967,73 @@ function onSortComboKeydown(event) {
   }
 }
 
-function toggleFiltersVisibility() {
+// Dispara a micro-animação das barras do ícone (equalizador) — reiniciável
+// mesmo em cliques rápidos seguidos: remove a classe, força reflow
+// (void ...offsetWidth), readiciona. Sem o reflow forçado, re-adicionar a
+// mesma classe que o elemento já tem não reinicia a @keyframes.
+function pulseFilterIcon(btn) {
+  if (!btn) return;
+  btn.classList.remove('fbar-pulse');
+  void btn.offsetWidth;
+  btn.classList.add('fbar-pulse');
+}
+
+function prefersReducedMotionFilters() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+let filtersHideTimer = null;
+
+// Troca de estado em duas fases, sempre lendo o estado real do DOM (nunca
+// uma variável paralela) — clicar rápido várias vezes nunca desincroniza:
+// cada chamada cancela qualquer timer pendente da chamada anterior antes
+// de agendar o seu próprio.
+//   Escondendo: o painel foge (fade+translateX) primeiro, com a coluna do
+//   grid ainda ocupada; só depois de 200ms (a transição de verdade
+//   terminar) o JS recolhe a coluna do grid (display:none via
+//   #secProdWrap.filters-hidden) — se as duas mudanças fossem juntas, o
+//   reflow do grid (instantâneo, não anima) cortaria a animação do painel
+//   pela metade.
+//   Mostrando: a coluna do grid volta primeiro (o painel reaparece no
+//   lugar certo, mas ainda transparente/deslocado por .fh-hiding), só
+//   então o fade+translateX de entrada é disparado — na ordem inversa,
+//   pelo mesmo motivo.
+function setFiltersVisualState(hidden) {
   const wrap = document.getElementById('secProdWrap');
-  if (!wrap) return;
-  const hidden = wrap.classList.toggle('filters-hidden');
-  const label = document.getElementById('filtersToggleLabel');
-  if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
-  // aria-pressed também dirige o estilo do botão (ver CSS) — não depende de
-  // onde .filters-toggle-btn fica no DOM em relação a #secProdWrap, o que
-  // varia entre este arquivo e search.html (aqui .prod-util-row é irmã de
-  // #secProdWrap, não descendente — um seletor #secProdWrap.filters-hidden
-  // .filters-toggle-btn nunca bateria aqui).
   const btn = document.getElementById('filtersToggleBtn');
-  if (btn) btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+  const label = document.getElementById('filtersToggleLabel');
+  if (!wrap || !btn) return;
+  const filtersEl = wrap.querySelector('.filters');
+
+  clearTimeout(filtersHideTimer);
+  pulseFilterIcon(btn);
+  btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+  if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
+
+  if (hidden) {
+    if (filtersEl) filtersEl.classList.add('fh-hiding');
+    const collapseGrid = () => wrap.classList.add('filters-hidden');
+    if (prefersReducedMotionFilters()) collapseGrid();
+    else filtersHideTimer = setTimeout(collapseGrid, 200);
+  } else {
+    wrap.classList.remove('filters-hidden');
+    if (filtersEl) {
+      void filtersEl.offsetWidth; // força reflow antes de tirar .fh-hiding, senão o navegador pode fundir as duas mudanças sem transição
+      filtersEl.classList.remove('fh-hiding');
+    }
+  }
+}
+
+function toggleFiltersVisibility() {
+  const btn = document.getElementById('filtersToggleBtn');
+  if (!btn) return;
+  // Lê aria-pressed, não #secProdWrap.filters-hidden: o recolhimento do
+  // grid é deliberadamente atrasado 200ms (ver setFiltersVisualState),
+  // mas aria-pressed é setado na hora — cliques rápidos repetidos
+  // continuam lendo o estado "de intenção" mais recente, não o estado
+  // "de layout" ainda em trânsito.
+  const willHide = btn.getAttribute('aria-pressed') !== 'true';
+  setFiltersVisualState(willHide);
 }
 
 
@@ -5851,54 +6117,9 @@ async function carregarCategoriasDoServidor() {
   renderCategoriasHome();
 }
 
-async function carregarStatsDestaque(){
-  const elP = document.getElementById('stProdutos');
-  const elA = document.getElementById('stAvaliacao');
-  const elC = document.getElementById('stClientes');
-  if(!elP || !elA || !elC) return;
-
-  // Produtos
-  try{
-    const r = await fetch(`${API_URL}/produtos`);
-    if(r.ok){
-      const dados = await r.json();
-      const n = Array.isArray(dados) ? dados.length : 0;
-      elP.textContent = n ? String(n) : '—';
-    }
-  } catch{}
-
-  // Avaliações
-  try{
-    const r = await fetch(`${API_URL}/reviews/public`);
-    if(r.ok){
-      const dados = await r.json();
-      const list = Array.isArray(dados) ? dados : [];
-      const total = list.length;
-      if(total){
-        const avg = list.reduce((s,x)=>s + (Number(x.estrelas)||0),0) / total;
-        elA.textContent = (Math.round(avg*10)/10).toString();
-      } else {
-        elA.textContent = '—';
-      }
-    }
-  } catch{}
-
-  // Clientes: número real, vindo de pedidos com pagamento confirmado no banco.
-  // Sem dado real ainda -> mostra "—" (honesto), em vez de inventar um número.
-  try{
-    const r = await fetch(`${API_URL}/stats/clientes`);
-    if(r.ok){
-      const d = await r.json();
-      const n = Number(d?.clientes) || 0;
-      elC.textContent = n > 0 ? String(n) : '—';
-    } else {
-      elC.textContent = '—';
-    }
-  } catch{
-    elC.textContent = '—';
-  }
-}
-
+// carregarStatsDestaque (preenchia #stProdutos/#stAvaliacao/#stClientes,
+// dentro de .hero-stats) removida — .hero-stats não existe mais no hero
+// único, ver remoção do texto do hero.
 
 // Busca produtos do banco e atualiza a vitrine
 async function carregarProdutosDoServidor(categoria) {
@@ -5940,27 +6161,21 @@ async function carregarProdutosDoServidor(categoria) {
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Rede de segurança: se /api/config falhar (rede, CSP, servidor fora do
-  // ar — qualquer um dos dois caminhos de erro em carregarConfigLoja()) o
-  // #heroTitle ficava com opacity:0 pra sempre, porque nem o "return"
-  // antecipado no `if (!r.ok)` nem o `catch` tratam esse elemento (só o
-  // nome da loja tem fallback). Revela do jeito simples (sem fonte custom)
-  // se, passado esse tempo, a classe is-ready ainda não tiver sido
-  // aplicada pelo caminho normal — mesma ideia do timeout de 1200ms já
-  // usado para a fonte customizada do hero, aqui como último recurso.
-  setTimeout(() => {
-    const heroTitleEl = document.getElementById('heroTitle');
-    if (heroTitleEl && !heroTitleEl.classList.contains('is-ready')) {
-      heroTitleEl.classList.add('font-ready');
-      revelarConteudoEl(heroTitleEl);
-    }
-  }, 1500);
+  // Busca banners do hero ANTES do resto do fluxo, e decide já (esconde o
+  // hero único se houver 1+ banner) antes de carregarConfigLoja() sequer
+  // começar a popular #heroSplitSingle — evita mostrar um hero e trocar
+  // pelo outro visivelmente (flash). Lista vazia: não faz nada aqui, o
+  // hero único segue exatamente como sempre foi.
+  const bannersHero = await carregarListaBannersHero();
+  if (bannersHero.length) {
+    const heroSplitEl = document.getElementById('heroSplitSingle');
+    if (heroSplitEl) heroSplitEl.hidden = true;
+  }
 
   // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
   // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
   await carregarConfigLoja();
   await carregarCategoriasDoServidor();
-  await carregarStatsDestaque();
   renderHome();
   renderCart();
   syncDots();
@@ -5968,6 +6183,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   carregarProdutosDoServidor();
   // carrega avaliações aprovadas (sem bloquear)
   carregarReviewsPublic().catch((e)=>console.error(e));
+
+  if (bannersHero.length) montarHeroCarousel(bannersHero);
 });
 
 

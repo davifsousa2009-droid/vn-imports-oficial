@@ -430,11 +430,15 @@ tr:hover td{background:#FAFAF8}
       <div class="panel" id="panel-banners">
         <div class="card">
           <div class="card-title">Gerenciar Banners</div>
-          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Imagens do carousel no topo da vitrine. Envie um arquivo do seu computador ou celular. Números menores em <strong>ordem</strong> aparecem primeiro.</p>
+          <p style="font-size:13px;color:#888;line-height:1.65;margin-bottom:18px">Imagens do carrossel no topo da vitrine. Envie um arquivo do seu computador/celular ou cole uma URL direta — se os dois forem preenchidos, o arquivo enviado tem prioridade. Números menores em <strong>ordem</strong> aparecem primeiro.</p>
           <div class="fg2">
             <div class="fg fw">
               <label class="fl">Arquivo da imagem</label>
               <input class="fi fi-file" id="ban-file" type="file" accept="image/*" onchange="previewLocalFile(this,'ban-prev')">
+            </div>
+            <div class="fg">
+              <label class="fl">URL (opcional)</label>
+              <input class="fi" id="ban-url" placeholder="https://... (opcional)" type="url" autocomplete="off">
             </div>
             <div class="fg">
               <label class="fl">Ordem</label>
@@ -442,8 +446,31 @@ tr:hover td{background:#FAFAF8}
             </div>
           </div>
           <div class="img-preview" id="ban-prev"><img src="" id="ban-prev-img" class="preview-tall" alt="Prévia"><span class="img-url" id="ban-prev-url"></span></div>
+          <div class="fg2">
+            <div class="fg fw">
+              <label class="fl">Eyebrow</label>
+              <input class="fi" id="ban-eyebrow" placeholder="Selo pequeno acima do título, ex: Nova Coleção (opcional)" type="text" autocomplete="off">
+            </div>
+            <div class="fg fw">
+              <label class="fl">Título</label>
+              <input class="fi" id="ban-titulo" placeholder="Título da campanha (opcional)" type="text" autocomplete="off">
+            </div>
+            <div class="fg fw">
+              <label class="fl">Subtítulo</label>
+              <input class="fi" id="ban-subtitulo" placeholder="Frase de apoio (opcional)" type="text" autocomplete="off">
+            </div>
+            <div class="fg">
+              <label class="fl">Texto do botão</label>
+              <input class="fi" id="ban-textoBotao" placeholder="Ex: Ver coleção (opcional)" type="text" autocomplete="off">
+            </div>
+            <div class="fg">
+              <label class="fl">Link do botão</label>
+              <input class="fi" id="ban-linkBotao" placeholder="https://... (opcional)" type="text" autocomplete="off">
+            </div>
+          </div>
           <div class="form-btns" style="border-top:none;padding-top:12px;margin-top:0">
-            <button class="btn btn-p" onclick="salvarBanner()">Salvar banner</button>
+            <button class="btn btn-p" id="btnSalvarBanner" onclick="salvarBanner()">Salvar banner</button>
+            <button class="btn btn-g" id="btnCancelarEdicaoBanner" style="display:none" onclick="cancelarEdicaoBanner()">Cancelar edição</button>
           </div>
           <div class="fmsg" id="banmsg"></div>
         </div>
@@ -759,29 +786,6 @@ tr:hover td{background:#FAFAF8}
 
           <div style="height:18px"></div>
 
-          <div class="card-title" style="font-size:14px;margin-top:10px">Vitrine da Loja (Foto Principal do Hero)</div>
-          <p style="font-size:13px;color:#888;line-height:1.65;margin:-6px 0 16px">
-            Selecione uma nova imagem (arquivo) para atualizar a foto principal do hero na Home.
-          </p>
-
-          <div class="fg2">
-            <div class="fg fw">
-              <label class="fl">Arquivo da capa (hero)</label>
-              <input class="fi fi-file" id="cfg-heroFile" type="file" accept="image/*" onchange="previewLocalFile(this,'cfg-heroPreview');checarLarguraHero(this)">
-              <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 0">Essa foto aparece ao lado do título e da descrição (não mais por cima) — ocupa cerca de 60% do hero, o resto fica com um bloco de cor sólida pro texto. Como não tem mais texto sobreposto, não precisa deixar nenhuma área "vazia" pra ele caber: foto quadrada de celular, foto vertical ou horizontal, todas funcionam — o produto pode estar centralizado. Ela é cortada pra preencher o espaço (bordas de cima/baixo ou dos lados podem sumir dependendo do formato da tela), então prefira uma foto com o produto mais ou menos centralizado. Pelo menos 1920px de largura ainda ajuda a evitar borrão em tela grande/de alta densidade. Sem texto/logo já embutido na imagem — o título da loja já aparece ao lado. Use uma foto sua ou de banco de imagem com licença — não a primeira que aparecer numa busca do Google.</p>
-              <p id="cfg-heroLarguraAviso" style="display:none;font-size:12px;color:#A0391E;font-weight:600;line-height:1.6;margin:8px 0 0"></p>
-            </div>
-            <div class="fg fw">
-              <label class="fl">URL (opcional)</label>
-              <input class="fi" id="cfg-heroUrl" placeholder="https://... (opcional)" type="url" autocomplete="off">
-            </div>
-          </div>
-
-          <div class="img-preview" id="cfg-heroPreview">
-            <img src="" id="cfg-heroPreview-img" class="preview-tall" alt="Prévia">
-            <span class="img-url" id="cfg-heroPreview-url"></span>
-          </div>
-
           <div class="fg" style="margin-top:18px">
             <label class="fl">Cor do Painel de Texto do Hero</label>
             <p style="font-size:12px;color:#888;line-height:1.6;margin:6px 0 14px">
@@ -978,37 +982,6 @@ function previewLocalFile(input, boxId) {
     box.classList.add('on');
   };
   reader.readAsDataURL(f);
-}
-
-// 1920px: mesmo no layout dividido (foto ocupa ~60% do hero, não mais a tela
-// inteira), uma tela grande de alta densidade ainda pede essa resolução pra
-// não ampliar visivelmente dentro da área da foto — medido contra um caso
-// real (achado de auditoria: foto de 1022px, enviada antes desta checagem
-// existir, ficou borrada esticada no hero). Só avisa, nunca bloqueia — o
-// lojista pode não ter foto maior disponível no momento, e travar a
-// configuração dele por causa disso é pior que uma loja com hero levemente
-// macio.
-const HERO_LARGURA_MINIMA_PX = 1920;
-function checarLarguraHero(input) {
-  const aviso = document.getElementById('cfg-heroLarguraAviso');
-  if (!aviso) return;
-  aviso.style.display = 'none';
-  aviso.textContent = '';
-
-  const file = input.files && input.files[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    if (img.naturalWidth < HERO_LARGURA_MINIMA_PX) {
-      aviso.textContent = `⚠ Esta imagem tem ${img.naturalWidth}px de largura — abaixo do mínimo recomendado (${HERO_LARGURA_MINIMA_PX}px) pra área da foto no hero. É provável que ela apareça borrada, esticada em telas grandes. Você pode salvar assim mesmo; se tiver uma versão maior da mesma foto, ela evita esse problema.`;
-      aviso.style.display = 'block';
-    }
-  };
-  img.onerror = () => URL.revokeObjectURL(url);
-  img.src = url;
 }
 
 // Preview local das novas fotos selecionadas pra galeria (antes de enviar).
@@ -1365,6 +1338,7 @@ async function removerCategoria(id, nome) {
 }
 
 let listaBannersAdmin = [];
+let bannerEditandoId = null;
 
 async function loadListaBanners() {
   document.getElementById('banTableBody').innerHTML = '<div class="empty">Carregando…</div>';
@@ -1385,14 +1359,18 @@ function renderListaBanners() {
   }
   el.innerHTML = `
     <table>
-      <thead><tr><th>Prévia</th><th>Caminho</th><th>Ordem</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Prévia</th><th>Caminho</th><th>Título</th><th>Ordem</th><th>Ações</th></tr></thead>
       <tbody>
-        ${listaBannersAdmin.map(b => `
+        ${listaBannersAdmin.map((b, i) => `
           <tr>
             <td><img class="td-ban" src="${escHtml(mediaUrl(b.imagem))}" alt="" onerror="this.style.opacity=.35"></td>
-            <td style="font-size:11px;color:#888;word-break:break-all;max-width:260px">${escHtml(b.imagem)}</td>
+            <td style="font-size:11px;color:#888;word-break:break-all;max-width:220px">${escHtml(b.imagem)}</td>
+            <td style="font-size:12px;color:#555;max-width:180px;word-break:break-word">${b.titulo ? escHtml(b.titulo) : '<span style="color:#bbb">— sem título —</span>'}</td>
             <td>${b.ordem ?? 0}</td>
-            <td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-g btn-sm" title="Mover para cima" ${i === 0 ? 'disabled' : ''} onclick="moverBanner('${escHtml(String(b._id))}','up')">↑</button>
+              <button class="btn btn-g btn-sm" title="Mover para baixo" ${i === listaBannersAdmin.length - 1 ? 'disabled' : ''} onclick="moverBanner('${escHtml(String(b._id))}','down')">↓</button>
+              <button class="btn btn-e btn-sm" onclick="editarBanner('${escHtml(String(b._id))}')">Editar</button>
               <button class="btn btn-d btn-sm" onclick="removerBanner('${escHtml(String(b._id))}')">Remover</button>
             </td>
           </tr>`).join('')}
@@ -1402,28 +1380,55 @@ function renderListaBanners() {
 
 async function salvarBanner() {
   const bf = document.getElementById('ban-file');
+  const urlDireta = document.getElementById('ban-url').value.trim();
   const ordem = parseInt(document.getElementById('ban-ordem').value, 10) || 0;
+  const eyebrow = document.getElementById('ban-eyebrow').value.trim();
+  const titulo = document.getElementById('ban-titulo').value.trim();
+  const subtitulo = document.getElementById('ban-subtitulo').value.trim();
+  const textoBotao = document.getElementById('ban-textoBotao').value.trim();
+  const linkBotao = document.getElementById('ban-linkBotao').value.trim();
   const msg = document.getElementById('banmsg');
-  if (!bf.files || !bf.files[0]) { showMsg(msg, 'Selecione uma imagem.', 'er'); return; }
-  let imagem;
-  try {
-    imagem = await uploadArquivo(bf.files[0]);
-  } catch (e) {
-    showMsg(msg, e.message || 'Erro no upload.', 'er');
+  const editando = !!bannerEditandoId;
+  const temArquivo = !!(bf.files && bf.files[0]);
+
+  if (!editando && !temArquivo && !urlDireta) {
+    showMsg(msg, 'Selecione uma imagem ou cole uma URL.', 'er');
     return;
   }
+
+  // Em modo de edição, a imagem só é trocada se um novo arquivo foi
+  // escolhido OU uma URL foi preenchida — do contrário a imagem atual do
+  // banner é mantida. Arquivo enviado tem prioridade sobre URL colada (mesmo
+  // padrão que o campo antigo de hero único já tinha).
+  let imagem;
+  if (temArquivo) {
+    try {
+      imagem = await uploadArquivo(bf.files[0]);
+    } catch (e) {
+      showMsg(msg, e.message || 'Erro no upload.', 'er');
+      return;
+    }
+  } else if (urlDireta) {
+    imagem = urlDireta;
+  }
+
+  const corpo = { ordem, eyebrow, titulo, subtitulo, textoBotao, linkBotao };
+  if (imagem !== undefined) corpo.imagem = imagem;
+
   try {
-    const r = await fetch(API + '/banners', {
-      method: 'POST',
-      headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ imagem, ordem })
-    });
+    const r = await fetch(
+      editando ? API + '/banners/' + encodeURIComponent(bannerEditandoId) : API + '/banners',
+      {
+        method: editando ? 'PUT' : 'POST',
+        headers: headersComJwt({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(corpo)
+      }
+    );
     const d = await r.json();
     if (r.ok) {
-      bf.value = '';
-      document.getElementById('ban-prev').classList.remove('on');
-      showMsg(msg, 'Banner salvo.', 'ok');
-      toast('Banner adicionado');
+      showMsg(msg, editando ? 'Banner atualizado.' : 'Banner salvo.', 'ok');
+      toast(editando ? 'Banner atualizado' : 'Banner adicionado');
+      cancelarEdicaoBanner();
       await loadListaBanners();
     } else if (r.status === 401) {
       relogar();
@@ -1436,6 +1441,84 @@ async function salvarBanner() {
   }
 }
 
+function editarBanner(id) {
+  const b = listaBannersAdmin.find(x => String(x._id) === String(id));
+  if (!b) { toast('Banner não encontrado. Atualize a lista e tente de novo.'); return; }
+  bannerEditandoId = b._id;
+  document.getElementById('ban-file').value = '';
+  document.getElementById('ban-url').value = '';
+  document.getElementById('ban-ordem').value = b.ordem ?? 0;
+  document.getElementById('ban-eyebrow').value = b.eyebrow || '';
+  document.getElementById('ban-titulo').value = b.titulo || '';
+  document.getElementById('ban-subtitulo').value = b.subtitulo || '';
+  document.getElementById('ban-textoBotao').value = b.textoBotao || '';
+  document.getElementById('ban-linkBotao').value = b.linkBotao || '';
+  if (b.imagem) {
+    document.getElementById('ban-prev-img').src = mediaUrl(b.imagem);
+    document.getElementById('ban-prev-url').textContent = 'Imagem atual — escolha um arquivo só se quiser trocá-la';
+    document.getElementById('ban-prev').classList.add('on');
+  }
+  document.getElementById('btnSalvarBanner').textContent = 'Salvar edição';
+  document.getElementById('btnCancelarEdicaoBanner').style.display = '';
+  document.getElementById('banmsg').innerHTML = '';
+  document.getElementById('panel-banners').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelarEdicaoBanner() {
+  bannerEditandoId = null;
+  document.getElementById('ban-file').value = '';
+  document.getElementById('ban-url').value = '';
+  document.getElementById('ban-ordem').value = 0;
+  document.getElementById('ban-eyebrow').value = '';
+  document.getElementById('ban-titulo').value = '';
+  document.getElementById('ban-subtitulo').value = '';
+  document.getElementById('ban-textoBotao').value = '';
+  document.getElementById('ban-linkBotao').value = '';
+  document.getElementById('ban-prev').classList.remove('on');
+  document.getElementById('btnSalvarBanner').textContent = 'Salvar banner';
+  document.getElementById('btnCancelarEdicaoBanner').style.display = 'none';
+}
+
+async function moverBanner(id, direcao) {
+  const idx = listaBannersAdmin.findIndex(b => String(b._id) === String(id));
+  if (idx === -1) return;
+  const alvoIdx = direcao === 'up' ? idx - 1 : idx + 1;
+  if (alvoIdx < 0 || alvoIdx >= listaBannersAdmin.length) return;
+
+  // Renumera a lista toda (0..n-1, na ordem atualmente exibida) antes de
+  // trocar: banners cadastrados sem "ordem" explícita ficam todos empatados
+  // em 0, e um simples swap entre dois valores iguais não muda nada de
+  // verdade (o desempate por createdAt no backend mantém a posição igual).
+  // Renumerar garante que mover pra cima/baixo sempre produz uma ordem nova
+  // e coerente, mesmo partindo de banners todos empatados.
+  const nova = listaBannersAdmin.map((b, i) => ({ _id: b._id, ordemAntiga: b.ordem ?? 0, ordemNova: i }));
+  const tmp = nova[idx].ordemNova;
+  nova[idx].ordemNova = nova[alvoIdx].ordemNova;
+  nova[alvoIdx].ordemNova = tmp;
+  const alterados = nova.filter(n => n.ordemNova !== n.ordemAntiga);
+
+  try {
+    const respostas = await Promise.all(alterados.map(n => fetch(API + '/banners/' + encodeURIComponent(n._id), {
+      method: 'PUT',
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ordem: n.ordemNova })
+    })));
+    if (respostas.some(r => r.status === 401)) {
+      relogar();
+      toast('Senha incorreta. Tente novamente.');
+      return;
+    }
+    if (respostas.every(r => r.ok)) {
+      toast('Ordem atualizada');
+      await loadListaBanners();
+    } else {
+      toast('Erro ao reordenar');
+    }
+  } catch {
+    toast('Servidor offline');
+  }
+}
+
 async function removerBanner(id) {
   if (!confirm('Remover este banner do carousel da vitrine?')) return;
   try {
@@ -1444,6 +1527,7 @@ async function removerBanner(id) {
       headers: headersComJwt({})
     });
     if (r.ok) {
+      if (bannerEditandoId === id) cancelarEdicaoBanner();
       toast('Banner removido');
       await loadListaBanners();
     } else if (r.status === 401) {
@@ -2875,16 +2959,6 @@ async function loadConfig() {
     document.getElementById('cfg-promoSubtitulo').value = d.promoSubtitulo || '';
     document.getElementById('cfg-promoCtaTexto').value = d.promoCtaTexto || '';
 
-    // ✅ Hero do split
-    const heroImgEl = document.getElementById('cfg-heroPreview');
-    if (heroImgEl) heroImgEl.classList.add('on');
-    if (d.heroImagem) {
-      const heroPrevImg = document.getElementById('cfg-heroPreview-img');
-      const heroPrevUrl = document.getElementById('cfg-heroPreview-url');
-      if (heroPrevImg) heroPrevImg.src = d.heroImagem;
-      if (heroPrevUrl) heroPrevUrl.textContent = 'Imagem atual (da vitrine/config)';
-    }
-
     const logo = document.querySelector('.sb-logo');
 
     if (logo && d.nomeLoja) logo.childNodes[0].textContent = d.nomeLoja;
@@ -2947,22 +3021,6 @@ async function salvarConfig() {
   const promoSubtitulo = document.getElementById('cfg-promoSubtitulo')?.value.trim() || '';
   const promoCtaTexto = document.getElementById('cfg-promoCtaTexto')?.value.trim() || '';
 
-  // ✅ Hero do split
-  const cfgHeroFile = document.getElementById('cfg-heroFile');
-  const cfgHeroUrl = document.getElementById('cfg-heroUrl');
-
-  let heroImagem = '';
-  let heroImagemUrl = cfgHeroUrl ? cfgHeroUrl.value.trim() : '';
-
-  if (cfgHeroFile && cfgHeroFile.files && cfgHeroFile.files[0]) {
-    try {
-      heroImagem = await uploadArquivo(cfgHeroFile.files[0]);
-    } catch (e) {
-      showMsg(msg, e.message || 'Erro no upload da imagem do hero.', 'er');
-      return;
-    }
-  }
-
   if (!nomeLoja) { showMsg(msg, 'O nome da loja não pode ficar vazio.', 'er'); return; }
 
   const cepOrigemDigitos = cepOrigem.replace(/\D/g, '');
@@ -2985,9 +3043,6 @@ async function salvarConfig() {
     }
   }
 
-  // Só inclui heroImagem/heroImagemUrl no payload quando há um valor novo de verdade.
-  // Sem isso, salvar qualquer outro campo (ex: só a cor) apagava a imagem do hero,
-  // porque o input de arquivo nunca vem pré-preenchido com a imagem já salva.
   const payload = {
     nomeLoja,
     chavePix,
@@ -3018,8 +3073,6 @@ async function salvarConfig() {
     promoSubtitulo,
     promoCtaTexto
   };
-  if (heroImagem) payload.heroImagem = heroImagem;
-  if (heroImagemUrl) payload.heroImagemUrl = heroImagemUrl;
 
   try {
     const r = await fetch(API + '/config', {

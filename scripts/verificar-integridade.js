@@ -148,32 +148,63 @@ function checarConsistenciaRotas() {
   // (/api/(.*)), não por um par 1:1 rota-a-rota como as páginas/arquivos.
   const ehRotaLiteralNaoApi = (rota) => /^\/[a-zA-Z0-9_\-./]*$/.test(rota) && !rota.startsWith('/api');
 
-  // Sentido 1: rewrite existe, rota em server.js não.
+  // Rotas de página podem estar direto em server.js (app.get(...)) OU num
+  // router montado via app.use(prefixo, require('./routes/X')) — desde a
+  // divisão de server.js em routes/*.js isso passou a valer pra páginas
+  // também (ver routes/paginas.js). Junta as duas fontes num único mapa
+  // rota -> arquivo onde ela é definida, pra checar consistência igual
+  // nos dois casos.
+  const rotaParaArquivo = new Map();
+
+  for (const m of serverCode.matchAll(/app\.get\(\s*['"](\/(?!api)[a-zA-Z0-9_\-./]*)['"]/g)) {
+    rotaParaArquivo.set(m[1], serverPath);
+  }
+
+  const juntarRota = (prefixo, sub) => {
+    if (prefixo === '/' || prefixo === '') return sub;
+    return (prefixo + sub).replace(/\/{2,}/g, '/');
+  };
+
+  for (const m of serverCode.matchAll(/app\.use\(\s*['"]([^'"]*)['"]\s*,\s*require\(\s*['"]([^'"]+)['"]\s*\)\s*\)/g)) {
+    const prefixo = m[1];
+    if (prefixo.startsWith('/api')) continue; // API é coberta pelo rewrite coringa, não 1:1
+    const requirePath = m[2];
+    const arquivoRota = path.join(ROOT, requirePath.endsWith('.js') ? requirePath : `${requirePath}.js`);
+    if (!fs.existsSync(arquivoRota)) continue;
+    let codigoRota;
+    try {
+      codigoRota = fs.readFileSync(arquivoRota, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const rm of codigoRota.matchAll(/router\.get\(\s*['"](\/(?!api)[a-zA-Z0-9_\-./]*)['"]/g)) {
+      rotaParaArquivo.set(juntarRota(prefixo, rm[1]), arquivoRota);
+    }
+  }
+
+  // Sentido 1: rewrite existe, rota não está definida em nenhuma das fontes acima.
   for (const r of rewrites) {
     if (r.destination !== '/server.js' || !ehRotaLiteralNaoApi(r.source)) continue;
-    const padrao = new RegExp(`app\\.get\\(\\s*['"]${escapeRegExp(r.source)}['"]`);
-    if (!padrao.test(serverCode)) {
+    if (!rotaParaArquivo.has(r.source)) {
       reportar(
         vercelPath,
         null,
-        `rewrite "${r.source}" aponta pra /server.js, mas não existe app.get('${r.source}', ...) em server.js — em produção isso bate 404 (o rewrite manda pro server.js, que não sabe responder)`
+        `rewrite "${r.source}" aponta pra /server.js, mas não existe app.get('${r.source}', ...) nem router.get('${r.source}', ...) em nenhuma rota montada — em produção isso bate 404 (o rewrite manda pro server.js, que não sabe responder)`
       );
     }
   }
 
-  // Sentido 2: rota em server.js existe, rewrite não — o mais perigoso dos
-  // dois, porque funciona local (express.static/o próprio Express cobre) e
-  // só quebra depois de já estar no ar.
+  // Sentido 2: rota definida (em server.js ou num router montado) existe,
+  // rewrite não — o mais perigoso dos dois, porque funciona local
+  // (express.static/o próprio Express cobre) e só quebra depois de já
+  // estar no ar.
   const fontesRewrite = new Set(rewrites.map((r) => r.source));
-  const rotasServerJs = new Set(
-    [...serverCode.matchAll(/app\.get\(\s*['"](\/(?!api)[a-zA-Z0-9_\-./]*)['"]/g)].map((m) => m[1])
-  );
-  for (const rota of rotasServerJs) {
+  for (const [rota, arquivoRota] of rotaParaArquivo) {
     if (!fontesRewrite.has(rota)) {
       reportar(
-        serverPath,
+        arquivoRota,
         null,
-        `app.get('${rota}', ...) existe, mas não há rewrite "${rota}" -> "/server.js" em vercel.json — funciona local (express.static cobre por engano), bate 404 em produção`
+        `rota '${rota}' existe, mas não há rewrite "${rota}" -> "/server.js" em vercel.json — funciona local (express.static cobre por engano), bate 404 em produção`
       );
     }
   }
