@@ -343,14 +343,22 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   display:flex;
   flex-direction:column;
   justify-content:center;
-  gap:14px;
+  /* 14px -> 20px: mais respiro entre eyebrow/título/linha de acento/descrição/
+     botões (pedido explícito de hierarquia — ver .hero-title abaixo). */
+  gap:20px;
   padding:48px clamp(28px,4vw,64px);
   background:var(--hero-panel-bg);
 }
+/* Fundo de marca visível nas bordas/letterbox mesmo com foto carregada —
+   ver .hero-media-compact abaixo pro modo letterbox de verdade (foto de
+   baixa resolução). Mesmo par de tons do botão CTA (--gold/--gold2), pra
+   a mídia nunca "piscar" uma cor genérica antes da foto (ou a extração de
+   cor) assumir. */
 .hero-split-media{
   position:relative;
   flex:0 0 58%;
   min-width:0;
+  background:linear-gradient(155deg, var(--gold), var(--gold2));
 }
 .hero-split-media img{
   width:100%;
@@ -358,6 +366,16 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   object-fit:cover;
   object-position:center;
   display:block;
+}
+/* Modo compacto/letterbox — aplicado via JS (ver script) quando a foto do
+   hero carrega com resolução baixa (naturalWidth/naturalHeight < 800px).
+   Trocar de cover pra contain evita esticar/pixelizar uma foto pequena pra
+   preencher a coluna inteira; o gradiente de marca (regra acima) preenche
+   a área que sobra ao redor, em vez de deixar espaço vazio/branco. */
+.hero-split-media.hero-media-compact img{
+  object-fit:contain;
+  padding:7%;
+  box-sizing:border-box;
 }
 
 .hero-season{
@@ -377,18 +395,19 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   padding:8px 18px;
   border-radius:999px;
   width:fit-content;
-  margin-bottom:6px;
+  margin-bottom:0;
 }
 .hero-season::before{content:none;display:none}
 
 .hero-title{
   font-family:var(--sans);
-  /* Recalibrado pra coluna de 42% de largura, não mais a tela inteira —
-     3.6vw/56px (layout antigo) quebrava linha cedo demais numa coluna
-     estreita; o teto certo é o da coluna, não o da viewport. */
-  font-size:clamp(24px,3.1vw,42px);
+  /* Escala aumentada (era clamp(24px,3.1vw,42px)) — mais contraste de
+     tamanho com o eyebrow (10px) acima, título mais confiante. Ainda
+     recalibrado pra coluna de 42%, não a tela inteira (ver comentário
+     original abaixo sobre a proporção 42/58). */
+  font-size:clamp(32px,4.4vw,60px);
   font-weight:900;
-  line-height:1.05;
+  line-height:1.03;
   letter-spacing:-.03em;
   margin-bottom:0;
   /* Branco fixo sobre --ink (superfície escura fixa, não mais foto) — medido:
@@ -411,6 +430,20 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
      Sem cor diferenciada, só itálico — branco garantido sempre passa. */
   color: inherit;
   font-weight: 900;
+}
+
+/* Linha fina de acento — cor dinâmica extraída da foto do hero (ver script,
+   garantirContraste), aplicada via --hero-dynamic-color no ancestral
+   .hero-split. É decoração pura, sem texto em cima, então não precisa do
+   mesmo piso de contraste do botão CTA (só ele lê o texto branco); ainda
+   assim reaproveita a MESMA cor já ajustada, por simplicidade. Sem foto
+   real configurada, a var nunca é definida e cai no fallback translúcido —
+   nunca invisível, nunca crua. */
+.hero-accent-line{
+  width:48px;
+  height:2px;
+  background:var(--hero-dynamic-color, rgba(255,255,255,.35));
+  transition:background-color .3s ease;
 }
 
 .hero-lead{
@@ -502,6 +535,27 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   border-color:rgba(255,255,255,.85);
 }
 
+/* Cor dinâmica do CTA principal, extraída da foto do hero (ver script,
+   garantirContraste) — só quando há foto real configurada (id="heroCtaPrimary"
+   ganha esta classe via JS). Resolve o MESMO problema que motivou o branco
+   fixo acima (cor de marca livre reprovava AA, medido 4.02:1/2.37:1), só
+   que agora com uma cor calculada e testada em tempo real por foto, em vez
+   de um hex fixo de catálogo sem garantia — por isso é seguro usar aqui e
+   não era antes. #heroCtaPrimary (id) vence a especificidade de
+   .hero-split .btn-fill (duas classes) sem precisar de !important.
+   Transição suave: a cor não troca bruscamente assim que a extração termina. */
+#heroCtaPrimary{
+  transition:background-color .3s ease, border-color .3s ease, color .3s ease;
+}
+#heroCtaPrimary.hero-cta-dynamic{
+  background:var(--hero-dynamic-color);
+  border-color:var(--hero-dynamic-color);
+  color:#fff;
+}
+#heroCtaPrimary.hero-cta-dynamic:hover{
+  filter:brightness(1.1);
+}
+
 /* ─── Barra de Benefícios (clean/discreta) ─── */
 .hero-benefits-bar{
   max-width:1240px;
@@ -534,6 +588,41 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 /* remover estilos antigos do hero poluído */
 .hero-badges,.hero-kenburns,.hero-media-layer,.hero-fadebadge{display:none !important}
+
+/* ─── ENTRADA DO HERO (fade + leve deslocamento, em sequência curta) ───
+   Duas variantes: .hero-anim (fade+slide, pros elementos que hoje não têm
+   nenhum controle de opacidade próprio) e .hero-anim-title (só slide, SEM
+   tocar opacity) — o título já tem seu próprio mecanismo de fade
+   (.hero-title/.font-ready acima, ligado ao carregamento da fonte
+   escolhida no admin, às vezes assíncrono) que não pode ser duplicado nem
+   competir com uma segunda transição de opacity na mesma propriedade.
+   backwards: mantém o estado "from" visível até o delay de cada item
+   começar, evitando um flash no estado final antes da animação disparar. */
+@keyframes heroFadeSlideUp{
+  from{ opacity:0; transform:translateY(14px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes heroSlideUpOnly{
+  from{ transform:translateY(14px); }
+  to{ transform:translateY(0); }
+}
+.hero-anim{
+  animation:heroFadeSlideUp .5s cubic-bezier(.16,1,.3,1) backwards;
+}
+.hero-anim-title{
+  animation:heroSlideUpOnly .5s cubic-bezier(.16,1,.3,1) backwards;
+}
+/* Atraso escalonado — ~80-100ms entre itens, do primeiro ao último soma
+   320ms, bem abaixo do teto de 600ms pedido. */
+.hero-anim-1{ animation-delay:0ms; }
+.hero-anim-title{ animation-delay:100ms; }
+.hero-anim-2{ animation-delay:180ms; }
+.hero-anim-3{ animation-delay:240ms; }
+.hero-anim-4{ animation-delay:320ms; }
+
+@media(prefers-reduced-motion:reduce){
+  .hero-anim,.hero-anim-title{ animation:none !important; }
+}
 
 @media(max-width:768px){
   /* Empilhado: faixa de texto (altura de conteúdo, cresce se o texto for
@@ -1961,13 +2050,14 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
      ordem vira texto em cima/foto embaixo — nenhum order/reverse necessário. -->
 <div class="hero-split">
   <div class="hero-split-text">
-    <div class="hero-season" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
-    <h1 class="hero-title" id="heroTitle">
+    <div class="hero-season hero-anim hero-anim-1" id="heroEyebrow"><i class="fa-solid fa-sparkles ui-ico" aria-hidden="true"></i><span id="heroEyebrowText">Coleção Exclusiva</span></div>
+    <h1 class="hero-title hero-anim-title" id="heroTitle">
       Qualidade que<br>fala <em id="heroTitleEm">antes</em> de você.
     </h1>
-    <p class="hero-lead" id="heroDesc">Produtos selecionados com qualidade e cuidado em cada detalhe.</p>
+    <div class="hero-accent-line hero-anim hero-anim-2" id="heroAccentLine"></div>
+    <p class="hero-lead hero-anim hero-anim-3" id="heroDesc">Produtos selecionados com qualidade e cuidado em cada detalhe.</p>
 
-    <div class="hero-btns">
+    <div class="hero-btns hero-anim hero-anim-4">
       <button class="btn-fill btn-cta-premium" onclick="scrollTo_('sec-prod')" id="heroCtaPrimary">Ver Coleção <i class="fa-solid fa-arrow-right ui-ico ui-ico-gap-l" aria-hidden="true"></i></button>
       <button class="btn-line" onclick="scrollTo_('sec-cats')" id="heroCtaSecondary">Categorias</button>
     </div>
@@ -1978,8 +2068,8 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div><span class="stat-val" id="stClientes">—</span><span class="stat-label">Clientes</span></div>
     </div>
   </div>
-  <div class="hero-split-media">
-    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyM5QTdBM0EnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyNDNEE1NUEnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
+  <div class="hero-split-media" id="heroSplitMedia">
+    <img id="heroImage" alt="Imagem do Hero" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIwIDEwODAnPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0nZycgeDE9JzAnIHkxPScwJyB4Mj0nMScgeTI9JzEnPjxzdG9wIG9mZnNldD0nMCUnIHN0b3AtY29sb3I9JyMxNjU5OEEnLz48c3RvcCBvZmZzZXQ9JzEwMCUnIHN0b3AtY29sb3I9JyMxMDNGNjMnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+" />
   </div>
 </div>
 
@@ -4621,6 +4711,109 @@ function aplicarBeneficioDinamico(n, d) {
   }
 }
 
+// ─── COR DINÂMICA DO HERO (extraída da própria foto) ───
+// Só roda quando existe uma foto real de hero configurada (chamada só de
+// dentro do `if (heroImgFinal)`, ver aplicarConfiguracaoDaLoja) — sem foto
+// real, o hero fica na cor de marca padrão, sem nenhuma extração (item 4).
+
+// Luminância relativa (WCAG 2.x) e contraste contra branco puro — mesma
+// fórmula/piso (4.5:1, AA) já usado pra validar as outras cores do hero
+// (ver comentários acima em .hero-title/.hero-season/.btn-fill: nenhuma
+// cor de marca livre tinha essa garantia antes, por isso ficavam de fora).
+function luminanciaRelativa(rgb) {
+  const linear = (c) => {
+    const cs = c / 255;
+    return cs <= 0.03928 ? cs / 12.92 : Math.pow((cs + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * linear(rgb.r) + 0.7152 * linear(rgb.g) + 0.0722 * linear(rgb.b);
+}
+function contrasteComBranco(rgb) {
+  // Branco puro tem luminância 1; fórmula de contraste WCAG: (L_claro+0.05)/(L_escuro+0.05).
+  return 1.05 / (luminanciaRelativa(rgb) + 0.05);
+}
+
+// Escurece a cor proporcionalmente (mesma matiz, só reduz luminosidade) até
+// o contraste com texto branco passar do piso mínimo. Converge sempre —
+// mesmo branco puro (contraste inicial 1:1) chega em ~19 passos; 60 é uma
+// margem generosa que nunca deve ser atingida na prática.
+function garantirContrasteComBranco(rgb, minimo) {
+  minimo = minimo || 4.5;
+  let cor = { r: rgb.r, g: rgb.g, b: rgb.b };
+  let passos = 0;
+  while (contrasteComBranco(cor) < minimo && passos < 60) {
+    cor = { r: cor.r * 0.96, g: cor.g * 0.96, b: cor.b * 0.96 };
+    passos++;
+  }
+  return {
+    r: Math.max(0, Math.min(255, Math.round(cor.r))),
+    g: Math.max(0, Math.min(255, Math.round(cor.g))),
+    b: Math.max(0, Math.min(255, Math.round(cor.b)))
+  };
+}
+
+function rgbParaHex(rgb) {
+  const canal = (c) => c.toString(16).padStart(2, '0');
+  return '#' + canal(rgb.r) + canal(rgb.g) + canal(rgb.b);
+}
+
+// Amostra a cor média de uma foto via <canvas> oculto (nunca inserido no
+// DOM) numa cópia SEPARADA da imagem, com crossOrigin — decisão deliberada:
+// a <img id="heroImage"> visível NUNCA leva crossOrigin, porque isso faria
+// o navegador recusar exibir a foto inteira caso o host não mande cabeçalho
+// CORS (comum em URL externa colada pelo lojista em heroImagemUrl; já
+// funciona por padrão nas fotos enviadas por upload, hospedadas no
+// Cloudinary). Com a amostragem numa imagem própria e descartável, uma
+// falha de CORS aqui derruba só a extração de cor (cai no catch, cor de
+// marca padrão continua valendo) — a foto real exibida ao cliente nunca é
+// afetada de jeito nenhum.
+function amostrarCorDominante(url, aoSucesso, aoFalhar) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function () {
+    try {
+      const LADO = 50;
+      const canvas = document.createElement('canvas');
+      canvas.width = LADO;
+      canvas.height = LADO;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, LADO, LADO);
+      const dados = ctx.getImageData(0, 0, LADO, LADO).data;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let i = 0; i < dados.length; i += 4) {
+        if (dados[i + 3] < 32) continue; // ignora pixel quase transparente
+        r += dados[i]; g += dados[i + 1]; b += dados[i + 2];
+        n++;
+      }
+      if (!n) { aoFalhar(new Error('Amostra sem pixels válidos')); return; }
+      aoSucesso({ r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) });
+    } catch (e) {
+      // getImageData lança SecurityError se o canvas ficou "tainted"
+      // (host sem CORS habilitado) — falha esperada, não um bug.
+      aoFalhar(e);
+    }
+  };
+  img.onerror = function () { aoFalhar(new Error('Falha ao carregar a foto pra amostragem')); };
+  img.src = url;
+}
+
+// Aplica a cor ajustada no CTA principal do hero e na linha de acento —
+// var(--hero-dynamic-color) no ancestral .hero-split, lido pelas duas
+// regras de CSS (ver .hero-accent-line e #heroCtaPrimary.hero-cta-dynamic).
+// Falha de amostragem (CORS, rede) é engolida aqui de propósito: o hero
+// continua funcionando normalmente com a cor de marca padrão, nunca quebra.
+function aplicarCorDinamicaHero(url) {
+  amostrarCorDominante(url, function (corMedia) {
+    const corAjustada = garantirContrasteComBranco(corMedia, 4.5);
+    const hex = rgbParaHex(corAjustada);
+    const heroSplitEl = document.querySelector('.hero-split');
+    const ctaEl = document.getElementById('heroCtaPrimary');
+    if (heroSplitEl) heroSplitEl.style.setProperty('--hero-dynamic-color', hex);
+    if (ctaEl) ctaEl.classList.add('hero-cta-dynamic');
+  }, function (erro) {
+    console.warn('Cor dinâmica do hero: extração não disponível, mantendo cor de marca padrão.', erro && erro.message);
+  });
+}
+
 /** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
   if (!d || typeof d !== 'object') return;
@@ -4752,14 +4945,39 @@ async function carregarConfigLoja() {
     S.chavePix = pix;
 
     // HERO imagem (split): prioriza upload (heroImagem), depois URL direta (heroImagemUrl).
-    // Se ambos vierem vazios, mantém o fallback que já está no HTML.
+    // Se ambos vierem vazios, mantém o fallback que já está no HTML — e,
+    // de propósito, NENHUMA das duas rotinas abaixo (letterbox, cor
+    // dinâmica) roda nesse caso: item 4 do pedido original é explícito que
+    // sem foto real configurada, a cor de marca padrão fica intocada.
     const heroImgFile = d.heroImagem ? String(d.heroImagem).trim() : '';
     const heroImgUrl = d.heroImagemUrl ? String(d.heroImagemUrl).trim() : '';
 
     const heroImgFinal = heroImgFile || heroImgUrl;
     if (heroImgFinal) {
       const heroImgEl = document.getElementById('heroImage');
-      if (heroImgEl) heroImgEl.src = heroImgFinal;
+      if (heroImgEl) {
+        heroImgEl.addEventListener('load', function onHeroImgLoad() {
+          heroImgEl.removeEventListener('load', onHeroImgLoad);
+
+          // 1) Modo compacto/letterbox pra foto de baixa resolução — evita
+          // esticar/pixelizar uma foto pequena pra preencher a coluna
+          // inteira (ver .hero-media-compact no CSS). Lida com a IMAGEM
+          // REAL, já visível (nunca falha por CORS — isso só afeta a
+          // leitura de pixel abaixo, não a exibição da foto em si).
+          // Piso de 600px (não 800): testado contra foto real de produto do
+          // catálogo (735x922) — 800px classificava uma foto normal, de
+          // qualidade razoável, como "baixa resolução" incorretamente.
+          const heroMediaEl = document.getElementById('heroSplitMedia');
+          if (heroMediaEl) {
+            const baixaResolucao = heroImgEl.naturalWidth < 600 || heroImgEl.naturalHeight < 600;
+            heroMediaEl.classList.toggle('hero-media-compact', baixaResolucao);
+          }
+
+          // 2) Cor dominante da foto -> acento do hero (CTA + linha).
+          aplicarCorDinamicaHero(heroImgFinal);
+        }, { once: true });
+        heroImgEl.src = heroImgFinal;
+      }
     }
 
     // Hero título dinâmico + fonte escolhida pelo admin
