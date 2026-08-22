@@ -881,7 +881,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn{animation:none !important;transition:none !important}
 }
 
 /* Chips de tamanho revelados no card — mesma linguagem visual do seletor de
@@ -1749,21 +1749,34 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 /* ─── UTIL ROW (toggle de filtros + ordenação) ─── */
 .prod-util-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
 .filters-toggle-btn{
-  display:flex;align-items:center;gap:9px;min-height:44px;padding:10px 18px;
-  background:var(--white);border:1px solid var(--ink);border-radius:6px;
-  color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
-  transition:background .15s ease;
+  display:flex;align-items:center;gap:10px;min-height:44px;padding:11px 20px;
+  background:var(--white);border:1px solid var(--ink);border-radius:4px;
+  color:var(--ink);font-family:var(--sans);font-size:11.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
 }
-.filters-toggle-btn:hover{background:var(--bg2)}
+.filters-toggle-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,34,51,.10)}
+.filters-toggle-btn:active{transform:translateY(0);box-shadow:none}
+.filters-toggle-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,111,160,.15)}
+/* Filtros ocultos = estado "ativo" do toggle — cor de destaque no botão em
+   vez de trocar o preenchimento (o svg do ícone usa fill:var(--bg) nos
+   círculos pra "furar" contra o fundo do botão; manter background sempre
+   var(--white) evita ter que sincronizar essa cor também). aria-pressed no
+   próprio botão (setado por toggleFiltersVisibility), não um ancestral —
+   .filters-toggle-btn não fica sempre dentro de #secProdWrap (não fica em
+   VN_IMPORTS.html), então esse estado não pode depender de posição no DOM. */
+.filters-toggle-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .sort-wrap{display:flex;align-items:center;gap:10px}
 .sort-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sort-select{
-  min-height:44px;padding:8px 34px 8px 14px;border:1px solid var(--border);border-radius:6px;
-  font-family:var(--sans);font-size:13.5px;color:var(--ink);background:var(--white);
-  appearance:none;cursor:pointer;
+  min-height:44px;padding:8px 34px 8px 14px;border:1px solid var(--ink);border-radius:4px;
+  font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);background:var(--white);
+  appearance:none;cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease;
   background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="%230E2233" stroke-width="1.5"/></svg>');
-  background-repeat:no-repeat;background-position:right 12px center;
+  background-repeat:no-repeat;background-position:right 14px center;
 }
+.sort-select:hover{border-color:var(--accent)}
+.sort-select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,111,160,.15)}
 /* "Ocultar Filtros" — desktop-only. Esta página colapsa a sidebar pra gaveta
    mobile em 900px (não 768px como VN_IMPORTS.html — os dois arquivos têm
    mecanismos de filtro mobile diferentes, ver abrirFiltrosMobile), então o
@@ -1877,7 +1890,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       <div class="search-page-count" id="qcount"></div>
     </div>
     <div class="prod-util-row">
-      <button type="button" class="filters-toggle-btn" id="filtersToggleBtn" onclick="toggleFiltersVisibility()">
+      <button type="button" class="filters-toggle-btn" id="filtersToggleBtn" aria-pressed="false" onclick="toggleFiltersVisibility()">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="6" cy="4" r="1.6" fill="var(--bg)"/><circle cx="11" cy="8" r="1.6" fill="var(--bg)"/><circle cx="5" cy="12" r="1.6" fill="var(--bg)"/></svg>
         <span id="filtersToggleLabel">Ocultar Filtros</span>
       </button>
@@ -2467,6 +2480,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     const hidden = wrap.classList.toggle('filters-hidden');
     const label = document.getElementById('filtersToggleLabel');
     if (label) label.textContent = hidden ? 'Mostrar Filtros' : 'Ocultar Filtros';
+    // aria-pressed também dirige o estilo do botão (ver CSS) — não depende de
+    // onde .filters-toggle-btn fica no DOM em relação a #secProdWrap, o que
+    // varia entre este arquivo e VN_IMPORTS.html.
+    const btn = document.getElementById('filtersToggleBtn');
+    if (btn) btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
   }
 
   // ─── GRID (mesmo card do site principal) ────────────────────────
