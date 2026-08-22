@@ -881,7 +881,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option{animation:none !important;transition:none !important}
 }
 
 /* Chips de tamanho revelados no card — mesma linguagem visual do seletor de
@@ -1768,15 +1768,72 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 .filters-toggle-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .sort-wrap{display:flex;align-items:center;gap:10px}
 .sort-label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sort-select-wrap{position:relative;display:inline-flex}
 .sort-select{
-  min-height:44px;padding:8px 34px 8px 14px;border:1px solid var(--ink);border-radius:4px;
+  display:flex;align-items:center;min-height:44px;padding:8px 34px 8px 14px;
+  border:1px solid var(--ink);border-radius:4px;text-align:left;
   font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);background:var(--white);
-  appearance:none;cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease;
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="%230E2233" stroke-width="1.5"/></svg>');
-  background-repeat:no-repeat;background-position:right 14px center;
+  appearance:none;cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease,transform .1s ease;
 }
 .sort-select:hover{border-color:var(--accent)}
+.sort-select:active{transform:scale(.97)}
 .sort-select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(28,111,160,.15)}
+/* Dropdown customizado (combobox/listbox ARIA) substituindo o <select>
+   nativo — só ele permite animar o painel de opções, que é impossível de
+   estilizar num <select> real (renderizado fora do documento pelo SO). O
+   <input type="hidden" id="prodSortSelect"> abaixo mantém o mesmo id/valor
+   de antes só por segurança, caso algo mais leia esse elemento — hoje nada
+   lê (a lógica de ordenação usa window.prodSortValue), mas custa pouco
+   manter sincronizado. Seta como elemento svg real (não background-image)
+   pra poder girar; pointer-events:none nela, o clique é sempre no botão.
+   aria-expanded agora é estado de verdade (setado por
+   openSortDropdown/closeSortDropdown), diferente da aproximação por :focus
+   usada antes num <select> nativo. */
+.sort-select-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--ink);pointer-events:none;transition:transform .2s ease}
+.sort-select[aria-expanded="true"] ~ .sort-select-chevron{transform:translateY(-50%) rotate(180deg)}
+.sort-listbox{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+  margin:0;padding:6px;list-style:none;min-width:100%;
+  background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--sh2);
+  opacity:0;visibility:hidden;transform:translateY(-8px);pointer-events:none;
+  transition:opacity .12s ease,transform .12s ease,visibility 0s linear .12s;
+}
+.sort-listbox.on{
+  opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;
+  transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1),visibility 0s linear 0s;
+}
+.sort-option{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);
+  border-radius:4px;cursor:pointer;white-space:nowrap;
+  opacity:0;transform:translateY(-6px);
+  transition:opacity .12s ease,transform .12s ease,background .12s ease;
+}
+/* Cascata leve na entrada: cada item atrasa 25ms a mais que o anterior —
+   só existe enquanto .on está presente (abrindo). Ao fechar, .on some e
+   os itens caem de volta na regra base acima (.12s, sem atraso, sem
+   cascata) — saída rápida e uniforme, sem o mesmo capricho da abertura. */
+.sort-listbox.on .sort-option{
+  opacity:1;transform:translateY(0);
+  transition:opacity .2s cubic-bezier(.2,.8,.2,1),transform .2s cubic-bezier(.2,.8,.2,1),background .12s ease;
+}
+.sort-listbox.on .sort-option:nth-child(1){transition-delay:0ms}
+.sort-listbox.on .sort-option:nth-child(2){transition-delay:25ms}
+.sort-listbox.on .sort-option:nth-child(3){transition-delay:50ms}
+.sort-listbox.on .sort-option:nth-child(4){transition-delay:75ms}
+.sort-option:hover{background:var(--bg2)}
+/* Foco visível por teclado: o foco real de DOM nunca sai do botão (padrão
+   combobox com aria-activedescendant), então esse destaque é uma classe
+   controlada por JS, não :focus-visible real — mesmo anel de cor já usado
+   em .sort-select:focus-visible/.filters-toggle-btn:focus-visible. */
+.sort-option.active{background:var(--bg2);box-shadow:0 0 0 3px rgba(28,111,160,.15) inset}
+/* Indicador de selecionado é um ponto, não cor de texto: opção selecionada
+   + opção ativa por teclado ao mesmo tempo (caso comum — é o estado inicial
+   ao abrir) combinava texto cor --accent sobre fundo --bg2 do destaque de
+   teclado, dando ~4.23:1 de contraste — abaixo do mínimo de 4.5:1 do WCAG
+   AA pra texto normal. O ponto, por ser indicador não-textual, só precisa
+   de 3:1 (WCAG 1.4.11), que essa combinação de cores cumpre com folga. */
+.sort-option[aria-selected="true"]::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
 /* "Ocultar Filtros" — desktop-only. Esta página colapsa a sidebar pra gaveta
    mobile em 900px (não 768px como VN_IMPORTS.html — os dois arquivos têm
    mecanismos de filtro mobile diferentes, ver abrirFiltrosMobile), então o
@@ -1895,13 +1952,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <span id="filtersToggleLabel">Ocultar Filtros</span>
       </button>
       <div class="sort-wrap">
-        <label class="sort-label" for="prodSortSelect">Ordenar por</label>
-        <select id="prodSortSelect" class="sort-select" onchange="onProdSortChange(this.value)">
-          <option value="relevancia">Relevância</option>
-          <option value="menor">Menor preço</option>
-          <option value="maior">Maior preço</option>
-          <option value="recentes">Mais recentes</option>
-        </select>
+        <label class="sort-label" id="sortLabel" for="sortComboBtn">Ordenar por</label>
+        <div class="sort-select-wrap">
+          <button type="button" class="sort-select" id="sortComboBtn"
+            role="combobox" aria-haspopup="listbox" aria-expanded="false"
+            aria-controls="sortListbox" aria-labelledby="sortLabel sortComboBtn"
+            onclick="toggleSortDropdown()" onkeydown="onSortComboKeydown(event)">
+            <span id="sortComboValue">Relevância</span>
+          </button>
+          <svg class="sort-select-chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l5 5 5-5"/></svg>
+          <ul class="sort-listbox" id="sortListbox" role="listbox" aria-labelledby="sortLabel">
+            <li class="sort-option" id="sortOpt-relevancia" role="option" aria-selected="true" onclick="chooseSortOptionByValue('relevancia')">Relevância</li>
+            <li class="sort-option" id="sortOpt-menor" role="option" aria-selected="false" onclick="chooseSortOptionByValue('menor')">Menor preço</li>
+            <li class="sort-option" id="sortOpt-maior" role="option" aria-selected="false" onclick="chooseSortOptionByValue('maior')">Maior preço</li>
+            <li class="sort-option" id="sortOpt-recentes" role="option" aria-selected="false" onclick="chooseSortOptionByValue('recentes')">Mais recentes</li>
+          </ul>
+          <input type="hidden" id="prodSortSelect" value="relevancia">
+        </div>
       </div>
     </div>
 
@@ -2472,6 +2539,142 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   function onProdSortChange(value){
     window.prodSortValue = value;
     aplicarFiltrosNaBase();
+  }
+
+  // ─── DROPDOWN "ORDENAR POR" (combobox/listbox ARIA custom) ───────
+  // Substitui um <select> nativo pra poder animar o painel de opções (ver
+  // comentário no CSS de .sort-listbox). Foco de DOM fica sempre no botão
+  // (padrão "select-only combobox" do WAI-ARIA APG) — aria-activedescendant
+  // aponta pra opção "ativa" durante navegação por teclado, sem mover o
+  // foco de verdade pra dentro da lista. Isso é o que permite Esc devolver
+  // o foco ao botão de graça (o foco nunca saiu de lá).
+  const SORT_OPTIONS = [
+    { value: 'relevancia', label: 'Relevância' },
+    { value: 'menor', label: 'Menor preço' },
+    { value: 'maior', label: 'Maior preço' },
+    { value: 'recentes', label: 'Mais recentes' }
+  ];
+  let sortActiveIndex = 0;
+
+  function isSortDropdownOpen(){
+    const panel = document.getElementById('sortListbox');
+    return !!panel && panel.classList.contains('on');
+  }
+
+  function openSortDropdown(){
+    const btn = document.getElementById('sortComboBtn');
+    const panel = document.getElementById('sortListbox');
+    if (!btn || !panel || panel.classList.contains('on')) return;
+    panel.classList.add('on');
+    btn.setAttribute('aria-expanded', 'true');
+    const currentValue = window.prodSortValue || 'relevancia';
+    const idx = SORT_OPTIONS.findIndex(o => o.value === currentValue);
+    setSortActiveOption(idx >= 0 ? idx : 0);
+    document.addEventListener('click', onSortOutsideClick, true);
+  }
+
+  function closeSortDropdown(){
+    const btn = document.getElementById('sortComboBtn');
+    const panel = document.getElementById('sortListbox');
+    if (!btn || !panel || !panel.classList.contains('on')) return;
+    panel.classList.remove('on');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.removeAttribute('aria-activedescendant');
+    document.querySelectorAll('.sort-option.active').forEach(el => el.classList.remove('active'));
+    document.removeEventListener('click', onSortOutsideClick, true);
+  }
+
+  function toggleSortDropdown(){
+    if (isSortDropdownOpen()) closeSortDropdown();
+    else openSortDropdown();
+  }
+
+  function onSortOutsideClick(e){
+    const wrap = document.getElementById('sortComboBtn')?.closest('.sort-select-wrap');
+    if (wrap && !wrap.contains(e.target)) closeSortDropdown();
+  }
+
+  function setSortActiveOption(index){
+    sortActiveIndex = index;
+    const opt = SORT_OPTIONS[index];
+    document.querySelectorAll('.sort-option.active').forEach(el => el.classList.remove('active'));
+    const optEl = document.getElementById('sortOpt-' + opt.value);
+    if (optEl) optEl.classList.add('active');
+    document.getElementById('sortComboBtn')?.setAttribute('aria-activedescendant', 'sortOpt-' + opt.value);
+  }
+
+  function chooseSortOption(index){
+    const opt = SORT_OPTIONS[index];
+    if (!opt) return;
+    document.querySelectorAll('.sort-option').forEach(el => {
+      el.setAttribute('aria-selected', el.id === 'sortOpt-' + opt.value ? 'true' : 'false');
+    });
+    const valueEl = document.getElementById('sortComboValue');
+    if (valueEl) valueEl.textContent = opt.label;
+    // Mantido em sincronia só por segurança — nada mais lê este elemento hoje.
+    const hidden = document.getElementById('prodSortSelect');
+    if (hidden) hidden.value = opt.value;
+    onProdSortChange(opt.value);
+    closeSortDropdown();
+    document.getElementById('sortComboBtn')?.focus();
+  }
+
+  function chooseSortOptionByValue(value){
+    const idx = SORT_OPTIONS.findIndex(o => o.value === value);
+    if (idx >= 0) chooseSortOption(idx);
+  }
+
+  function onSortComboKeydown(event){
+    const open = isSortDropdownOpen();
+    const n = SORT_OPTIONS.length;
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (!open) openSortDropdown();
+        else setSortActiveOption(Math.min(sortActiveIndex + 1, n - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (!open) openSortDropdown();
+        else setSortActiveOption(Math.max(sortActiveIndex - 1, 0));
+        break;
+      case 'Home':
+        if (open) { event.preventDefault(); setSortActiveOption(0); }
+        break;
+      case 'End':
+        if (open) { event.preventDefault(); setSortActiveOption(n - 1); }
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (open) chooseSortOption(sortActiveIndex);
+        else openSortDropdown();
+        break;
+      case 'Escape':
+        if (open) { event.preventDefault(); closeSortDropdown(); document.getElementById('sortComboBtn')?.focus(); }
+        break;
+      case 'Tab':
+        if (open) closeSortDropdown();
+        break;
+      default:
+        // Digitar uma letra pula pra próxima opção (a partir da atual,
+        // com volta ao início) que começa com ela — mesmo comportamento de
+        // um <select> nativo. Busca sempre depois do índice ativo, então
+        // apertar a mesma letra várias vezes cicla entre as opções que
+        // começam com ela (ex: "m" alterna Menor/Maior/Mais).
+        if (open && event.key.length === 1) {
+          const letter = event.key.toLowerCase();
+          if (/[a-zà-ÿ0-9]/.test(letter)) {
+            for (let step = 1; step <= n; step++) {
+              const idx = (sortActiveIndex + step) % n;
+              if (SORT_OPTIONS[idx].label.toLowerCase().startsWith(letter)) {
+                setSortActiveOption(idx);
+                break;
+              }
+            }
+          }
+        }
+    }
   }
 
   function toggleFiltersVisibility(){
