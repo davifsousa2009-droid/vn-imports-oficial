@@ -413,7 +413,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    inteira some (nem gradiente, nem espaço reservado: #heroCarousel mantém
    o atributo `hidden` do HTML, montarHeroCarousel nunca roda, e
    #heroSplitSingle também fica hidden — a página começa direto na próxima
-   seção, ver DOMContentLoaded). Com 1+ banner, este carrossel é exibido. */
+   seção, ver DOMContentLoaded). Com 1+ banner, este carrossel é exibido.
 
    Layout aqui é full-bleed com texto sobreposto (estilo Nike.com.br), texto
    ancorado na metade inferior, alinhado à esquerda. Tem seu próprio scrim
@@ -707,6 +707,18 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   display:flex;
   gap:10px;
   z-index:2;
+}
+/* Achado ao inspecionar ao vivo: `display:flex` nas três regras acima
+   (especificidade de classe, 0,1,0) vence a regra `[hidden]{display:none}`
+   do agente de usuário mesmo com a MESMA especificidade (0,1,0, atributo),
+   porque estilo de autor sempre tem prioridade sobre estilo do agente de
+   usuário na cascata, independente da ordem — o atributo `hidden` (setado
+   corretamente pelo JS pra 1 banner/0 controles) nunca escondia de fato
+   esses três elementos. Selector com classe + atributo (0,2,0) resolve. */
+.hero-car-arrow[hidden],
+.hero-car-pause[hidden],
+.hero-car-dots[hidden]{
+  display:none;
 }
 .hero-car-dot{
   width:9px;height:9px;border-radius:50%;
