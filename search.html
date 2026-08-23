@@ -1821,7 +1821,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 .sort-select-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--ink);pointer-events:none;transition:transform .2s ease}
 .sort-select[aria-expanded="true"] ~ .sort-select-chevron{transform:translateY(-50%) rotate(180deg)}
 .sort-listbox{
-  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+  /* z-index:90 (não 50): a posição em si sempre foi correta (top:calc(100%+
+     6px), ancorada em .sort-select-wrap, position:relative, seu pai direto —
+     conferido ao vivo, 0px de diferença). O bug era de EMPILHAMENTO: no
+     mobile existe uma barra sticky logo abaixo do header — .page-search-box
+     aqui (top:60px) e .filters-mobile-bar em VN_IMPORTS.html (top:120px) —
+     ambas com z-index:80, criada bem depois deste dropdown (que já nascia
+     com z-index:50). Como as duas vivem no mesmo stacking context (nenhum
+     ancestral entre elas cria um novo) e ocupam a mesma faixa de tela
+     durante o scroll, a barra sticky (80 > 50) sempre desenhava por CIMA do
+     painel — cortando visualmente a opção "Relevância" (o "elemento
+     duplicado com um ponto" reportado é só a 1ª opção da lista, com o
+     indicador ● de seleção de .sort-option[aria-selected="true"]::after,
+     isolada visualmente pela barra sticky por cima dela) e sobrepondo os
+     cards de produto embaixo. 90 fica acima dessa barra (80) e abaixo do
+     nav (100, que nunca compete de verdade com este painel — ele abre bem
+     mais abaixo na página) e de qualquer modal/drawer real (z-index 600+). */
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:90;
   margin:0;padding:6px;list-style:none;min-width:100%;
   background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--sh2);
   opacity:0;visibility:hidden;transform:translateY(-8px);pointer-events:none;

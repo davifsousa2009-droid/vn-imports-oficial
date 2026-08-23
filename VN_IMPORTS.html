@@ -446,6 +446,13 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   min-height:max(70vh, 400px);
   overflow:hidden;
   background:var(--ink);
+  /* touch-action:pan-y — deixa o navegador rolar verticalmente na hora
+     (sem esperar decisão do JS), já que scroll vertical nunca é
+     interceptado aqui; o gesto horizontal (swipe de slide) continua
+     tratado via touchmove/preventDefault condicional (ver initHeroSwipe
+     no script) só quando confirmado horizontal. Padrão recomendado pra
+     "carrossel arrastável que não pode travar o scroll da página". */
+  touch-action:pan-y;
 }
 /* .hero-car-slide não anima mais a si mesmo (opacity/visibility) — só
    controla interatividade (pointer-events). O cross-dissolve de verdade
@@ -991,7 +998,23 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .sort-select-chevron{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--ink);pointer-events:none;transition:transform .2s ease}
 .sort-select[aria-expanded="true"] ~ .sort-select-chevron{transform:translateY(-50%) rotate(180deg)}
 .sort-listbox{
-  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+  /* z-index:90 (não 50): a posição em si sempre foi correta (top:calc(100%+
+     6px), ancorada em .sort-select-wrap, position:relative, seu pai direto —
+     conferido ao vivo, 0px de diferença). O bug era de EMPILHAMENTO: no
+     mobile existe uma barra sticky logo abaixo do header — .filters-mobile-
+     bar aqui (top:120px) e .page-search-box em search.html (top:60px) —
+     ambas com z-index:80, criada bem depois deste dropdown (que já nascia
+     com z-index:50). Como as duas vivem no mesmo stacking context (nenhum
+     ancestral entre elas cria um novo) e ocupam a mesma faixa de tela
+     durante o scroll, a barra sticky (80 > 50) sempre desenhava por CIMA do
+     painel — cortando visualmente a opção "Relevância" (o "elemento
+     duplicado com um ponto" reportado é só a 1ª opção da lista, com o
+     indicador ● de seleção de .sort-option[aria-selected="true"]::after,
+     isolada visualmente pela barra sticky por cima dela) e sobrepondo os
+     cards de produto embaixo. 90 fica acima dessa barra (80) e abaixo do
+     nav (100, que nunca compete de verdade com este painel — ele abre bem
+     mais abaixo na página) e de qualquer modal/drawer real (z-index 600+). */
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:90;
   margin:0;padding:6px;list-style:none;min-width:100%;
   background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--sh2);
   opacity:0;visibility:hidden;transform:translateY(-8px);pointer-events:none;
@@ -5431,6 +5454,68 @@ function atualizarBotaoPausaHero(pausado) {
 document.getElementById('heroCarPrev')?.addEventListener('click', () => irParaSlideHero((heroCarouselState?.index ?? 0) - 1, true));
 document.getElementById('heroCarNext')?.addEventListener('click', () => irParaSlideHero((heroCarouselState?.index ?? 0) + 1, true));
 document.getElementById('heroCarPause')?.addEventListener('click', alternarPausaHero);
+
+/* ─── SWIPE NO CARROSSEL (mobile) ───
+   Achado da auditoria mobile: sem isso, o carrossel só respondia a
+   toque em seta/bolinha — arrastar o dedo sobre a foto (o gesto que
+   qualquer usuário tenta primeiro) não fazia nada. Reaproveita
+   irParaSlideHero() (mesma função de seta/bolinha) pra trocar de slide
+   e pausar o autoplay — não duplica lógica nova.
+   Listener em #heroCarousel (a <section>, não #heroCarouselTrack): o
+   track em si não tem CSS próprio, só ancora os slides (todos
+   position:absolute), então tem altura 0 e nunca receberia o toque —
+   quem cobre a área visível de verdade é a section, position:relative,
+   com min-height real. */
+(function initHeroSwipe(){
+  const carrossel = document.getElementById('heroCarousel');
+  if (!carrossel) return;
+  const LIMIAR_PX = 50;
+  const FATOR_HORIZONTAL = 1.5; // |deltaX| precisa ser > |deltaY| * este fator pra contar como swipe
+  let startX = 0, startY = 0, tocando = false, decidido = false, ehSwipeHorizontal = false;
+
+  carrossel.addEventListener('touchstart', (e) => {
+    if (!heroCarouselState || heroCarouselState.total < 2) return;
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    tocando = true;
+    decidido = false;
+    ehSwipeHorizontal = false;
+  }, { passive: true });
+
+  carrossel.addEventListener('touchmove', (e) => {
+    if (!tocando) return;
+    const t = e.touches[0];
+    const deltaX = t.clientX - startX;
+    const deltaY = t.clientY - startY;
+    if (!decidido) {
+      // só decide a direção depois de um deslocamento mínimo, pra não
+      // travar a decisão em cima de tremor/jitter do toque inicial
+      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+        decidido = true;
+        ehSwipeHorizontal = Math.abs(deltaX) > Math.abs(deltaY) * FATOR_HORIZONTAL;
+      }
+    }
+    // preventDefault só quando já temos certeza que é um swipe horizontal
+    // de carrossel — antes disso (ou se for vertical), a página tem que
+    // rolar normalmente, sem travar (requisito explícito da auditoria).
+    if (decidido && ehSwipeHorizontal) e.preventDefault();
+  }, { passive: false });
+
+  function finalizarToque(e) {
+    if (!tocando) return;
+    tocando = false;
+    if (!decidido || !ehSwipeHorizontal) return;
+    const t = e.changedTouches[0];
+    const deltaX = t.clientX - startX;
+    if (Math.abs(deltaX) < LIMIAR_PX) return; // arraste curto demais, ignora
+    const atual = heroCarouselState?.index ?? 0;
+    // esquerda -> próximo, direita -> anterior (mesma lógica das setas)
+    irParaSlideHero(deltaX < 0 ? atual + 1 : atual - 1, true);
+  }
+  carrossel.addEventListener('touchend', finalizarToque);
+  carrossel.addEventListener('touchcancel', () => { tocando = false; });
+})();
 
 /** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
