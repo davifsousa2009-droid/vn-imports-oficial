@@ -456,17 +456,37 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    pedido — imagem de saída desaparecendo enquanto a de entrada aparece,
    sobrepostas. O texto (.hero-car-text) tem sua própria camada de
    animação, independente, logo abaixo. */
+/* z-index:0 aqui (em vez de deixar auto): sem isso, .hero-car-slide não
+   estabelece seu próprio contexto de empilhamento (position:absolute com
+   z-index:auto NÃO cria um), e qualquer z-index definido lá dentro (ex.:
+   .hero-car-img abaixo) "vaza" pra fora do slide e passa a competir
+   diretamente com os controles do carrossel (setas/bolinhas/pausar, fora
+   da árvore do slide) em vez de ficar contido aqui. Achado ao medir ao
+   vivo: foi exatamente essa falta de contenção que fazia a foto nítida
+   (z-index:1, vazando) pintar por cima do texto (.hero-car-text, sem
+   z-index próprio) — ver comentário em .hero-car-media logo abaixo pra o
+   mesmo problema, um nível mais fundo. */
 .hero-car-slide{
   position:absolute;
   inset:0;
+  z-index:0;
   pointer-events:none;
 }
 .hero-car-slide.on{
   pointer-events:auto;
 }
+/* z-index:1 aqui pelo mesmo motivo do comentário em .hero-car-slide acima:
+   .hero-car-media também precisa estabelecer seu PRÓPRIO contexto de
+   empilhamento, senão o z-index de .hero-car-img (usado só pra vencer
+   .hero-car-blur-bg, seu irmão aqui dentro) vaza e compete com
+   .hero-car-scrim/.hero-car-text (irmãos de .hero-car-media dentro do
+   slide) em vez de ficar contido só aqui dentro. Ordem de empilhamento
+   dentro do slide (a mais atrás pra mais na frente): media(1) <
+   scrim(2) < text(3) — ver essas duas regras logo abaixo. */
 .hero-car-media{
   position:absolute;
   inset:0;
+  z-index:1;
   overflow:hidden;
   /* Neutro (mesmo tom do próprio carrossel), só pro instante antes de
      qualquer imagem pintar — nunca uma cor de marca calculada aqui: cor
@@ -502,6 +522,10 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 }
 .hero-car-img{
   position:relative;
+  /* Local a .hero-car-media (que agora tem seu próprio contexto de
+     empilhamento, ver comentário lá em cima) — só precisa vencer
+     .hero-car-blur-bg aqui dentro, nunca mais vaza pra competir com
+     .hero-car-scrim/.hero-car-text do slide. */
   z-index:1;
   width:100%;
   height:100%;
@@ -534,6 +558,8 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-car-scrim{
   position:absolute;
   inset:0;
+  /* Acima de .hero-car-media(1) dentro do contexto de .hero-car-slide. */
+  z-index:2;
   /* Mais escuro embaixo (onde o texto fica) e transparente no topo — deixa a
      foto respirar acima da metade e ainda garante piso de contraste AA pro
      texto branco por cima, qualquer que seja a foto. Mesma transição da
@@ -564,6 +590,10 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   left:0;
   right:0;
   bottom:0;
+  /* Acima de .hero-car-scrim(2) dentro do contexto de .hero-car-slide —
+     topo do conteúdo do slide (só os controles do carrossel, fora da
+     árvore do slide, ficam acima disto). */
+  z-index:3;
   /* 36px laterais: mesmo valor de padding usado no resto do site pras
      faixas de conteúdo (.cats-inner/.sec/.reviews-inner/.pv-inner, todas
      com padding:...36px), não um valor inventado só pro hero. */
@@ -684,7 +714,11 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 /* Controles — mesmo padrão visual de botão-círculo translúcido já usado no
    lightbox de fotos do produto (ver .pv-lightbox-nav/.pv-lightbox-close),
-   reaproveitado aqui em vez de inventar um novo estilo de botão. */
+   reaproveitado aqui em vez de inventar um novo estilo de botão.
+   z-index:5, claramente acima de qualquer coisa dentro de um slide (que
+   agora vai no máximo até 3, ver .hero-car-text, contido dentro do
+   próprio contexto de empilhamento de .hero-car-slide) — topo da pilha
+   inteira do carrossel, por cima de foto e texto de qualquer slide. */
 .hero-car-arrow,
 .hero-car-pause{
   position:absolute;
@@ -692,7 +726,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   background:rgba(247,244,240,.1);border:1px solid rgba(247,244,240,.25);color:#F7F4F0;
   font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:background .2s;
-  z-index:2;
+  z-index:5;
 }
 .hero-car-arrow:hover,
 .hero-car-pause:hover{background:rgba(247,244,240,.2)}
@@ -706,7 +740,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   transform:translateX(-50%);
   display:flex;
   gap:10px;
-  z-index:2;
+  z-index:5;
 }
 /* Achado ao inspecionar ao vivo: `display:flex` nas três regras acima
    (especificidade de classe, 0,1,0) vence a regra `[hidden]{display:none}`
