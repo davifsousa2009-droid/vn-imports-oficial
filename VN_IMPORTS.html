@@ -788,10 +788,36 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 @media(max-width:768px){
   .hero-carousel{min-height:max(60vh, 320px)}
   .hero-car-text{padding:0 20px 44px;max-width:none;gap:16px}
-  .hero-car-arrow{width:36px;height:36px;font-size:14px}
+  /* Achado da auditoria mobile: aqui embaixo o mobile encolhia seta/pausar
+     pra 36×36px, abaixo do mínimo de toque (44×44). Removido o
+     width/height:36px — sem eles, o botão volta a herdar os 44×44px já
+     corretos da regra base (.hero-car-arrow,.hero-car-pause acima, fora
+     de media query — não mexe em desktop). Só o ícone (font-size) e a
+     posição (mais perto da borda no mobile) continuam com override aqui. */
+  .hero-car-arrow{font-size:14px}
   .hero-car-prev{left:12px}
   .hero-car-next{right:12px}
-  .hero-car-pause{top:12px;right:12px;width:36px;height:36px;font-size:14px}
+  .hero-car-pause{top:12px;right:12px;font-size:14px}
+  /* Indicadores (bolinhas): achado da auditoria — 9px/11px visual, bem
+     abaixo do mínimo de toque. Aumentar o tamanho VISUAL ficaria
+     desproporcional (indicador discreto, não botão) — em vez disso, um
+     ::before invisível de 44×44px centralizado por cima do botão (via
+     position:relative no botão + position:absolute no pseudo-elemento)
+     aumenta só a ÁREA TOCÁVEL, sem alterar a bolinha em si nem o
+     espaçamento visual entre elas (.hero-car-dots mantém gap:10px, sem
+     overflow:hidden, então o pseudo-elemento não é cortado mesmo saindo
+     da caixa de 9px do botão). Como os pseudo-elementos de bolinhas
+     vizinhas se sobrepõem (compacto de propósito, pra não espalhar as
+     bolinhas), o botão mais à frente no DOM vence na zona de overlap —
+     comportamento padrão e esperado pra indicadores próximos como este. */
+  .hero-car-dot{position:relative}
+  .hero-car-dot::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:44px;height:44px;
+  }
 }
 
 
@@ -5273,7 +5299,29 @@ function montarHeroCarousel(banners) {
       dot.className = 'hero-car-dot';
       dot.setAttribute('aria-label', 'Ir para banner ' + (i + 1));
       dot.setAttribute('aria-current', i === 0 ? 'true' : 'false');
-      dot.addEventListener('click', () => irParaSlideHero(i, true));
+      // Toque roteado pelo ponto mais próximo (não pelo índice fixo `i`
+      // capturado no closure): a área de toque ampliada no mobile (ver
+      // ::before de 44×44px em @media(max-width:768px)) é maior que o
+      // espaçamento real entre bolinhas (~19px), então as áreas de
+      // indicadores vizinhos se sobrepõem — inclusive por cima do CENTRO
+      // visual de uma bolinha vizinha, não só na borda entre elas. Sem
+      // isso, o navegador resolveria pela ordem no DOM (o botão mais à
+      // frente sempre venceria), o que podia fazer um toque bem no centro
+      // de uma bolinha ativar a bolinha seguinte por engano. Calculando
+      // pela distância real do toque (e.clientX) até o centro de cada
+      // bolinha, o toque sempre ativa a bolinha mais próxima de verdade —
+      // inclusive o centro exato de qualquer uma delas, sempre resolve
+      // pra ela mesma (distância zero, não tem como outra vencer).
+      dot.addEventListener('click', (e) => {
+        const todasBolinhas = Array.from(dotsWrap.querySelectorAll('.hero-car-dot'));
+        let maisProxima = i, menorDist = Infinity;
+        todasBolinhas.forEach((d, idx) => {
+          const r = d.getBoundingClientRect();
+          const dist = Math.abs(e.clientX - (r.left + r.width / 2));
+          if (dist < menorDist) { menorDist = dist; maisProxima = idx; }
+        });
+        irParaSlideHero(maisProxima, true);
+      });
       dotsWrap.appendChild(dot);
     }
   });
