@@ -1589,6 +1589,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   /* Zonas de toque ≥44px no header */
   .nav-btn{width:44px;height:44px}
 
+  /* #main-nav.nav-unstick (ID+classe, vence "nav{position:sticky}" que é só
+     elemento, sem precisar de !important): aplicada via JS (ver IIFE
+     "HEADER NÃO COBRIR RODAPÉ" perto do fim do JS) assim que o
+     <footer> começa a entrar na tela. Motivo: nav é sticky, então cobre
+     sempre os primeiros ~121px da tela atual (nav + .search-wrap sempre
+     expandida aqui no mobile), inclusive no fim da página — e o rodapé
+     real é mais curto que essa faixa, então não dá pra resolver só com
+     padding/scroll-padding (o espaço extra empurraria o link pra FORA da
+     tela por cima, não pra baixo do header — ver achado da auditoria
+     mobile "rodapé escondido atrás do cabeçalho fixo"). Desgrudando o
+     header nesse momento, ele volta a ocupar só seu espaço normal no
+     topo do documento (fora da área visível), liberando a tela toda pro
+     rodapé. */
+  #main-nav.nav-unstick{position:static}
+
   .hero{grid-template-columns:1fr;min-height:auto;padding:0}
   .hero-left{padding:44px 20px;border-right:none;border-bottom:1px solid var(--border)}
   .hero-right{padding:20px;flex-direction:row;flex-wrap:wrap}
@@ -2225,6 +2240,34 @@ document.addEventListener('keydown', (e) => {
   });
 })();
 
+/* ─── HEADER NÃO COBRIR RODAPÉ (mobile) ───
+   #main-nav é sticky (não fixed): cobre sempre os primeiros ~121px da
+   tela atual (nav + .search-wrap sempre expandida no mobile — ver
+   @media(max-width:768px)), em qualquer posição de scroll, inclusive no
+   fim da página. O rodapé real é mais curto que essa faixa "segura"
+   (viewport−header), então padding/scroll-padding no fim do documento
+   NÃO resolve — só empurra o link pra fora da tela por cima em vez de
+   pra baixo do header (matemática conferida ao vivo antes de escolher
+   esta abordagem). Fix real: assim que o <footer> começa a entrar na
+   tela, desgruda o header (position:sticky→static via .nav-unstick) —
+   ele some de vista (volta pro topo do documento) e libera a tela toda
+   pro rodapé. Regruda automaticamente ao rolar de volta pra cima. */
+(function(){
+  const nav = document.getElementById('main-nav');
+  const footerEl = document.querySelector('footer');
+  if(!nav || !footerEl) return;
+  function aplicar(footerVisivel){
+    nav.classList.toggle('nav-unstick', footerVisivel && window.innerWidth <= 768);
+  }
+  const navUnstickObs = new IntersectionObserver(entries=>{
+    entries.forEach(e=> aplicar(e.isIntersecting));
+  }, { threshold: 0 });
+  navUnstickObs.observe(footerEl);
+  window.addEventListener('resize', ()=>{
+    const r = footerEl.getBoundingClientRect();
+    aplicar(r.top < window.innerHeight && r.bottom > 0);
+  });
+})();
 
 </script>
 </body>

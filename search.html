@@ -799,7 +799,15 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 @media(max-width:768px){
   .sec-prod-wrap{grid-template-columns:1fr;gap:0}
-  .filters{display:none}
+  /* .filters{display:none} removido — colidia com a gaveta mobile real
+     desta página (.filters/#filtersAside, ver @media(max-width:900px)
+     acima: position:fixed + transform:translateY(100%/0), sem nenhum
+     display próprio de propósito, pra animar suave). Essa linha era
+     resto de um bloco .mobile-filters-* (achado na auditoria) copiado de
+     VN_IMPORTS.html, onde .filters é só a sidebar de desktop — aqui em
+     search.html .filters É a própria gaveta mobile, então escondê-la
+     incondicionalmente quebrava o botão "Filtrar" por completo (a classe
+     .open era aplicada certo, mas display:none vence qualquer transform). */
   .filters-mobile-bar{display:block;padding:0 0 20px}
 }
 

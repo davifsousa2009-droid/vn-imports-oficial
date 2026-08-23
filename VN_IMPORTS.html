@@ -1258,7 +1258,16 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   from{opacity:0;transform:translateY(18px)}
   to{opacity:1;transform:translateY(0)}
 }
-.prod-card{cursor:pointer;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards;will-change:transform,opacity}
+/* min-width:0 necessário: .prod-card é item direto do CSS Grid (.prod-grid),
+   e por padrão um item de grid tem min-width:auto — ou seja, o track nunca
+   encolhe abaixo do min-content do conteúdo. O botão .prod-add-btn usa
+   white-space:nowrap com o rótulo "Adicionar ao Carrinho" (~199px de
+   min-content); sem isso, o grid de 2 colunas no mobile "estoura" (track
+   calculado bem maior que o container real) pra caber o texto inteiro do
+   botão, cortando o 2º card pra fora da tela. Com min-width:0 o track
+   encolhe normalmente e o próprio overflow:hidden/text-overflow:ellipsis
+   que .prod-add-btn já declara passa a truncar o texto como previsto. */
+.prod-card{cursor:pointer;min-width:0;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards;will-change:transform,opacity}
 .prod-card-frame{
   border-radius:12px;overflow:hidden;background:#ffffff;
   border:1px solid rgba(0,0,0,.05);
@@ -2142,6 +2151,21 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   /* Zonas de toque ≥44px no header e nos ícones do topo */
   .nav-btn{width:44px;height:44px}
 
+  /* #main-nav.nav-unstick (ID+classe, vence "nav{position:sticky}" que é só
+     elemento, sem precisar de !important): aplicada via JS (ver IIFE
+     "HEADER NÃO COBRIR RODAPÉ" perto do fim do JS) assim que o
+     <footer> começa a entrar na tela. Motivo: nav é sticky, então cobre
+     sempre os primeiros ~121px da tela atual (nav + .search-wrap sempre
+     expandida aqui no mobile), inclusive no fim da página — e o rodapé
+     real é mais curto que essa faixa, então não dá pra resolver só com
+     padding/scroll-padding (o espaço extra empurraria o link pra FORA da
+     tela por cima, não pra baixo do header — ver achado da auditoria
+     mobile "rodapé escondido atrás do cabeçalho fixo"). Desgrudando o
+     header nesse momento, ele volta a ocupar só seu espaço normal no
+     topo do documento (fora da área visível), liberando a tela toda pro
+     rodapé. */
+  #main-nav.nav-unstick{position:static}
+
   .hero-feat-card{flex:1;min-width:240px}
   .sec{padding:60px 20px}
   .cats-inner{padding:0 20px}
@@ -2156,6 +2180,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .prod-price{font-size:14px}
   .prod-old{font-size:10px}
   .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
+  /* .prod-card .prod-add-btn (2 classes) em vez de .prod-add-btn sozinho:
+     precisa vencer por especificidade, não por ordem, a regra
+     ".btn-fill,.btn-line{justify-content:center}" de @media(max-width:480px)
+     mais abaixo no arquivo (ela também bate no botão, que tem as duas
+     classes "btn-fill prod-add-btn", e como tem a mesma especificidade
+     de .prod-add-btn sozinho, venceria por vir depois). No grid de 2
+     colunas mobile o rótulo "Adicionar ao Carrinho" ultrapassa a largura
+     do botão mesmo com o min-width:0 do .prod-card (ver comentário lá).
+     Com justify-content:center (herdado de .btn-fill) o flexbox centraliza
+     a linha e o overflow:hidden+text-overflow:ellipsis do .prod-add-btn
+     corta os dois lados igualmente sem exibir "…", virando texto ilegível
+     tipo "CIONAR AO CARRIN". Com flex-start o corte fica só no fim, com
+     "…" visível, como o ellipsis já declarado sempre pretendeu. Fica
+     dentro deste media query (não solto/global) pra não mexer no
+     alinhamento do botão no desktop, onde o texto cabe e isso não é
+     problema. */
+  .prod-card .prod-add-btn{justify-content:flex-start}
 
   /* Zonas de toque ≥44px nos controles de filtro */
   .filters-reset{min-height:44px;padding:10px 12px}
@@ -4735,6 +4776,35 @@ function showToast(ico,msg){
 
 /* ─── SCROLL ─── */
 window.addEventListener('scroll',()=>{ const el=document.getElementById('back-to-top'); if(el) el.classList.toggle('on',scrollY>500); });
+
+/* ─── HEADER NÃO COBRIR RODAPÉ (mobile) ───
+   #main-nav é sticky (não fixed): cobre sempre os primeiros ~121px da
+   tela atual (nav + .search-wrap sempre expandida no mobile — ver
+   @media(max-width:768px)), em qualquer posição de scroll, inclusive no
+   fim da página. O rodapé real é mais curto que essa faixa "segura"
+   (viewport−header), então padding/scroll-padding no fim do documento
+   NÃO resolve — só empurra o link pra fora da tela por cima em vez de
+   pra baixo do header (matemática conferida ao vivo antes de escolher
+   esta abordagem). Fix real: assim que o <footer> começa a entrar na
+   tela, desgruda o header (position:sticky→static via .nav-unstick) —
+   ele some de vista (volta pro topo do documento) e libera a tela toda
+   pro rodapé. Regruda automaticamente ao rolar de volta pra cima. */
+(function(){
+  const nav = document.getElementById('main-nav');
+  const footerEl = document.querySelector('footer');
+  if(!nav || !footerEl) return;
+  function aplicar(footerVisivel){
+    nav.classList.toggle('nav-unstick', footerVisivel && window.innerWidth <= 768);
+  }
+  const navUnstickObs = new IntersectionObserver(entries=>{
+    entries.forEach(e=> aplicar(e.isIntersecting));
+  }, { threshold: 0 });
+  navUnstickObs.observe(footerEl);
+  window.addEventListener('resize', ()=>{
+    const r = footerEl.getBoundingClientRect();
+    aplicar(r.top < window.innerHeight && r.bottom > 0);
+  });
+})();
 
 /* Mega menu: acordeão mobile + fecha ao clicar fora. Delegado em document
    (em vez de pegar só o primeiro .nav-item-mega) porque agora existe um em
