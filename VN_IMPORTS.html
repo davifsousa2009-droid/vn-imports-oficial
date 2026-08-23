@@ -406,13 +406,14 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 
 /* ─── HERO CARROSSEL (múltiplos banners) ───
    Ativado só quando GET /api/banners devolve 1+ item (ver montarHeroCarousel
-   no script) — nesse caso .hero-split (id="heroSplitSingle") fica escondido
-   e este carrossel assume o lugar dele. Sem nenhum banner cadastrado, este
-   bloco inteiro nunca é populado nem exibido: .hero-split fica visível,
-   mostrando só o painel de gradiente vazio (o texto do hero único antigo —
-   título/eyebrow/descrição/CTAs/stats — e a foto única antiga — heroImagem/
-   heroImagemUrl — foram ambos removidos; o design definitivo desta área
-   pro caso sem banner ainda não foi definido, ver .hero-split-media acima).
+   no script). #heroSplitSingle (.hero-split, o hero único antigo — já sem
+   texto nem foto própria, ver comentário em .hero-split-media acima) fica
+   SEMPRE escondido agora, em qualquer contagem de banner — não é mais usado
+   como fallback visual. Sem nenhum banner cadastrado, a seção do hero
+   inteira some (nem gradiente, nem espaço reservado: #heroCarousel mantém
+   o atributo `hidden` do HTML, montarHeroCarousel nunca roda, e
+   #heroSplitSingle também fica hidden — a página começa direto na próxima
+   seção, ver DOMContentLoaded). Com 1+ banner, este carrossel é exibido. */
 
    Layout aqui é full-bleed com texto sobreposto (estilo Nike.com.br), texto
    ancorado na metade inferior, alinhado à esquerda. Tem seu próprio scrim
@@ -461,28 +462,69 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .hero-car-media{
   position:absolute;
   inset:0;
-  /* Mesmo par gold/gold2 do letterbox do hero único (ver .hero-split-media)
-     — fundo de marca visível atrás de foto pequena, nunca um vazio genérico. */
-  background:linear-gradient(155deg, var(--gold), var(--gold2));
+  overflow:hidden;
+  /* Neutro (mesmo tom do próprio carrossel), só pro instante antes de
+     qualquer imagem pintar — nunca uma cor de marca calculada aqui: cor
+     fixa/calculada nesse lugar foi exatamente o bug corrigido nesta etapa
+     (ver .hero-car-blur-bg abaixo, a técnica correta pra foto pequena). */
+  background:var(--ink);
   opacity:0;
   transition:opacity .55s ease-in-out;
 }
 .hero-car-slide.on .hero-car-media{
   opacity:1;
 }
-.hero-car-media img{
+/* Fundo desfocado — cópia AMPLIADA e borrada da MESMA foto do slide,
+   cobrindo o container inteiro por baixo da imagem nítida (.hero-car-img
+   abaixo). Sempre presente (mesma imagem carregada duas vezes; o navegador
+   reaproveita do cache HTTP na segunda vez), mas só fica visível de fato
+   quando a imagem nítida não cobre o container inteiro — em modo cover
+   normal (foto grande) a imagem nítida já preenche tudo por cima e esconde
+   esta camada por completo, sem precisar de nenhuma lógica condicional de
+   visibilidade. scale(1.15): sem isso, a borda do blur mostraria uma faixa
+   mais clara/desfocada de menos (o filtro amostra também fora dos limites
+   do elemento) — a ampliação empurra essa borda pra fora da área visível. */
+.hero-car-blur-bg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+  filter:blur(48px);
+  transform:scale(1.15);
+}
+.hero-car-img{
+  position:relative;
+  z-index:1;
   width:100%;
   height:100%;
   object-fit:cover;
   object-position:center;
   display:block;
 }
-/* Modo compacto/letterbox — mesmo critério herdado do hero único de foto
-   (naturalWidth ou naturalHeight abaixo de 600px, ver script). */
-.hero-car-media.slide-media-compact img{
+/* Modo compacto/letterbox (foto pequena) — mesmo critério herdado do hero
+   único de foto (naturalWidth ou naturalHeight abaixo de 600px, ver
+   script). Imagem nítida no tamanho REAL dela, centralizada, sem upscale:
+   width/height:auto (não mais 100%/100%) faz o <img> renderizar nas
+   dimensões intrínsecas da foto; max-width/max-height só protegem contra
+   uma foto pequena mas ainda maior que o container em algum eixo raro
+   (não amplia, só evita overflow). .hero-car-media vira flex pra
+   centralizar essa imagem menor que o container — o fundo borrado
+   (.hero-car-blur-bg acima) continua cobrindo tudo por trás, agora visível
+   nas bordas que a foto nítida, menor, deixa descobertas. */
+.hero-car-media.slide-media-compact{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.hero-car-media.slide-media-compact .hero-car-img{
+  width:auto;
+  height:auto;
+  max-width:100%;
+  max-height:100%;
   object-fit:contain;
-  padding:7%;
-  box-sizing:border-box;
 }
 .hero-car-scrim{
   position:absolute;
@@ -2163,21 +2205,20 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   </div>
 </nav>
 
-<!-- Hero único (fallback pra quando não há nenhum banner cadastrado, ver
-     #heroCarousel logo abaixo). Texto (nome da loja, tagline, botões "Ver
-     Coleção"/"Categorias", stats) removido nesta etapa — remoção pura, sem
-     substituir por nada ainda; o design definitivo do carrossel entra num
-     próximo passo. Container principal (.hero-split) e o painel de mídia
-     (.hero-split-media) continuam existindo, só esvaziados — é o mesmo
-     espaço que o carrossel de banners vai ocupar quando houver banner. -->
+<!-- Hero único antigo — sem texto (removido numa etapa anterior) e sem
+     função de fallback visual (decisão revista: com 0 banners a seção do
+     hero inteira some, não mostra mais este gradiente). Fica SEMPRE
+     escondido via JS (ver DOMContentLoaded) em qualquer contagem de
+     banner; marcação mantida no HTML só porque remover a section inteira
+     não foi pedido, não porque ainda cumpre algum papel visual. -->
 <div class="hero-split" id="heroSplitSingle">
   <div class="hero-split-media" id="heroSplitMedia"></div>
 </div>
 
 <!-- HERO CARROSSEL: montado por JS (montarHeroCarousel) só quando
-     GET /api/banners devolve 1+ item — nesse caso o hero único acima
-     (#heroSplitSingle) é escondido e este assume o lugar dele. Com 0
-     banners, fica sempre hidden e vazio (ver comentário no CSS,
+     GET /api/banners devolve 1+ item. Com 0 banners, fica sempre hidden e
+     vazio — junto com #heroSplitSingle também escondido, a seção do hero
+     inteira desaparece da página nesse caso (ver comentário no CSS,
      .hero-carousel, e no DOMContentLoaded). -->
 <section class="hero-carousel" id="heroCarousel" hidden aria-roledescription="carrossel" aria-label="Banners promocionais">
   <div id="heroCarouselTrack"></div>
@@ -4992,7 +5033,22 @@ function montarHeroCarousel(banners) {
 
     const mediaEl = document.createElement('div');
     mediaEl.className = 'hero-car-media';
+
+    // Fundo desfocado: cópia da MESMA foto, ampliada e borrada via CSS (ver
+    // .hero-car-blur-bg), cobrindo o container inteiro por trás da imagem
+    // nítida — só fica visível de verdade quando a foto é pequena demais
+    // pra cobrir tudo sozinha (ver .slide-media-compact). Puramente
+    // decorativa (é a MESMA foto que a imagem nítida ao lado já descreve
+    // pro leitor de tela) — alt vazio + aria-hidden, pra não duplicar o
+    // texto alternativo.
+    const blurBgEl = document.createElement('img');
+    blurBgEl.className = 'hero-car-blur-bg';
+    blurBgEl.alt = '';
+    blurBgEl.setAttribute('aria-hidden', 'true');
+    mediaEl.appendChild(blurBgEl);
+
     const imgEl = document.createElement('img');
+    imgEl.className = 'hero-car-img';
     // Alt: título do banner quando existe, senão texto genérico (requisito
     // de acessibilidade explícito) — nunca alt vazio, a foto é conteúdo, não
     // decoração (é o próprio banner promocional).
@@ -5085,6 +5141,10 @@ function montarHeroCarousel(banners) {
       });
     }, { once: true });
     imgEl.src = banner.imagem;
+    // Mesma URL na camada de fundo desfocado — o navegador reaproveita do
+    // cache HTTP (não baixa a foto de novo), só renderiza uma segunda vez
+    // com o filtro blur+scale do CSS por cima.
+    blurBgEl.src = banner.imagem;
 
     if (comControles) {
       const dot = document.createElement('button');
@@ -6161,16 +6221,17 @@ async function carregarProdutosDoServidor(categoria) {
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Busca banners do hero ANTES do resto do fluxo, e decide já (esconde o
-  // hero único se houver 1+ banner) antes de carregarConfigLoja() sequer
-  // começar a popular #heroSplitSingle — evita mostrar um hero e trocar
-  // pelo outro visivelmente (flash). Lista vazia: não faz nada aqui, o
-  // hero único segue exatamente como sempre foi.
+  // Busca banners do hero ANTES do resto do fluxo. #heroSplitSingle (o
+  // painel de gradiente do hero único antigo) fica sempre escondido agora
+  // — com 1+ banner o carrossel assume o lugar dele (como já era); com 0
+  // banners a seção do hero inteira some (nem gradiente, nem espaço
+  // reservado — decisão explícita, ver #heroCarousel: fica com o atributo
+  // `hidden` do HTML e nunca é populado/exibido nesse caso). Busca aqui,
+  // antes de carregarConfigLoja(), só pra decidir tudo isso antes de
+  // qualquer coisa pintar (evita flash).
   const bannersHero = await carregarListaBannersHero();
-  if (bannersHero.length) {
-    const heroSplitEl = document.getElementById('heroSplitSingle');
-    if (heroSplitEl) heroSplitEl.hidden = true;
-  }
+  const heroSplitEl = document.getElementById('heroSplitSingle');
+  if (heroSplitEl) heroSplitEl.hidden = true;
 
   // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
   // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
