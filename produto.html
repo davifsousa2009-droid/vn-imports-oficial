@@ -1318,6 +1318,96 @@ footer{background:var(--ink);color:var(--white)}
   transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
 }
 .pv-wish-btn:hover{border-color:var(--ink);color:var(--ink)}
+/* .pv-wish-btn acima fica sem uso (o botão real agora é o padrão
+   checkbox+label .fav-toggle-* logo abaixo) — não removida porque a
+   regra é compartilhada com .phb-wish (barra de ação mobile), que
+   continua existindo em outro lugar do site; deixar essa seletor "morto"
+   pra .pv-wish-btn não tem custo nenhum e evita mexer numa regra
+   compartilhada só por causa de um botão que já não existe mais aqui. */
+
+/* ─── FAVORITAR — padrão checkbox+label (referência do cliente) ───
+   CSS colado do arquivo fornecido, valores idênticos (cor, sombra,
+   radius, padding, tamanho de ícone, timing de toda transição/
+   animação) — só troquei os NOMES de seletor (.container/.action do
+   original → .fav-toggle-label/.fav-toggle-action, @keyframes
+   heartButton → favToggleHeartButton) porque são genéricos demais pra
+   colar sem checar num arquivo deste tamanho. Conferido antes de
+   colar: nenhum dos dois nomes (nem "container"/"action" originais,
+   nem os novos) existia em produto.html — e um "input{display:none}"
+   solto, como no arquivo original, teria escondido o campo de busca
+   do cabeçalho (#searchInp também é <input>) — por isso o seletor de
+   esconder é #pvFavCheckbox especificamente, não a tag input inteira.
+
+   IMPORTANTE — desvio deliberado do CSS original nesta regra: o
+   arquivo do cliente usa display:none no <input>, mas display:none
+   tira o elemento da ordem de tabulação por completo em todo navegador
+   moderno — quebraria "Tab + Espaço deve funcionar, como qualquer
+   checkbox nativo" (requisito explícito, na seção de acessibilidade).
+   Troquei pela técnica padrão "visualmente escondido, mas focável"
+   (clip-rect zero-size) em vez de display:none — mesmo efeito visual
+   (invisível), mas o checkbox continua alcançável por teclado. */
+#pvFavCheckbox{
+  position:absolute;width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.fav-toggle-label{
+  background-color:#fff;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:10px 15px 10px 15px;
+  cursor:pointer;user-select:none;
+  border-radius:10px;
+  box-shadow:0px 8px 24px rgba(149,157,165,.8);
+  color:#000;
+  transition:background .3s ease;
+  /* width:100% — não existe no original (lá o componente fica sozinho,
+     centralizado na página); aqui ele empilha junto do botão "Adicionar
+     ao Carrinho" (100% de largura) dentro de .pv-btns, então precisa
+     acompanhar a largura pra não sobrar vazio de um lado. */
+  width:100%;
+}
+.fav-toggle-label:hover{background:#fafafa}
+.fav-toggle-label i{font-size:24px;transition:all .3s ease;color:#999}
+#pvFavCheckbox:checked + .fav-toggle-label i{
+  color:hsl(0deg 100% 50%);
+  transform:scale(1.2);
+  animation:favToggleHeartButton 1s;
+  font-weight:900;
+}
+@keyframes favToggleHeartButton{
+  0%{transform:scale(1)}
+  25%{transform:scale(1.3)}
+  50%{transform:scale(1)}
+  75%{transform:scale(1.3)}
+  100%{transform:scale(1)}
+}
+#pvFavCheckbox + .fav-toggle-label .fav-toggle-action{
+  position:relative;overflow:hidden;display:grid;
+}
+#pvFavCheckbox + .fav-toggle-label .fav-toggle-action span{
+  grid-column-start:1;grid-column-end:1;
+  grid-row-start:1;grid-row-end:1;
+  transition:all .5s;font-weight:500;
+}
+#pvFavCheckbox + .fav-toggle-label .fav-toggle-action span.fav-toggle-option-1{
+  transform:translate(0px,0%);opacity:1;
+}
+#pvFavCheckbox:checked + .fav-toggle-label .fav-toggle-action span.fav-toggle-option-1{
+  transform:translate(0px,-100%);opacity:0;
+}
+#pvFavCheckbox + .fav-toggle-label .fav-toggle-action span.fav-toggle-option-2{
+  transform:translate(0px,100%);opacity:0;
+}
+#pvFavCheckbox:checked + .fav-toggle-label .fav-toggle-action span.fav-toggle-option-2{
+  transform:translate(0px,0%);opacity:1;
+}
+/* Foco visível por teclado (Tab até o label, :focus-visible no input
+   nativo não teria efeito porque ele é display:none — o navegador move
+   o foco visual pro <label> associado via for=, então o anel precisa
+   estar aqui). */
+#pvFavCheckbox:focus-visible + .fav-toggle-label{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
 .pv-feats{display:flex;flex-direction:column;gap:10px}
 .pv-feat{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
 .pv-feat strong{color:var(--ink);font-weight:500}
@@ -1792,7 +1882,23 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
           <button class="btn-fill btn-full cart-add-fx" id="pvAddBtn"><span class="cart-add-fx-iconslot" aria-hidden="true"><i class="fa-solid fa-cart-shopping cart-add-fx-icon"></i><i class="fa-solid fa-check cart-add-fx-fly"></i></span><span class="cart-add-fx-label" id="pvAddBtnLabel">Adicionar ao Carrinho</span></button>
-          <button class="pv-wish-btn" id="pvWishBtn"><span class="ui-ico" id="pvWishIco"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg></span><span id="pvWishTxt">Adicionar aos Favoritos</span></button>
+          <!-- Padrão checkbox+label (referência fornecida pelo cliente) —
+               troca proposital do sistema de ícone de contorno fino
+               unificado do site pelo Font Awesome fa-regular/fa-heart,
+               igual já decidido antes pro botão "Adicionar ao Carrinho".
+               Classes renomeadas com prefixo fav-toggle- (o original usa
+               .container/.action, nomes genéricos demais pra um arquivo
+               com milhares de linhas de CSS — troca de nome, não muda
+               nenhum valor de propriedade). id="pvFavCheckbox" único,
+               conferido contra colisão antes de usar. -->
+          <input type="checkbox" id="pvFavCheckbox" class="fav-toggle-input">
+          <label for="pvFavCheckbox" class="fav-toggle-label">
+            <i class="fa-regular fa-heart"></i>
+            <div class="fav-toggle-action">
+              <span class="fav-toggle-option-1">Adicionar aos Favoritos</span>
+              <span class="fav-toggle-option-2">Nos Favoritos</span>
+            </div>
+          </label>
         </div>
         <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
         <div class="pv-feats">
@@ -2086,29 +2192,26 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
     tamanhoSelecionado = s;
   }
 
-  // Mesmo par de SVG (preenchido/contorno) usado no coração do cabeçalho e
-  // dos cards — unifica com o resto do site em vez de trocar classe
-  // fa-regular/fa-solid.
-  const PV_HEART_FILLED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>';
-  const PV_HEART_OUTLINE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>';
+  // Ícone/cor/texto agora são só CSS (input:checked + .fav-toggle-label —
+  // ver estilos), então aqui só precisa sincronizar o ESTADO (marcado ou
+  // não) do checkbox com a wishlist real — nada de innerHTML de ícone.
   function atualizarBotaoWish(){
     const wish = getWishlist();
-    const is = produtoAtual && wish.includes(produtoAtual._id);
-    document.getElementById('pvWishIco').innerHTML = is ? PV_HEART_FILLED : PV_HEART_OUTLINE;
-    document.getElementById('pvWishTxt').textContent = is ? 'Nos Favoritos' : 'Adicionar aos Favoritos';
+    const is = !!(produtoAtual && wish.includes(produtoAtual._id));
+    const cb = document.getElementById('pvFavCheckbox');
+    if (cb) cb.checked = is;
   }
 
-  document.getElementById('pvWishBtn').addEventListener('click', function(){
-    if(!produtoAtual) return;
+  document.getElementById('pvFavCheckbox').addEventListener('change', function(){
+    if(!produtoAtual){ this.checked = !this.checked; return; }
     const wish = getWishlist();
     const idx = wish.indexOf(produtoAtual._id);
-    if(idx>-1){ wish.splice(idx,1); showToast('heart','Removido dos favoritos'); }
-    else { wish.push(produtoAtual._id); showToast('heart','Adicionado aos favoritos!'); }
+    if(this.checked){ wish.push(produtoAtual._id); showToast('heart','Adicionado aos favoritos!'); }
+    else { if(idx>-1) wish.splice(idx,1); showToast('heart','Removido dos favoritos'); }
     saveWishlist(wish);
-    atualizarBotaoWish();
     syncDots();
-    // efeito de pulso ao clicar
-    this.classList.remove('pulse'); void this.offsetWidth; this.classList.add('pulse');
+    // O próprio :checked já dispara a animação heartButton (ver CSS) —
+    // não precisa mais do pulso manual daqui, isso era só pro SVG antigo.
   });
 
   document.getElementById('pvAddBtn').addEventListener('click', function(){
