@@ -780,8 +780,63 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
+
+/* ─── BOTÃO "ADICIONAR AO CARRINHO" — efeito exclusivo (decisão do
+   cliente), mesmo tratamento de VN_IMPORTS.html/search.html (ver
+   comentário lá pra detalhes completos): fundo preto, cantos retos,
+   ícone sólido (Font Awesome) que desliza da esquerda no hover, com um
+   segundo ícone (fa-check) entrando girando por cima. Aqui a classe vai
+   só no #pvAddBtn (botão principal da página) — os cards de "produtos
+   relacionados" mais abaixo usam .prod-add-btn sozinho, sem
+   .cart-add-fx, e continuam no visual antigo (fora do escopo pedido). */
+/* .cartbtn no original: transition:all .3s ease-in-out + box-shadow de
+   repouso rgba(...,.419) que sobe pra rgba(...,.719) no hover, junto com
+   transform:scale(.96) — replicado aqui, cor da sombra adaptada pra
+   preto puro (nosso fundo é #000, não #222). */
+.cart-add-fx{
+  background:#000;border-radius:0;color:#fff;
+  position:relative;overflow:hidden;
+  justify-content:center;gap:9px;
+  transition:all .3s ease-in-out;
+  box-shadow:0 20px 30px -7px rgba(0,0,0,.419);
+}
+@media(hover:hover){
+  .cart-add-fx:hover{background:#000;transform:scale(.96);box-shadow:0 20px 30px -7px rgba(0,0,0,.719)}
+}
+.cart-add-fx.cart-add-fx-touch{background:#000;transform:scale(.96);box-shadow:0 20px 30px -7px rgba(0,0,0,.719)}
+.cart-add-fx-iconslot{
+  position:relative;width:20px;height:20px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.cart-add-fx-icon{position:relative;z-index:2;font-size:16px}
+/* .product no original: transition:all .3s ease-in (regula a volta suave
+   ao estado escondido quando o hover/toque termina). */
+.cart-add-fx-fly{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) translateY(-14px);
+  opacity:0;font-size:10px;color:rgba(255,255,255,.6);
+  z-index:1;pointer-events:none;
+  transition:all .3s ease-in;
+}
+.cart-add-fx-label{position:relative;z-index:2}
+@keyframes cartAddFxIcon{
+  0%{transform:translateX(-10px);opacity:0}
+  100%{transform:translateX(0);opacity:1}
+}
+@keyframes cartAddFxFly{
+  0%{transform:translate(-50%,-50%) translateY(-14px) rotate(0deg);opacity:1}
+  100%{transform:translate(-50%,-50%) translateY(0) rotate(-90deg);opacity:1}
+}
+@media(hover:hover){
+  .cart-add-fx:hover .cart-add-fx-icon{animation:cartAddFxIcon 1s cubic-bezier(.25,.46,.45,.9) both}
+  .cart-add-fx:hover .cart-add-fx-fly{animation:cartAddFxFly 1.2s cubic-bezier(.25,.46,.45,.9) both}
+}
+.cart-add-fx.cart-add-fx-touch .cart-add-fx-icon{animation:cartAddFxIcon 1s cubic-bezier(.25,.46,.45,.9) both}
+.cart-add-fx.cart-add-fx-touch .cart-add-fx-fly{animation:cartAddFxFly 1.2s cubic-bezier(.25,.46,.45,.9) both}
+
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.cart-add-fx,.cart-add-fx-icon,.cart-add-fx-fly{animation:none !important;transition:none !important}
+  .cart-add-fx:hover,.cart-add-fx.cart-add-fx-touch{transform:none !important;box-shadow:0 20px 30px -7px rgba(0,0,0,.419) !important}
 }
 .prod-card{
   background:#ffffff;cursor:pointer;position:relative;
@@ -1736,7 +1791,7 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <div class="pv-sizes" id="pvSizes"></div>
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
-          <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
+          <button class="btn-fill btn-full cart-add-fx" id="pvAddBtn"><span class="cart-add-fx-iconslot" aria-hidden="true"><i class="fa-solid fa-cart-shopping cart-add-fx-icon"></i><i class="fa-solid fa-check cart-add-fx-fly"></i></span><span class="cart-add-fx-label" id="pvAddBtnLabel">Adicionar ao Carrinho</span></button>
           <button class="pv-wish-btn" id="pvWishBtn"><span class="ui-ico" id="pvWishIco"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg></span><span id="pvWishTxt">Adicionar aos Favoritos</span></button>
         </div>
         <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
@@ -2001,6 +2056,20 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   // Carrinho, favoritos e syncDots() agora vêm de /js/cart.js (compartilhado
   // com VN_IMPORTS.html e search.html).
 
+  // Botão "Adicionar ao Carrinho" (.cart-add-fx): em touch não existe
+  // :hover de verdade, então replicamos o mesmo efeito visual com uma
+  // classe adicionada no touchstart e removida ~900ms depois — só decora,
+  // nunca bloqueia o clique real (mesmo padrão de VN_IMPORTS.html/
+  // search.html). Delegado em document por consistência, embora aqui o
+  // botão principal (#pvAddBtn) já exista fixo no HTML.
+  document.addEventListener('touchstart', function(e){
+    const btn = e.target.closest('.cart-add-fx');
+    if (!btn) return;
+    btn.classList.add('cart-add-fx-touch');
+    clearTimeout(btn.__cartAddFxTimer);
+    btn.__cartAddFxTimer = setTimeout(() => btn.classList.remove('cart-add-fx-touch'), 900);
+  }, { passive: true });
+
   let produtoAtual = null;
   let tamanhoSelecionado = null;
 
@@ -2106,7 +2175,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       const addBtn = document.getElementById('pvAddBtn');
       if (addBtn) {
         addBtn.disabled = indisponivel;
-        addBtn.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
+        // .textContent no label interno (não no botão inteiro): o botão
+        // agora carrega os ícones do efeito cart-add-fx como filhos
+        // (ver cart-add-fx-iconslot), que addBtn.textContent apagaria.
+        const addBtnLabel = document.getElementById('pvAddBtnLabel');
+        if (addBtnLabel) addBtnLabel.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
       }
 
       // Galeria: capa + fotos adicionais, sem repetir

@@ -1382,8 +1382,86 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-add-btn{width:100%;justify-content:center;letter-spacing:.12em;margin-top:12px;transition:all .3s ease;position:relative;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .prod-add-btn:hover{background:var(--ink2);box-shadow:0 4px 14px rgba(17,17,17,.18)}
 .prod-add-btn:active{transform:scale(.97)}
+
+/* ─── BOTÃO "ADICIONAR AO CARRINHO" — efeito exclusivo (decisão do
+   cliente): rompe de propósito com o resto do site — fundo preto sólido,
+   cantos retos, ícone de carrinho SÓLIDO (Font Awesome, fa-cart-shopping)
+   em vez do SVG de contorno fino usado em todo o resto do site (inclusive
+   o ícone de carrinho do cabeçalho, que continua intocado). Efeito
+   replicado de uma referência fornecida pelo cliente (ícone desliza da
+   esquerda no hover, um segundo ícone — aqui fa-check no lugar do
+   "fa-shirt" do original, já que a loja vende mais de uma categoria —
+   entra girando por cima). Classe própria (.cart-add-fx), não escrita em
+   cima de .prod-add-btn/.btn-fill diretamente: eles continuam usados por
+   outros botões (checkout, variantes curtas "+ Carrinho") que não devem
+   herdar esse visual.
+   .cart-add-fx-iconslot é um "slot" de tamanho FIXO (20px) que ancora os
+   dois ícones — ao contrário do original (width:180px fixo, ícone
+   posicionado em left/bottom absolutos calculados pra aquele tamanho
+   exato), nosso botão é width:100% com texto de tamanho variável
+   ("Adicionar ao Carrinho" vs "Adicionar" em search.html) — ancorando no
+   slot, não no botão inteiro, o efeito funciona igual não importa a
+   largura real. */
+/* .cartbtn no original: transition:all .3s ease-in-out + box-shadow de
+   repouso rgba(...,.419) que sobe pra rgba(...,.719) no hover, junto com
+   transform:scale(.96) — as 3 propriedades do botão em si (não dos
+   ícones), replicadas aqui com a MESMA transição/timing, só adaptando a
+   cor da sombra pra preto puro (nosso fundo é #000, não #222). */
+.cart-add-fx{
+  background:#000;border-radius:0;color:#fff;
+  position:relative;overflow:hidden;
+  justify-content:center;gap:9px;
+  transition:all .3s ease-in-out;
+  box-shadow:0 20px 30px -7px rgba(0,0,0,.419);
+}
+@media(hover:hover){
+  .cart-add-fx:hover{background:#000;transform:scale(.96);box-shadow:0 20px 30px -7px rgba(0,0,0,.719)}
+}
+.cart-add-fx.cart-add-fx-touch{background:#000;transform:scale(.96);box-shadow:0 20px 30px -7px rgba(0,0,0,.719)}
+.cart-add-fx-iconslot{
+  position:relative;width:20px;height:20px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.cart-add-fx-icon{position:relative;z-index:2;font-size:16px}
+/* .product no original: transition:all .3s ease-in (regula só a VOLTA
+   suave ao estado escondido quando o hover/toque termina — enquanto a
+   animação roda, ela domina; a transition assume no instante em que
+   .cart-add-fx-touch sai ou o mouse desliga do hover e o valor computado
+   de transform/opacity volta pro estado base). Sem isso o ícone
+   secundário sumia de golpe em vez de recolher suavemente, diferente do
+   original. */
+.cart-add-fx-fly{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) translateY(-14px);
+  opacity:0;font-size:10px;color:rgba(255,255,255,.6);
+  z-index:1;pointer-events:none;
+  transition:all .3s ease-in;
+}
+.cart-add-fx-label{position:relative;z-index:2}
+@keyframes cartAddFxIcon{
+  0%{transform:translateX(-10px);opacity:0}
+  100%{transform:translateX(0);opacity:1}
+}
+@keyframes cartAddFxFly{
+  0%{transform:translate(-50%,-50%) translateY(-14px) rotate(0deg);opacity:1}
+  100%{transform:translate(-50%,-50%) translateY(0) rotate(-90deg);opacity:1}
+}
+/* @media(hover:hover): a animação só dispara em dispositivo com hover de
+   verdade (mouse) — no touch, quem dispara é a classe .cart-add-fx-touch
+   (adicionada via JS no touchstart, ver initCartAddFxTouch no script). */
+@media(hover:hover){
+  .cart-add-fx:hover .cart-add-fx-icon{animation:cartAddFxIcon 1s cubic-bezier(.25,.46,.45,.9) both}
+  .cart-add-fx:hover .cart-add-fx-fly{animation:cartAddFxFly 1.2s cubic-bezier(.25,.46,.45,.9) both}
+}
+.cart-add-fx.cart-add-fx-touch .cart-add-fx-icon{animation:cartAddFxIcon 1s cubic-bezier(.25,.46,.45,.9) both}
+.cart-add-fx.cart-add-fx-touch .cart-add-fx-fly{animation:cartAddFxFly 1.2s cubic-bezier(.25,.46,.45,.9) both}
+
 @media(prefers-reduced-motion:reduce){
-  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option,.filters,.fbar-1,.fbar-2,.fbar-3{animation:none !important;transition:none !important}
+  .prod-card,.prod-card-frame,.prod-card-media img,.prod-wish-btn,.prod-wish-btn svg,.prod-add-btn,.filters-toggle-btn,.sort-select,.sort-select-chevron,.sort-listbox,.sort-option,.filters,.fbar-1,.fbar-2,.fbar-3,.cart-add-fx,.cart-add-fx-icon,.cart-add-fx-fly{animation:none !important;transition:none !important}
+  /* "só sem movimento" (requisito explícito): não basta tirar a transição
+     suave — o scale/sombra do botão em si (.cartbtn:hover no original)
+     não pode acontecer nem de forma instantânea. */
+  .cart-add-fx:hover,.cart-add-fx.cart-add-fx-touch{transform:none !important;box-shadow:0 20px 30px -7px rgba(0,0,0,.419) !important}
 }
 
 /* Chips de tamanho revelados no card (destaques, favoritos, grid) — mesma
@@ -3241,7 +3319,7 @@ function renderGrid(list){
             </div>
 
             ${indisponivel
-              ? `<button class="btn-fill prod-add-btn" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
+              ? `<button class="btn-fill prod-add-btn cart-add-fx" disabled aria-disabled="true">${rotuloIndisponivel}</button>`
               : renderQuickAddAction(p, 'btn-fill prod-add-btn', 'Adicionar ao Carrinho')
             }
           </div>
@@ -3596,14 +3674,26 @@ function addCart(p, tamanho){
  * página do produto — mesmo padrão nos três carrosséis (grid, destaques,
  * favoritos), pra um produto nunca se comportar diferente dependendo de
  * onde o cliente clicou. */
+/* Conteúdo interno do botão de carrinho: só o "Adicionar ao Carrinho" real
+   (btnClass contendo prod-add-btn) recebe o par de ícones do efeito
+   cart-add-fx (decisão do cliente, exclusiva desse botão) — as variantes
+   curtas '+ Carrinho' (btn-sm/phb-cart, usadas em carrossel de destaques e
+   na barra fixa mobile do produto) continuam só com texto, sem mexer. */
+function renderQuickAddBtnInner(btnClass, btnLabel){
+  if (!btnClass.includes('prod-add-btn')) return btnLabel;
+  return `<span class="cart-add-fx-iconslot" aria-hidden="true"><i class="fa-solid fa-cart-shopping cart-add-fx-icon"></i><i class="fa-solid fa-check cart-add-fx-fly"></i></span><span class="cart-add-fx-label">${btnLabel}</span>`;
+}
+
 function renderQuickAddAction(p, btnClass, btnLabel){
   const sizes = Array.isArray(p.sizes) ? p.sizes : [];
+  const cls = btnClass.includes('prod-add-btn') ? `${btnClass} cart-add-fx` : btnClass;
+  const inner = renderQuickAddBtnInner(btnClass, btnLabel);
   if (!sizes.length) {
-    return `<button class="${btnClass}" onclick="event.stopPropagation();addCart(S.products[${p.id}],'')">${btnLabel}</button>`;
+    return `<button class="${cls}" onclick="event.stopPropagation();addCart(S.products[${p.id}],'')">${inner}</button>`;
   }
   return `
     <div class="qa-wrap">
-      <button class="${btnClass} qa-btn" onclick="event.stopPropagation();toggleQuickSize(this)">${btnLabel}</button>
+      <button class="${cls} qa-btn" onclick="event.stopPropagation();toggleQuickSize(this)">${inner}</button>
       <div class="qa-sizes" style="display:none">
         ${sizes.map(s => `<button type="button" class="qa-size-chip" data-tamanho="${escHtml(s)}" onclick="event.stopPropagation();addCartComTamanho(this,${p.id})">${escHtml(s)}</button>`).join('')}
       </div>
@@ -5516,6 +5606,21 @@ document.getElementById('heroCarPause')?.addEventListener('click', alternarPausa
   carrossel.addEventListener('touchend', finalizarToque);
   carrossel.addEventListener('touchcancel', () => { tocando = false; });
 })();
+
+/* Botão "Adicionar ao Carrinho" (.cart-add-fx): em touch não existe
+   :hover de verdade, então replicamos o mesmo efeito visual com uma
+   classe adicionada no touchstart e removida ~900ms depois — só decora,
+   nunca bloqueia o clique real (addCart/toggleQuickSize continuam no
+   onclick normal do botão, intocados). Delegado em document (não por
+   botão): os cards são renderizados dinamicamente (renderGrid etc.),
+   um listener por elemento se perderia toda vez que o grid é refeito. */
+document.addEventListener('touchstart', function(e){
+  const btn = e.target.closest('.cart-add-fx');
+  if (!btn) return;
+  btn.classList.add('cart-add-fx-touch');
+  clearTimeout(btn.__cartAddFxTimer);
+  btn.__cartAddFxTimer = setTimeout(() => btn.classList.remove('cart-add-fx-touch'), 900);
+}, { passive: true });
 
 /** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
