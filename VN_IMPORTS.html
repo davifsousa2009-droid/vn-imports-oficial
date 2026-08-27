@@ -2865,7 +2865,16 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         <div class="pv-sizes" id="pvSizes"></div>
         <p class="pv-desc" id="pvDesc"></p>
         <div class="pv-btns">
-          <button class="btn-fill btn-full" id="pvAddBtn">Adicionar ao Carrinho</button>
+          <!-- Terceira ocorrência do botão "Adicionar ao Carrinho" que faltava
+               receber o efeito .cart-add-fx: esta é a do painel de produto
+               INTERNO (aberto por openProd() ao clicar num card direto na
+               vitrine da Home, sem navegar pra produto.html) — achado ao
+               investigar por que o botão aparecia preto ao entrar via busca
+               (search.html → produto.html, já tinha o efeito) mas azul ao
+               entrar direto pela vitrine principal (esta é a página/painel
+               que renderiza nesse caminho, nunca tinha sido tocada). Mesma
+               estrutura/classes de produto.html. -->
+          <button class="btn-fill btn-full cart-add-fx" id="pvAddBtn"><span class="cart-add-fx-iconslot" aria-hidden="true"><i class="fa-solid fa-cart-shopping cart-add-fx-icon"></i><i class="fa-solid fa-check cart-add-fx-fly"></i></span><span class="cart-add-fx-label" id="pvAddBtnLabel">Adicionar ao Carrinho</span></button>
           <button class="pv-wish-btn" id="pvWishBtn"><svg class="ui-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>Adicionar aos Favoritos</button>
         </div>
         <p id="pvIndisponivelMsg" style="display:none;font-size:13px;color:var(--muted);margin:-8px 0 4px">Este produto está temporariamente indisponível para compra.</p>
@@ -3433,7 +3442,11 @@ function openProd(id){
   if (indisponivelMsg) indisponivelMsg.style.display = semDadosEnvio ? 'block' : 'none';
   if (addBtn) {
     addBtn.disabled = indisponivel;
-    addBtn.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
+    // .textContent no label interno (não no botão inteiro): o botão agora
+    // carrega os ícones do efeito cart-add-fx como filhos, que
+    // addBtn.textContent apagaria (mesmo ajuste já feito em produto.html).
+    const pvAddBtnLabel = document.getElementById('pvAddBtnLabel');
+    if (pvAddBtnLabel) pvAddBtnLabel.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
     addBtn.onclick = indisponivel ? null : ()=>{
       // Só exige tamanho quando o produto de fato tem tamanho cadastrado —
       // achado ao mexer nesta linha: antes disso, `!sel` bloqueava qualquer
