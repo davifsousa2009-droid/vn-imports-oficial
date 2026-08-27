@@ -2283,6 +2283,20 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         // (ver cart-add-fx-iconslot), que addBtn.textContent apagaria.
         const addBtnLabel = document.getElementById('pvAddBtnLabel');
         if (addBtnLabel) addBtnLabel.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
+
+        // ⚠️ MARCA TEMPORÁRIA DE DIAGNÓSTICO #2 — NÃO REMOVER até
+        // confirmar visibilidade. Desta vez no produto Casaco Basico
+        // Preto (o que está em disputa agora), e deploy feito pelo
+        // próprio Davi (não por mim) — testa se o push feito por outra
+        // conta/máquina muda o resultado. Cor/texto diferentes da marca
+        // #1 de propósito, pra não confundir com cache de uma marca
+        // antiga. Só afeta 6a80d35879e7f1ef8d15cc61 — condicional no
+        // _id, não altera nenhum outro produto nem nenhuma outra parte
+        // do site.
+        if (p._id === '6a80d35879e7f1ef8d15cc61') {
+          addBtn.style.border = '6px solid #39ff14';
+          if (addBtnLabel) addBtnLabel.textContent = 'TESTE DAVI 999';
+        }
       }
 
       // Galeria: capa + fotos adicionais, sem repetir
