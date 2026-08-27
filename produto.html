@@ -2283,17 +2283,6 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
         // (ver cart-add-fx-iconslot), que addBtn.textContent apagaria.
         const addBtnLabel = document.getElementById('pvAddBtnLabel');
         if (addBtnLabel) addBtnLabel.textContent = esgotado ? 'Esgotado' : (semDadosEnvio ? 'Indisponível' : 'Adicionar ao Carrinho');
-
-        // ⚠️ MARCA TEMPORÁRIA DE DIAGNÓSTICO — NÃO REMOVER até o cliente
-        // confirmar se consegue ver esta marca do lado dele. Teste decisivo
-        // pra isolar cache/proxy/CDN entre o servidor e o navegador do
-        // cliente, do problema de renderização do botão preto reportado.
-        // Só afeta o produto 6a80d31d3c2e185f2306e59a — condicional no _id,
-        // não altera nenhum outro produto nem nenhuma outra parte do site.
-        if (p._id === '6a80d31d3c2e185f2306e59a') {
-          addBtn.style.border = '6px solid #ff00ff';
-          if (addBtnLabel) addBtnLabel.textContent = 'TESTE 12345';
-        }
       }
 
       // Galeria: capa + fotos adicionais, sem repetir
