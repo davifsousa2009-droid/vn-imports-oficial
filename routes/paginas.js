@@ -274,6 +274,7 @@ router.get('/js/colors.js', servirJsCompartilhado('colors.js'));
 // (Estágio 2) — cada arquivo abaixo precisa da mesma dupla rota+rewrite
 // (ver comentário sobre /css/vn-imports.css logo abaixo) desde o commit
 // em que é criado, nunca depois.
+router.get('/js/vn-core.js', servirJsCompartilhado('vn-core.js'));
 router.get('/js/vn-hero-carousel.js', servirJsCompartilhado('vn-hero-carousel.js'));
 router.get('/js/vn-reviews.js', servirJsCompartilhado('vn-reviews.js'));
 

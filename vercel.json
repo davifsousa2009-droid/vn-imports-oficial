@@ -82,6 +82,10 @@
       "destination": "/server.js"
     },
     {
+      "source": "/js/vn-core.js",
+      "destination": "/server.js"
+    },
+    {
       "source": "/js/vn-hero-carousel.js",
       "destination": "/server.js"
     },
