@@ -570,6 +570,23 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   left:0;
   right:0;
   bottom:0;
+  /* top:0 (achado da auditoria do carrossel): antes só bottom:0 estava
+     setado, então a altura da caixa vinha só do conteúdo (flex column
+     crescendo pra cima) — com título+subtítulo compridos o topo da
+     caixa passava do topo do próprio .hero-carousel (que tem
+     overflow:hidden), cortando as primeiras linhas do título. Com
+     top:0 a caixa fica limitada à altura real do carrossel (nunca
+     mais alta que ele), e justify-content:flex-end abaixo mantém o
+     texto ancorado visualmente embaixo — resultado idêntico ao de
+     antes pra qualquer banner de texto curto/médio (a maioria), só
+     muda o comportamento no caso extremo de texto muito longo, que
+     agora fica contido em vez de vazar pra fora da área visível.
+     line-clamp no título/subtítulo (ver .hero-car-title/.hero-car-
+     subtitle abaixo) é a rede de segurança complementar — limita a
+     ALTURA de cada um independente do comprimento do texto, então
+     nem chega a testar esse limite na prática. */
+  top:0;
+  justify-content:flex-end;
   /* Acima de .hero-car-scrim(2) dentro do contexto de .hero-car-slide —
      topo do conteúdo do slide (só os controles do carrossel, fora da
      árvore do slide, ficam acima disto). */
@@ -649,6 +666,18 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   line-height:1.05;
   color:#fff;
   margin:0;
+  /* Rede de segurança (achado da auditoria): título é texto livre
+     cadastrado pelo lojista, sem limite de caracteres no admin — sem
+     isso, um título comprido o bastante ainda poderia se aproximar do
+     limite de altura da caixa (ver top:0 em .hero-car-text acima),
+     mesmo já bem mais raro. 3 linhas cobre confortavelmente qualquer
+     título normal (a maioria fica em 1-2) e trava o pior caso num
+     tamanho previsível. -webkit-line-clamp tem suporte amplo (Chrome/
+     Edge/Safari/Firefox 68+), mesmo prefixado -webkit-. */
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
 }
 .hero-car-subtitle{
   font-size:16px;
@@ -657,6 +686,13 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   font-weight:300;
   margin:0;
   max-width:520px;
+  /* Mesma rede de segurança do título acima, 2 linhas — o subtítulo já
+     é limitado a 520px de largura, mas sem limite de linhas ainda
+     podia crescer bastante verticalmente com um texto longo. */
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
 }
 /* Botão do slide: estilo próprio, não reaproveita .btn-fill de propósito —
    este arquivo já tem duas definições de .btn-fill concorrentes no cascade
