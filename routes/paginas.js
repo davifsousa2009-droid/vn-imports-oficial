@@ -278,6 +278,7 @@ router.get('/js/vn-core.js', servirJsCompartilhado('vn-core.js'));
 router.get('/js/vn-hero-carousel.js', servirJsCompartilhado('vn-hero-carousel.js'));
 router.get('/js/vn-reviews.js', servirJsCompartilhado('vn-reviews.js'));
 router.get('/js/vn-nav.js', servirJsCompartilhado('vn-nav.js'));
+router.get('/js/vn-shop-config.js', servirJsCompartilhado('vn-shop-config.js'));
 
 // CSS compartilhado entre devolucao.html/privacidade.html/termos.html — ao
 // contrário dos js/*.js acima (no-store, mesmo padrão das páginas HTML

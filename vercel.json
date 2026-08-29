@@ -96,6 +96,10 @@
     {
       "source": "/js/vn-nav.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-shop-config.js",
+      "destination": "/server.js"
     }
   ]
 }
