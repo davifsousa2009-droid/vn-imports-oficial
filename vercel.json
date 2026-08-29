@@ -112,6 +112,10 @@
     {
       "source": "/js/vn-filters-sort.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-checkout.js",
+      "destination": "/server.js"
     }
   ]
 }
