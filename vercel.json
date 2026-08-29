@@ -92,6 +92,10 @@
     {
       "source": "/js/vn-reviews.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-nav.js",
+      "destination": "/server.js"
     }
   ]
 }
