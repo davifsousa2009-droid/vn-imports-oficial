@@ -720,6 +720,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bannersHero = await carregarListaBannersHero();
   const heroSplitEl = document.getElementById('heroSplitSingle');
   if (heroSplitEl) heroSplitEl.hidden = true;
+  // Popula o carrossel JÁ AQUI, colado no hide acima — não depois de
+  // carregarConfigLoja()/carregarCategoriasDoServidor() (medido: isso
+  // deixava o hero em branco por ~200-300ms entre esconder o gradiente
+  // antigo e mostrar a foto real, porque o código esperava duas
+  // requisições sem nenhuma relação com o hero antes de continuar).
+  // montarHeroCarousel não depende de config/categorias — só de
+  // bannersHero, que já está pronto aqui.
+  if (bannersHero.length) montarHeroCarousel(bannersHero);
 
   // carregarConfigLoja aplica Sobre/Benefícios via carregarConteudoDinamico(d)
   // (fonte: /api/config — onde o Admin grava o conteúdo dinâmico).
@@ -732,8 +740,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   carregarProdutosDoServidor();
   // carrega avaliações aprovadas (sem bloquear)
   carregarReviewsPublic().catch((e)=>console.error(e));
-
-  if (bannersHero.length) montarHeroCarousel(bannersHero);
 });
 
 
