@@ -100,6 +100,10 @@
     {
       "source": "/js/vn-shop-config.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-product-grid.js",
+      "destination": "/server.js"
     }
   ]
 }
