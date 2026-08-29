@@ -605,7 +605,15 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   transform:translateY(12px);
 }
 .hero-car-slide.on .hero-car-text-item{
-  animation:heroCarTextIn .32s cubic-bezier(.16,1,.3,1) backwards;
+  /* both (não só backwards): backwards sozinho só segura o estado
+     inicial do keyframe DURANTE o delay — depois que a animação
+     termina, sem "forwards" o elemento volta pra regra base acima
+     (opacity:0), apagando eyebrow/título/subtítulo/botão ~320-530ms
+     depois de cada troca de slide. "both" mantém o estado final
+     (opacity:1, sem translateY) até a próxima troca reiniciar a
+     animação. Achado real, confirmado com os banners reais do banco
+     (auditoria de carrossel). */
+  animation:heroCarTextIn .32s cubic-bezier(.16,1,.3,1) both;
 }
 @media(prefers-reduced-motion:reduce){
   .hero-car-text-item{ animation:none !important; }
