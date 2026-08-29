@@ -108,6 +108,10 @@
     {
       "source": "/js/vn-cart-wishlist.js",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-filters-sort.js",
+      "destination": "/server.js"
     }
   ]
 }
