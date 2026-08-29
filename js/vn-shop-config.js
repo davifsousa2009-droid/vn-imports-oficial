@@ -90,21 +90,6 @@ function aplicarBeneficioDinamico(n, d) {
 
 
 
-/* Botão "Adicionar ao Carrinho" (.cart-add-fx): em touch não existe
-   :hover de verdade, então replicamos o mesmo efeito visual com uma
-   classe adicionada no touchstart e removida ~900ms depois — só decora,
-   nunca bloqueia o clique real (addCart/toggleQuickSize continuam no
-   onclick normal do botão, intocados). Delegado em document (não por
-   botão): os cards são renderizados dinamicamente (renderGrid etc.),
-   um listener por elemento se perderia toda vez que o grid é refeito. */
-document.addEventListener('touchstart', function(e){
-  const btn = e.target.closest('.cart-add-fx');
-  if (!btn) return;
-  btn.classList.add('cart-add-fx-touch');
-  clearTimeout(btn.__cartAddFxTimer);
-  btn.__cartAddFxTimer = setTimeout(() => btn.classList.remove('cart-add-fx-touch'), 900);
-}, { passive: true });
-
 /** Aplica Sobre + Benefícios no DOM com fade-in (sem FOUC). */
 function aplicarConteudoDinamico(d) {
   if (!d || typeof d !== 'object') return;
