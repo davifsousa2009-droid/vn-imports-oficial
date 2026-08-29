@@ -80,6 +80,10 @@
     {
       "source": "/css/vn-imports.css",
       "destination": "/server.js"
+    },
+    {
+      "source": "/js/vn-hero-carousel.js",
+      "destination": "/server.js"
     }
   ]
 }

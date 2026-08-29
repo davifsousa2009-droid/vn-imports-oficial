@@ -270,6 +270,11 @@ function servirJsCompartilhado(nomeArquivo) {
 }
 router.get('/js/cart.js', servirJsCompartilhado('cart.js'));
 router.get('/js/colors.js', servirJsCompartilhado('colors.js'));
+// Divisão do <script> inline de VN_IMPORTS.html por funcionalidade
+// (Estágio 2) — cada arquivo abaixo precisa da mesma dupla rota+rewrite
+// (ver comentário sobre /css/vn-imports.css logo abaixo) desde o commit
+// em que é criado, nunca depois.
+router.get('/js/vn-hero-carousel.js', servirJsCompartilhado('vn-hero-carousel.js'));
 
 // CSS compartilhado entre devolucao.html/privacidade.html/termos.html — ao
 // contrário dos js/*.js acima (no-store, mesmo padrão das páginas HTML
