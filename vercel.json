@@ -76,6 +76,10 @@
     {
       "source": "/css/legal.css",
       "destination": "/server.js"
+    },
+    {
+      "source": "/css/vn-imports.css",
+      "destination": "/server.js"
     }
   ]
 }

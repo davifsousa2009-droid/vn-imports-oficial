@@ -287,4 +287,26 @@ router.get('/css/legal.css', (req, res) => {
   res.send(legalCssCache);
 });
 
+// CSS extraído do <style> inline de VN_IMPORTS.html (Estágio 1 da divisão do
+// arquivo). Mesmo motivo de existir de /css/legal.css acima: em produção o
+// express.static de server.js fica desligado (só roda fora de produção —
+// ver `if (process.env.NODE_ENV !== 'production')` lá), então NENHUM
+// arquivo estático deste projeto é servido de graça — cada um precisa da
+// própria rota aqui, IGUAL sua entrada correspondente em vercel.json
+// (rewrites), senão a Vercel roteia pra function sem nenhuma rota bater e
+// a resposta não vira CSS de verdade (foi exatamente isso que quebrou o
+// visual em produção da primeira vez, sem essa rota). Cache público como
+// legal.css (não muda por request, só por deploy — não é o caso do
+// no-store usado no HTML da loja, que tem cor/imagem/nome variáveis
+// injetados por cima do cache em memória a cada request).
+let vnImportsCssCache = null;
+router.get('/css/vn-imports.css', (req, res) => {
+  if (!vnImportsCssCache) {
+    vnImportsCssCache = fs.readFileSync(path.join(__dirname, '..', 'css', 'vn-imports.css'), 'utf8');
+  }
+  res.set('Content-Type', 'text/css; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.send(vnImportsCssCache);
+});
+
 module.exports = router;
