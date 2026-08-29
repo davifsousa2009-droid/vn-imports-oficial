@@ -275,6 +275,7 @@ router.get('/js/colors.js', servirJsCompartilhado('colors.js'));
 // (ver comentário sobre /css/vn-imports.css logo abaixo) desde o commit
 // em que é criado, nunca depois.
 router.get('/js/vn-hero-carousel.js', servirJsCompartilhado('vn-hero-carousel.js'));
+router.get('/js/vn-reviews.js', servirJsCompartilhado('vn-reviews.js'));
 
 // CSS compartilhado entre devolucao.html/privacidade.html/termos.html — ao
 // contrário dos js/*.js acima (no-store, mesmo padrão das páginas HTML
