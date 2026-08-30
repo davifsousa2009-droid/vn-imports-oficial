@@ -413,6 +413,12 @@ tr:hover td{background:#FAFAF8}
               </select>
             </div>
           </div>
+          <div class="fg">
+            <label class="fl">Categoria pai (opcional)</label>
+            <select class="fsel" id="cat-pai">
+              <option value="">Nenhuma (categoria de topo)</option>
+            </select>
+          </div>
           <div class="form-btns" style="border-top:none;padding-top:0;margin-top:0">
             <button class="btn btn-p" onclick="adicionarCategoria()">+ &nbsp;Adicionar</button>
           </div>
@@ -1225,7 +1231,32 @@ function preencherSelectCategorias(id) {
 async function loadListaCategorias() {
   document.getElementById('catTableBody').innerHTML = '<div class="empty">Carregando…</div>';
   await refreshCategorias();
+  preencherSelectCategoriaPai();
   renderListaCategorias();
+}
+
+// Opções válidas de "categoria pai": só categorias de TOPO (sem parent) —
+// mesma regra que o backend valida em validarParent (routes/categorias.js).
+// Usado tanto no select do formulário "Nova categoria" (idExcluir/
+// idSelecionado indefinidos: nada a excluir, nada pré-marcado) quanto, por
+// linha, no select de editar uma categoria existente (idExcluir = a
+// própria linha, pra não deixar escolher ela mesma como pai; idSelecionado
+// = o parent atual dela, pra abrir o <select> já marcado no valor certo).
+function opcoesCategoriaPai(idExcluir, idSelecionado) {
+  return adminCategorias
+    .filter(c => !c.parent && String(c._id) !== String(idExcluir || ''))
+    .map(c => {
+      const id = String(c._id);
+      const marcado = idSelecionado && id === String(idSelecionado) ? ' selected' : '';
+      return `<option value="${escHtml(id)}"${marcado}>${escHtml(c.nome)}</option>`;
+    })
+    .join('');
+}
+
+function preencherSelectCategoriaPai() {
+  const sel = document.getElementById('cat-pai');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Nenhuma (categoria de topo)</option>' + opcoesCategoriaPai();
 }
 
 function renderListaCategorias() {
@@ -1236,7 +1267,7 @@ function renderListaCategorias() {
   }
   el.innerHTML = `
     <table>
-      <thead><tr><th>Nome</th><th>Slug</th><th>Tipo</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Slug</th><th>Tipo</th><th>Categoria pai</th><th>Ações</th></tr></thead>
       <tbody>
         ${adminCategorias.map(c => `
           <tr>
@@ -1247,6 +1278,12 @@ function renderListaCategorias() {
                 <option value="outro"${c.tipo!=='roupa'&&c.tipo!=='joia'?' selected':''}>Outro</option>
                 <option value="roupa"${c.tipo==='roupa'?' selected':''}>Roupa</option>
                 <option value="joia"${c.tipo==='joia'?' selected':''}>Joia</option>
+              </select>
+            </td>
+            <td>
+              <select class="fsel" style="min-height:36px;padding:4px 8px" data-id="${escHtml(String(c._id))}" onchange="atualizarParentCategoria(this)">
+                <option value=""${!c.parent?' selected':''}>Nenhuma (topo)</option>
+                ${opcoesCategoriaPai(c._id, c.parent)}
               </select>
             </td>
             <td>
@@ -1286,21 +1323,51 @@ async function atualizarTipoCategoria(sel) {
   }
 }
 
+// Mesmo padrão de atualizarTipoCategoria (PUT com um campo só) — separado
+// em função própria porque o <select> de cada linha chama uma delas
+// isoladamente, sem reenviar o outro campo (ver comentário na rota PUT).
+async function atualizarParentCategoria(sel) {
+  const id = sel.dataset.id;
+  const parent = sel.value || null;
+  try {
+    const r = await fetch(API + '/categories/' + id, {
+      method: 'PUT',
+      headers: headersComJwt({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ parent })
+    });
+    if (r.ok) {
+      toast('Categoria pai atualizada');
+      await loadListaCategorias();
+    } else if (r.status === 401) {
+      relogar();
+    } else {
+      const d = await r.json();
+      toast(d.erro || 'Erro ao atualizar categoria pai');
+      await loadListaCategorias();
+    }
+  } catch {
+    toast('Servidor offline. Rode: node server.js');
+    await loadListaCategorias();
+  }
+}
+
 async function adicionarCategoria() {
   const nome = document.getElementById('cat-nova').value.trim();
   const tipo = document.getElementById('cat-tipo').value;
+  const parent = document.getElementById('cat-pai').value || null;
   const msg = document.getElementById('catmsg');
   if (!nome) { showMsg(msg, 'Informe o nome da categoria.', 'er'); return; }
   try {
       const r = await fetch(API + '/categories', {
       method: 'POST',
       headers: headersComJwt({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ nome, tipo })
+      body: JSON.stringify({ nome, tipo, parent })
     });
     const d = await r.json();
     if (r.ok) {
       document.getElementById('cat-nova').value = '';
       document.getElementById('cat-tipo').selectedIndex = 0;
+      document.getElementById('cat-pai').selectedIndex = 0;
       showMsg(msg, 'Categoria criada.', 'ok');
       toast('Categoria adicionada');
       await loadListaCategorias();
