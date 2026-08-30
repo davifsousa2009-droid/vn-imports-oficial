@@ -163,9 +163,8 @@ function renderGrid(list){
             <div class="prod-card-name">${escHtml(p.name)}</div>
 
             <div class="prod-card-price-row">
-              ${p.old ? `<span class="prod-old-price">${R$(p.old)}</span>` : ''}
+              ${p.old ? `<div class="prod-price-was-row"><span class="prod-old-price">${R$(p.old)}</span>${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}</div>` : ''}
               <span class="prod-price${p.old?' prod-price-deal':''}">${R$(p.price)}</span>
-              ${badgePct ? `<span class="prod-off">${badgePct}% off</span>` : ''}
             </div>
 
             ${indisponivel

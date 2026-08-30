@@ -1522,11 +1522,41 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
 .prod-card-body{padding:14px 10px 16px}
 .prod-card-sub{font-family:var(--mono);font-size:.68rem;font-weight:600;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-card-name{font-size:1rem;font-weight:600;color:var(--ink);margin-top:6px;line-height:1.25;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.prod-card-price-row{display:flex;gap:8px;align-items:center;margin-top:10px}
-.prod-old-price{text-decoration:line-through;color:#b0b0b0;font-weight:500;font-size:.95rem}
-.prod-price{color:var(--ink);font-weight:700;font-size:1.05rem}
-.prod-price-deal{color:var(--accent)}
-.prod-off{color:#00875a;font-weight:700;font-size:.9rem}
+/* Hierarquia do bloco de preço: o preço COM desconto é o elemento
+   dominante (maior, cor de destaque --accent, já era o padrão dessa
+   cor pra "preço de negócio" nesse componente). Preço original +
+   badge de % ficam agrupados numa linha PRÓPRIA acima do preço atual
+   (.prod-price-was-row), bem menores e com cor neutra — não competem
+   mais na mesma linha/tamanho do preço grande. Quando não há desconto
+   (p.old ausente), o HTML não renderiza .prod-price-was-row: a coluna
+   fica só com o preço normal, sem sobra de espaço vazio (ver
+   js/vn-product-grid.js e o <script> de search.html).
+   Cores conferidas por contraste WCAG (fundo branco do card):
+   --muted (preço riscado) = 6.69:1 | --accent (preço em destaque) =
+   5.48:1 | #006644 sobre o próprio fundo do badge (~#e0f1eb, tint de
+   12% do verde) = 6.02:1 — todas acima do mínimo de 4.5:1 exigido
+   pra texto normal. O riscado antigo (#b0b0b0 puro) media 2.17:1,
+   abaixo do mínimo — corrigido de brinde nessa troca. */
+.prod-card-price-row{display:flex;flex-direction:column;gap:3px;margin-top:10px}
+.prod-price-was-row{display:flex;align-items:center;gap:6px}
+.prod-old-price{text-decoration:line-through;color:var(--muted);font-weight:500;font-size:.78rem}
+.prod-off{
+  background:rgba(0,135,90,.12);color:#006644;
+  font-size:.62rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 6px;border-radius:4px;line-height:1.5;
+}
+/* Ambos escopados sob .prod-card-price-row (não só a classe da
+   própria fonte): existe outro .prod-price{font-size:17px;
+   font-weight:600} de um componente legado (lista de favoritos, ver
+   .prod-info/.prod-foot mais abaixo no arquivo) que bate no MESMO
+   nome de classe. Com a mesma especificidade de uma classe só, esse
+   outro venceria por vir depois no arquivo — tanto o preço normal
+   quanto o preço em destaque ficavam com o font-size/weight errado
+   (do componente errado) mesmo no desktop, sem filtro de largura
+   nenhum. Escopar sob o pai exclusivo deste componente garante que
+   ganha sempre, não importa a ordem. */
+.prod-card-price-row .prod-price{color:var(--ink);font-weight:700;font-size:1.05rem}
+.prod-card-price-row .prod-price.prod-price-deal{color:var(--accent);font-size:1.2rem}
 
 .prod-badge-new{
   position:absolute;top:10px;left:10px;z-index:2;
@@ -2467,6 +2497,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
   .prod-brand{font-size:8px;margin-bottom:3px}
   .prod-name{font-size:14px;margin-bottom:2px}
   .prod-price{font-size:14px}
+  /* Escopado sob .prod-card-price-row igual ao bloco base (ver
+     comentário lá) — aqui precisa ter a MESMA especificidade do bloco
+     base (não menos), senão o bloco base (mais específico, mas fora
+     de media query) venceria mesmo dentro do breakpoint mobile. */
+  .prod-card-price-row .prod-price.prod-price-deal{font-size:16px}
   .prod-old{font-size:10px}
   .prod-add-btn{padding:12px 16px;font-size:11px;min-height:44px}
   /* .prod-card .prod-add-btn (2 classes) em vez de .prod-add-btn sozinho:
