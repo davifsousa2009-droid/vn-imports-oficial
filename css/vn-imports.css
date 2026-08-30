@@ -470,9 +470,31 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
      (achado real: viewports/webviews embutidos onde 70dvh resolvia pra um
      valor bem menor que o esperado, colapsando o carrossel a um retângulo
      baixo — o texto ancorado em bottom:0 e a seção seguinte da página
-     acabavam se sobrepondo). Cresce até 70% da altura da viewport em
-     telas normais, nunca fica menor que 400px em nenhum caso. */
-  min-height:max(70vh, 400px);
+     acabavam se sobrepondo). Cresce até 75% da altura da viewport em
+     telas normais, nunca fica menor que 400px em nenhum caso.
+
+     75vh, não 70vh (nem menos — ver achado abaixo): banners exportados em
+     2.4:1 (ex.: 1920×800, o formato recomendado no Figma pro carrossel)
+     estavam tendo a cabeça de modelos cortada em telas 16:9 comuns
+     (1366×768, 1920×1080). Medido com precisão via object-fit:cover
+     (escala = max(largura_container/largura_imagem, altura_container/
+     altura_imagem)): pra uma imagem LARGA como essa, é o container ficar
+     mais BAIXO (não mais alto) que força mais corte no topo/base — a
+     escala passa a ser dominada pela largura, e a altura da imagem já
+     ampliada sobra além da altura curta do container. Confirmado
+     empiricamente: a 70vh o corte já era de ~22px; hipótese inicial era
+     REDUZIR a altura pra aproximar de 2.4:1, mas isso mediu 157px de
+     corte (pior, não melhor) — a direção certa é a oposta. Em telas 16:9
+     (a maioria dos desktops), a altura que zera o corte é
+     largura/2.4/altura_da_tela ≈ 74vh; 75vh dá uma margem mínima de
+     segurança (barra de rolagem do Windows reduz a largura útil em
+     ~15-17px, o suficiente pra reintroduzir um pixel de corte bem no
+     limite dos 74vh exatos). Overshooting é seguro em qualquer proporção
+     de tela: numa tela mais alta que 16:9 (16:10, 4:3), 75vh sobra além
+     do necessário pra zerar o corte vertical, e o excedente só aumenta o
+     corte lateral (fundo da foto, nunca o assunto — sempre mais seguro
+     que cortar em cima). */
+  min-height:max(75vh, 400px);
   overflow:hidden;
   background:var(--ink);
   /* touch-action:pan-y — deixa o navegador rolar verticalmente na hora
