@@ -457,9 +457,13 @@ function converterProduto(p, index) {
     imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
     desc: p.descricao || p.nome,
     sizes: normalizedSizes,
-    // "Novo" = cadastrado há menos de 30 dias — deriva de createdAt (todo
+    // "Novo" = cadastrado há menos de 6 HORAS — deriva de createdAt (todo
     // produto já tem, timestamps:true no schema), não é um campo próprio.
-    badge: (p.createdAt && (Date.now() - new Date(p.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000) ? 'new' : null,
+    // Comparação em milissegundos de epoch (Date.now() e .getTime() são os
+    // dois UTC), então não tem risco de bug de fuso horário nem de
+    // arredondamento por dia de calendário — a troca de 30 dias pra 6 horas
+    // foi só no valor do limiar, a lógica de comparação já estava correta.
+    badge: (p.createdAt && (Date.now() - new Date(p.createdAt).getTime()) < 6 * 60 * 60 * 1000) ? 'new' : null,
     // Guardado só pra ordenação "Mais recentes" (ver applyFilters) — não
     // exibido em lugar nenhum do card.
     createdAt: p.createdAt || null,

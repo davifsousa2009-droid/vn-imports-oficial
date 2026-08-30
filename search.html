@@ -2256,9 +2256,11 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
       imgs: Array.isArray(p.imagens) ? p.imagens.filter(Boolean) : [],
       desc: p.descricao || p.nome,
       sizes: normalizedSizes,
-      // "Novo" = cadastrado há menos de 30 dias, deriva de createdAt (todo
-      // produto já tem, timestamps:true no schema).
-      badge: (p.createdAt && (Date.now() - new Date(p.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000) ? 'new' : null,
+      // "Novo" = cadastrado há menos de 6 HORAS, deriva de createdAt (todo
+      // produto já tem, timestamps:true no schema). Ver comentário completo
+      // (limiar em ms, sem risco de fuso/arredondamento) em
+      // js/vn-product-grid.js — mesma lógica, mantida em sync manualmente.
+      badge: (p.createdAt && (Date.now() - new Date(p.createdAt).getTime()) < 6 * 60 * 60 * 1000) ? 'new' : null,
       createdAt: p.createdAt || null,
       // null = controle de estoque desativado (nunca esgotado); um número é a
       // quantidade real — só 0 significa esgotado de verdade.
