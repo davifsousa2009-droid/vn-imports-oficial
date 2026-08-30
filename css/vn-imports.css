@@ -158,12 +158,26 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    A troca de mostrar/esconder em si continua 100% controlada por CSS
    (:hover no hero, :focus-within na própria nav) — o JS só ativa a zona.
 
-   Gatilho do hover é o HERO (#heroCarousel/#heroSplitSingle), não a nav
-   em si: com a nav em translateY(-100%) ela não tem nenhum pixel visível
-   pra receber :hover diretamente — :has(~ seletor) verifica um IRMÃO
-   POSTERIOR no DOM (nav vem antes do hero em #view-home), então
+   Gatilho INICIAL do hover é o HERO (#heroCarousel/#heroSplitSingle), não
+   a nav em si: com a nav em translateY(-100%) ela não tem nenhum pixel
+   visível pra receber :hover diretamente — :has(~ seletor) verifica um
+   IRMÃO POSTERIOR no DOM (nav vem antes do hero em #view-home), então
    `#main-nav:has(~ #heroCarousel:hover)` funciona mesmo com a nav
-   invisível. */
+   invisível.
+
+   BUG CORRIGIDO (reportado pelo cliente, reproduzido com trajeto de mouse
+   contínuo, não só dois pontos discretos): a nav revelada (translateY(0))
+   ocupa exatamente y=0..67px, e #heroCarousel começa exatamente em
+   y=67px — as duas caixas são CONTÍGUAS, sem sobreposição nenhuma. Sem
+   `:hover` na própria nav como gatilho de CONTINUAÇÃO, o instante em que
+   o cursor cruzava de dentro do hero (y≥67, ainda revelando) pra dentro
+   da nav já visível (y<67, tentando alcançá-la) tirava o cursor de cima
+   de #heroCarousel — a condição de reveal caía, e a nav escondia de novo
+   ANTES do clique, exatamente na direção oposta do gesto do usuário
+   (afastando-se de quem tentava alcançá-la). `:hover` na própria nav
+   abaixo resolve isso: uma vez já revelada (por ter passado pelo hero
+   primeiro), o cursor entrando nela mantém o estado revelado — cobertura
+   contínua ao longo de todo o trajeto hero → nav, sem gap. */
 @media (hover:hover) and (pointer:fine){
   #main-nav.nav-hide-in-hero{
     transform:translateY(-100%);
@@ -171,6 +185,7 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   }
   #main-nav.nav-hide-in-hero:has(~ #heroCarousel:hover),
   #main-nav.nav-hide-in-hero:has(~ #heroSplitSingle:hover),
+  #main-nav.nav-hide-in-hero:hover,
   #main-nav.nav-hide-in-hero:focus-within{
     transform:translateY(0);
   }
