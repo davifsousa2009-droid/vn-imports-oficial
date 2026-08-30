@@ -1652,7 +1652,23 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   z-index:1;pointer-events:none;
   transition:all .3s ease-in;
 }
-.cart-add-fx-label{position:relative;z-index:2}
+/* min-width:0 + truncamento PRÓPRIOS, não herdados do botão: regressão
+   real (não é o mesmo bug do grid antigo, ver comentário em .prod-card) —
+   .cart-add-fx-label é item de flex de .prod-add-btn.cart-add-fx
+   (display:inline-flex), e por padrão um item de flex tem min-width:auto,
+   igual um item de grid — o mesmo mecanismo do bug original, só que aqui
+   é o SPAN do rótulo que se recusa a encolher, não o card inteiro.
+   white-space é herdado do botão (por isso funcionava até aqui), mas
+   overflow/text-overflow NÃO são propriedades herdadas em CSS — declarar
+   ellipsis só em .prod-add-btn não tinha efeito nenhum no filho, o botão
+   só recortava (overflow:hidden) o span sem mostrar "…", cortando no meio
+   da palavra. flex:1 1 auto faz o rótulo dividir o espaço com o slot fixo
+   do ícone (20px) em vez de manter sua largura de conteúdo. */
+.cart-add-fx-label{
+  position:relative;z-index:2;
+  min-width:0;flex:1 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 @keyframes cartAddFxIcon{
   0%{transform:translateX(-10px);opacity:0}
   100%{transform:translateX(0);opacity:1}

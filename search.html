@@ -940,7 +940,15 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   z-index:1;pointer-events:none;
   transition:all .3s ease-in;
 }
-.cart-add-fx-label{position:relative;z-index:2}
+/* ver comentário completo em css/vn-imports.css: item de flex tem
+   min-width:auto por padrão (mesmo mecanismo do bug de grid original,
+   agora no span do rótulo) e overflow/text-overflow não são herdados do
+   botão pai — sem isso o texto recortava sem "…" no meio da palavra. */
+.cart-add-fx-label{
+  position:relative;z-index:2;
+  min-width:0;flex:1 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 @keyframes cartAddFxIcon{
   0%{transform:translateX(-10px);opacity:0}
   100%{transform:translateX(0);opacity:1}
