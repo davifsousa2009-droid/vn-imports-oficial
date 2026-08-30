@@ -167,6 +167,45 @@ window.addEventListener('scroll',()=>{ const el=document.getElementById('back-to
   });
 })();
 
+/* ─── NAV SOME SOBRE O HERO (desktop com mouse, ver auditoria do carrossel) ───
+   Só desktop com hover de verdade: a troca de mostrar/esconder em si é toda
+   CSS (:hover em #heroCarousel/#heroSplitSingle, :focus-within na própria
+   nav, transição, @media(hover:hover) and (pointer:fine) — ver css/vn-
+   imports.css, .nav-hide-in-hero). Este observer aqui NÃO decide se a nav
+   aparece ou não — só liga/desliga a classe .nav-hide-in-hero, que é o que
+   torna esse comportamento válido SÓ enquanto o hero está de fato na tela.
+
+   Por quê precisa disso (não dá pra fazer só com :hover): sem essa classe
+   como "portão", a regra teria que esconder a nav por padrão o tempo
+   inteiro, em qualquer posição de scroll — porque depois que o usuário rola
+   pra além do hero, ele nunca mais consegue de fato passar o mouse em cima
+   de #heroCarousel (o elemento já saiu da tela, :hover nunca mais bate nele
+   ali), então a nav ficaria escondida pro resto da página inteira, violando
+   o requisito de "fora do hero, sticky sempre visível como já é hoje". Este
+   IntersectionObserver resolve isso exatamente como o de nav-unstick logo
+   acima resolve o problema equivalente com o rodapé: aplica a classe só
+   enquanto o alvo (aqui, hero) está realmente na tela. */
+(function(){
+  const nav = document.getElementById('main-nav');
+  const heroCarousel = document.getElementById('heroCarousel');
+  const heroSplit = document.getElementById('heroSplitSingle');
+  if(!nav || (!heroCarousel && !heroSplit)) return;
+
+  const estado = { carousel: false, split: false };
+  function aplicar(){
+    nav.classList.toggle('nav-hide-in-hero', estado.carousel || estado.split);
+  }
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.target === heroCarousel) estado.carousel = e.isIntersecting;
+      if(e.target === heroSplit) estado.split = e.isIntersecting;
+    });
+    aplicar();
+  }, { threshold: 0 });
+  if(heroCarousel) obs.observe(heroCarousel);
+  if(heroSplit) obs.observe(heroSplit);
+})();
+
 /* Mega menu: acordeão mobile + fecha ao clicar fora. Delegado em document
    (em vez de pegar só o primeiro .nav-item-mega) porque agora existe um em
    cada nav — a home e as gavetas das views secundárias. */

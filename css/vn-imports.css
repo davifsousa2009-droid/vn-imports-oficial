@@ -137,6 +137,47 @@ nav{
    problema porque vive fora da nav no body; aqui a gaveta é descendente
    da nav, então neutralizamos o blur só enquanto ela está aberta. */
 nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
+
+/* Nav some sobre o hero (achado da auditoria do carrossel) — SÓ desktop
+   com mouse de verdade: hover:hover + pointer:fine (não max-width) evita
+   ativar em tablets touch de tela larga, que têm hover:none mesmo sendo
+   "desktop-sized". No mobile este bloco inteiro não existe: a nav
+   continua sempre visível, sem nenhuma mudança — obrigatório, não há
+   hover em touch, e esconder a navegação principal lá tornaria
+   categorias/busca/carrinho difíceis de achar pra quem acessa pelo
+   celular (a maioria do tráfego).
+
+   .nav-hide-in-hero é ligada/desligada via IntersectionObserver (ver
+   js/vn-nav.js, mesmo padrão de .nav-unstick logo abaixo, só que
+   observando o hero em vez do rodapé) — só enquanto o hero está de fato
+   na tela. Sem esse "portão", a nav teria que ficar escondida por padrão
+   o tempo inteiro (não só perto do hero): depois de rolar pra além do
+   hero ele nunca mais fica hover-ável (saiu da tela), então nada
+   conseguiria mais revelar a nav pelo resto da página — quebraria o
+   requisito de "fora do hero, sticky sempre visível como já é hoje".
+   A troca de mostrar/esconder em si continua 100% controlada por CSS
+   (:hover no hero, :focus-within na própria nav) — o JS só ativa a zona.
+
+   Gatilho do hover é o HERO (#heroCarousel/#heroSplitSingle), não a nav
+   em si: com a nav em translateY(-100%) ela não tem nenhum pixel visível
+   pra receber :hover diretamente — :has(~ seletor) verifica um IRMÃO
+   POSTERIOR no DOM (nav vem antes do hero em #view-home), então
+   `#main-nav:has(~ #heroCarousel:hover)` funciona mesmo com a nav
+   invisível. */
+@media (hover:hover) and (pointer:fine){
+  #main-nav.nav-hide-in-hero{
+    transform:translateY(-100%);
+    transition:transform .28s ease-out;
+  }
+  #main-nav.nav-hide-in-hero:has(~ #heroCarousel:hover),
+  #main-nav.nav-hide-in-hero:has(~ #heroSplitSingle:hover),
+  #main-nav.nav-hide-in-hero:focus-within{
+    transform:translateY(0);
+  }
+  @media (prefers-reduced-motion:reduce){
+    #main-nav.nav-hide-in-hero{ transition:none; }
+  }
+}
 .nav-inner{
   max-width:1240px;margin:0 auto;
   display:flex;align-items:center;justify-content:space-between;
