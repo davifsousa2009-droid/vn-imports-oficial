@@ -1468,10 +1468,21 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    encolhe normalmente e o próprio overflow:hidden/text-overflow:ellipsis
    que .prod-add-btn já declara passa a truncar o texto como previsto. */
 .prod-card{cursor:pointer;min-width:0;animation:prodCardIn .5s cubic-bezier(.22,.61,.36,1) backwards;will-change:transform,opacity}
+/* Sem border aqui (achado do artefato de canto — ver .prod-card-media
+   abaixo pra o contexto completo): testado com medição de pixel exata
+   (não só visual) que reduzir a opacidade da borda pra .03 não muda
+   NADA no pixel renderizado, e tirar a borda por completo só encolhe a
+   faixa de transição da curva em ~1px (o pico de branco continua o
+   mesmo) — a causa de verdade é o preenchimento do PRÓPRIO fundo
+   (background:#ffffff) no bordo anti-aliased da curva arredondada,
+   inerente a qualquer overflow:hidden+border-radius, não a borda em si
+   (testado também tirar o box-shadow: piora, deixa a transição mais
+   dura/sem suavização nenhuma — mantido, com um pouco mais de blur pra
+   compensar a ausência da borda). Sem alteração de background aqui —
+   fora do escopo desta correção. */
 .prod-card-frame{
   border-radius:12px;overflow:hidden;background:#ffffff;
-  border:1px solid rgba(0,0,0,.05);
-  box-shadow:0 1px 2px rgba(17,17,17,.05),0 1px 6px rgba(17,17,17,.04);
+  box-shadow:0 1px 3px rgba(17,17,17,.06),0 2px 10px rgba(17,17,17,.05);
   transition:all .3s ease;
 }
 .prod-card:hover .prod-card-frame{
