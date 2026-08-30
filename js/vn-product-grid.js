@@ -501,14 +501,33 @@ function renderFilterBar() {
   fb.innerHTML = botoes.join('');
 }
 
+// Categorias de topo puramente organizacionais (Masculino/Feminino — só
+// existem pra agrupar subcategorias no mega menu, ver Fase 2 da estrutura
+// de categorias) ficam de fora desta seção especificamente: o cliente quer
+// elas só na navegação do topo, não como card clicável aqui.
+// Casa por SLUG OU NOME (case-insensitive), não só slug: essa categoria
+// específica se mostrou instável na prática (renomeada de "Masculino" pra
+// "Masculina" ao vivo, no mesmo dia em que essa regra foi escrita) — travar
+// só no slug exato quebraria de novo no próximo pequeno ajuste de grafia.
+// Cobre as duas variantes de gênero gramatical (masculino/masculina,
+// feminino/feminina). Não criamos um campo novo no schema (ex:
+// ocultarNaHome) pra isso — uma lista curta e fixa não justifica a
+// complexidade extra; revisar se crescer além de "os dois gêneros".
+const NOMES_OCULTOS_NA_HOME = new Set(['masculino', 'masculina', 'feminino', 'feminina']);
+function categoriaOcultaNaHome(c) {
+  return NOMES_OCULTOS_NA_HOME.has(String(c.slug || '').toLowerCase())
+    || NOMES_OCULTOS_NA_HOME.has(String(c.nome || '').toLowerCase());
+}
+
 function renderCategoriasHome() {
   const cg = document.getElementById('catsGrid');
   if (!cg) return;
-  if (!categoriasVitrine.length) {
+  const categoriasParaExibir = categoriasVitrine.filter(c => !categoriaOcultaNaHome(c));
+  if (!categoriasParaExibir.length) {
     cg.innerHTML = `<div class="cat-card"><div class="cat-name">Sem categorias cadastradas</div><div class="cat-sub">Cadastre categorias no painel admin</div><div class="cat-arr">→</div></div>`;
     return;
   }
-  cg.innerHTML = categoriasVitrine.map(c => {
+  cg.innerHTML = categoriasParaExibir.map(c => {
     // Usa a foto do primeiro produto cadastrado nessa categoria como imagem de fundo —
     // sem precisar de upload extra, e sempre com foto real (nunca placeholder genérico).
     const prod = (S.products || []).find(p => p.cat === c.slug && p.img);

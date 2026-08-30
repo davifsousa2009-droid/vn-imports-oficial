@@ -1049,15 +1049,38 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   opacity:0;transition:opacity .25s;
 }
 .cat-card.has-img .cat-card-overlay{opacity:1}
-.cat-card:not(.has-img):hover{background-color:var(--ink)}
-.cat-card:not(.has-img):hover .cat-sub,.cat-card:not(.has-img):hover .cat-arr{color:rgba(247,244,240,.5)}
+/* Categoria sem foto de produto pra usar de fundo (ver renderCategoriasHome
+   — a "foto do card" é sempre emprestada do primeiro produto cadastrado
+   naquela categoria; sem produto com foto, não há imagem nenhuma, não é
+   bug) recebe o MESMO gradiente de marca usado no hero quando não há
+   banner (.hero-split-media, --gold/--gold2) em vez de ficar só com texto
+   solto sobre o fundo neutro da seção — helps every card read as
+   equally "desenhado", nunca como se estivesse faltando alguma coisa. */
+.cat-card:not(.has-img){
+  background:linear-gradient(155deg, var(--gold), var(--gold2));
+}
+.cat-card:not(.has-img):hover{
+  filter:brightness(1.08);
+}
 .cat-card-body{
   position:absolute;left:0;right:0;bottom:0;
   padding:28px 24px;
   display:flex;flex-direction:column;gap:10px;
   z-index:1;
 }
-.cat-card.has-img .cat-name,.cat-card.has-img .cat-sub,.cat-card.has-img .cat-arr{color:#F7F4F0}
+/* Texto sempre claro agora — as duas variantes (foto+overlay escuro no
+   rodapé, ou gradiente de marca sólido) garantem fundo escuro o
+   suficiente onde o texto fica (rodapé do card) pra manter contraste. */
+.cat-card.has-img .cat-name,.cat-card.has-img .cat-sub,.cat-card.has-img .cat-arr,
+.cat-card:not(.has-img) .cat-name,.cat-card:not(.has-img) .cat-sub,.cat-card:not(.has-img) .cat-arr{color:#F7F4F0}
+/* .65 de opacidade, não .5 (era o valor herdado de quando o fundo no
+   hover era só var(--ink), bem mais escuro que o gradiente --gold/--gold2
+   de agora): medido por contraste WCAG real, .5 sobre o gradiente cai pra
+   ~3.75:1 no texto do rodapé (abaixo do mínimo de 4.5:1) — .65 recupera
+   >=4.5:1 na região onde o texto realmente fica (perto do stop mais
+   escuro, --gold2, já que o texto senta no rodapé do card e o gradiente é
+   ~vertical). */
+.cat-card:not(.has-img):hover .cat-sub,.cat-card:not(.has-img):hover .cat-arr{color:rgba(247,244,240,.65)}
 .cat-icon{font-size:34px;margin-bottom:4px}
 .cat-name{font-family:var(--sans);font-size:22px;font-weight:800;letter-spacing:-.01em;transition:color .2s}
 .cat-sub{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s}
