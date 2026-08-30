@@ -652,15 +652,27 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
   color:rgba(255,255,255,.82);
   margin:0;
 }
-/* Título em Cormorant Garamond (var(--serif), mesma fonte de .sec-title),
-   não mais a sans-serif do hero único antigo. Peso 600: só 500/600/700
-   estão carregados pro Cormorant Garamond (ver <link> de fonts no <head>)
-   — 900 não existe nessa família aqui, cairia num fallback sem peso.
-   Tamanho bem maior que o subtítulo (clamp de até 64px contra 16-17px do
-   subtítulo) — salto de escala perceptível, não incremental, pedido
-   explícito. */
+/* Título: Playfair Display, NÃO var(--serif)/Cormorant Garamond — troca
+   isolada só aqui (achado da auditoria do carrossel + investigação de
+   causa raiz): Cormorant Garamond peso 600 tem um bug de renderização
+   real em tamanho grande (34-64px, a faixa que este título usa) —
+   circunflexo/til/cedilha de letras minúsculas acentuadas renderizam
+   soltos da letra-base, não compostos. Confirmado que NÃO é bug de
+   peso (testado 400/500/600/700, todos quebram igual acima de ~30px),
+   NÃO é causado por CSS/transform do projeto (reproduz idêntico numa
+   página isolada sem nenhum CSS do site) e NÃO é normalização Unicode
+   do texto (o título já vem precomposto/NFC do banco, e forçar NFC ou
+   até NFD explicitamente não muda o resultado — o bug é do arquivo da
+   fonte). Playfair Display peso 600 é outra serifada de destaque
+   (mesmo registro visual, carregada só pra este elemento — ver <link>
+   de fonts no <head>) que renderiza os mesmos acentos corretamente
+   nesse tamanho. Only var(--serif)/Cormorant Garamond continuam em
+   todo o resto do site (h2 de seção, preços, FAQ etc.) — troca não
+   afeta mais nada. Tamanho bem maior que o subtítulo (clamp de até
+   64px contra 16-17px do subtítulo) — salto de escala perceptível,
+   não incremental, pedido explícito. */
 .hero-car-title{
-  font-family:var(--serif);
+  font-family:'Playfair Display',serif;
   font-size:clamp(34px,5.5vw,64px);
   font-weight:600;
   line-height:1.05;

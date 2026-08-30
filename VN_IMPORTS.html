@@ -24,7 +24,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- Playfair Display peso 600, só pra .hero-car-title (ver css/vn-imports.css) —
+     Cormorant Garamond peso 600 tem um bug de renderização confirmado
+     (circunflexo/til/cedilha soltos da letra em minúsculas, só em tamanho
+     grande ~34-64px; testado e descartado: não é peso, não é CSS do
+     projeto, não é normalização Unicode do texto — é o arquivo da fonte
+     em si). Nenhum outro lugar do site usa Playfair Display; --serif
+     continua Cormorant Garamond em todo o resto. -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/vn-imports.css">
 </head>
 <body>
