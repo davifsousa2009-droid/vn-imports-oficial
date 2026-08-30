@@ -177,9 +177,29 @@ nav:has(.nav-links.open){z-index:1500;backdrop-filter:none}
    (afastando-se de quem tentava alcançá-la). `:hover` na própria nav
    abaixo resolve isso: uma vez já revelada (por ter passado pelo hero
    primeiro), o cursor entrando nela mantém o estado revelado — cobertura
-   contínua ao longo de todo o trajeto hero → nav, sem gap. */
+   contínua ao longo de todo o trajeto hero → nav, sem gap.
+
+   BUG CORRIGIDO #2 (reportado pelo cliente): com a nav escondida
+   (translateY), sobrava um vão vazio no topo do tamanho da altura dela —
+   transform NUNCA tira um elemento do fluxo normal do documento, só
+   desloca visualmente onde ele é pintado; position:sticky (a regra base
+   de `nav`, no topo deste arquivo) continua reservando o espaço da nav
+   no layout, então #heroCarousel (irmã seguinte) começava mais abaixo,
+   como se a nav ainda estivesse lá. Correção: position:fixed AQUI (só
+   dentro desta media query, só enquanto .nav-hide-in-hero está ativa —
+   ou seja, só perto do hero) tira a nav do fluxo de vez, então o hero
+   sempre começa em y:0, com ou sem a nav visível — e quando ela aparece
+   no hover, flutua POR CIMA do topo do banner (z-index:100, herdado da
+   regra `nav` no topo do arquivo) em vez de empurrá-lo. Fora da área do
+   hero (.nav-hide-in-hero removida pelo IntersectionObserver — ver
+   js/vn-nav.js), a nav volta a position:sticky puro (nenhuma declaração
+   de position aqui fora desta media query), comportamento inalterado. */
 @media (hover:hover) and (pointer:fine){
   #main-nav.nav-hide-in-hero{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
     transform:translateY(-100%);
     transition:transform .28s ease-out;
   }
