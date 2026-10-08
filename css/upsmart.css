@@ -238,12 +238,15 @@ nav::after{
   content:'';position:absolute;inset:0;
   background:radial-gradient(circle at 80% 15%,rgba(240,161,94,.35),transparent 60%);
 }
-.cat-card-body{padding:24px 22px;gap:6px}
-.cat-name{font-family:var(--serif);font-weight:700;font-size:24px;letter-spacing:-.02em}
+/* Grade de 2 colunas: o nome ocupa a largura toda (nomes longos como
+   "PlayStation"/"Acessórios" nunca disputam espaço com a seta) e a seta
+   fica na linha de baixo, ao lado de "Ver produtos". */
+.cat-card-body{padding:22px 20px;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;row-gap:8px}
+.cat-name{grid-column:1/-1;font-family:var(--serif);font-weight:700;font-size:clamp(18px,1.7vw,23px);letter-spacing:-.02em}
 .cat-sub{font-family:var(--sans);font-weight:800;letter-spacing:.14em;font-size:10.5px}
 .cat-card.has-img .cat-sub,.cat-card:not(.has-img) .cat-sub{color:rgba(247,244,240,.78)}
 .cat-arr{
-  position:absolute;right:22px;bottom:24px;margin:0;
+  margin:0;
   width:44px;height:44px;border-radius:14px;
   display:flex;align-items:center;justify-content:center;
   background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
@@ -516,9 +519,10 @@ footer::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;back
   .hero-car-next{right:16px}
   .hero-car-dots{left:24px;transform:none;bottom:24px}
   .cat-card{min-height:200px}
-  .cat-card-body{padding:18px 16px;padding-right:60px}
-  .cat-name{font-size:17px}
-  .cat-arr{right:14px;bottom:16px;width:36px;height:36px;border-radius:12px}
+  .cat-card-body{padding:16px 14px}
+  .cat-name{font-size:16px}
+  .cat-sub{font-size:9.5px;letter-spacing:.1em}
+  .cat-arr{width:34px;height:34px;border-radius:11px}
   .cat-arr::before{font-size:15px}
 }
 @media(max-width:600px){
