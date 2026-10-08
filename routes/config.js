@@ -155,7 +155,7 @@ router.post('/config', verificarJWT, async (req, res) => {
     if (corSecundaria !== undefined) dados.corSecundaria = String(corSecundaria).trim();
     // Só grava se for uma chave conhecida do catálogo — barra tentativa de
     // salvar um valor arbitrário direto na API, não só na UI do admin.
-    if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'neblina';
+    if (temaFundo !== undefined) dados.temaFundo = TEMAS_FUNDO[temaFundo] ? temaFundo : 'neutro';
     if (corPainelHero !== undefined) {
       dados.corPainelHero = TEMAS_HERO[corPainelHero]
         ? corPainelHero

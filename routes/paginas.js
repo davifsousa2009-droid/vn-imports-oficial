@@ -322,4 +322,18 @@ router.get('/css/vn-imports.css', (req, res) => {
   res.send(vnImportsCssCache);
 });
 
+// Camada de identidade visual da UpSmart (cores, fontes, cards) — carregada
+// por último em VN_IMPORTS.html, search.html e produto.html, por cima do CSS
+// acima. Mesma dupla rota+rewrite (vercel.json) de vn-imports.css, pelo mesmo
+// motivo; mesmo cache público (só muda por deploy).
+let upsmartCssCache = null;
+router.get('/css/upsmart.css', (req, res) => {
+  if (!upsmartCssCache) {
+    upsmartCssCache = fs.readFileSync(path.join(__dirname, '..', 'css', 'upsmart.css'), 'utf8');
+  }
+  res.set('Content-Type', 'text/css; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=300');
+  res.send(upsmartCssCache);
+});
+
 module.exports = router;

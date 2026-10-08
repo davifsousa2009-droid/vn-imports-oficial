@@ -1,0 +1,553 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   IDENTIDADE VISUAL UPSMART — camada de aparência
+   ───────────────────────────────────────────────────────────────────────
+   Carregado DEPOIS de todo o CSS da página (vn-imports.css e os <style>
+   inline de search.html/produto.html), então só SOBRESCREVE aparência.
+
+   Regras desta camada (pra não quebrar nada que já funciona):
+   1. Só cor, fonte, raio, sombra, espaçamento interno e animação visual.
+      Nada de position/top/height/min-height/display de containers que o
+      JS controla (hero, nav escondida no hero, gaveta mobile, carrinho,
+      filtros, lightbox) — essas regras continuam valendo como estão.
+   2. Nenhuma classe/ID nova é exigida do HTML ou do JS: tudo aqui pendura
+      nas classes que já existem.
+   3. Cores de marca que variam por loja (--bg/--bg2/--border/--gold/
+      --gold2) continuam vindo do servidor (construirOverrideCoresStyle),
+      injetadas DEPOIS deste arquivo — por isso elas não são redefinidas
+      aqui; o tema "neutro" e as cores de config.js já entregam os valores
+      da UpSmart. Os tokens --up-* abaixo são só desta camada.
+   4. Contraste: texto sobre o degradê de marca é sempre escuro (#16100C,
+      ≥ 7:1); texto claro só sobre grafite. --accent (#B8341D) passa AA
+      como texto sobre branco (5.6:1) e com texto branco por cima.
+   Para voltar ao visual anterior: remover a <link> deste arquivo nas 3
+   páginas (VN_IMPORTS.html, search.html, produto.html). Nada mais depende
+   dele.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Selo redondo da logo (88px, ~7KB) — embutido pra não precisar de rota
+     nova só pra uma imagem; usado no topo e no rodapé. */
+  --up-logo:url("data:image/png;base64,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");
+  --up-ink:#0E0E14;          /* grafite do fundo da logo */
+  --up-ink-2:#17161F;
+  --up-ink-3:#24232E;
+  --up-line-dark:rgba(255,255,255,.08);
+  --up-coral:#D9472B;        /* vermelho-coral da logo */
+  --up-amber:#F0A15E;        /* âmbar da logo */
+  --up-grad:linear-gradient(120deg,#D9472B 0%,#E8774A 55%,#F0A15E 100%);
+  --up-on-grad:#16100C;      /* texto sobre o degradê */
+  --up-card:#FFFFFF;
+  --up-tile:#EEEEF1;         /* fundo da foto do produto */
+  --up-text-soft:#5A5866;
+  --up-radius:18px;
+  --up-ease:cubic-bezier(.22,.61,.36,1);
+
+  /* Tokens fixos do template (não variam por loja, nunca são injetados
+     pelo servidor) — trocados aqui pela paleta da marca. */
+  --ink:#121119;
+  --ink2:#1D1C25;
+  --accent:#B8341D;
+  --muted:#5A5866;
+  --serif:'Unbounded',system-ui,sans-serif;
+  --sans:'Manrope',system-ui,sans-serif;
+  --mono:'Manrope',system-ui,sans-serif;
+  --sh:0 1px 2px rgba(14,14,20,.06),0 6px 20px rgba(14,14,20,.06);
+  --sh2:0 18px 50px rgba(14,14,20,.16);
+}
+
+body{font-family:var(--sans);-webkit-font-smoothing:antialiased;color:var(--ink)}
+::selection{background:var(--up-amber);color:var(--up-on-grad)}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:#B9B7C2;border-radius:8px}
+
+/* ─── FAIXA DE AVISO (frete/parcelas) ─── */
+.announce,.announce.announce-alt{
+  background:var(--up-ink);color:#E9E7EE;
+  border-bottom:1px solid var(--up-line-dark);
+  font-family:var(--sans);font-weight:700;letter-spacing:.14em;font-size:11px;
+}
+.announce em,.announce.announce-alt em{color:var(--up-amber) !important}
+
+/* ─── NAV: barra grafite ─── */
+/* #main-nav repetido de propósito: vn-imports.css (e as cópias inline de
+   search/produto) pintam #main-nav de branco translúcido por ID. */
+nav,#main-nav{
+  background:rgba(14,14,20,.94);
+  border-bottom:1px solid var(--up-line-dark);
+}
+/* A linha de degradê embaixo da barra — assinatura da marca. Pseudo-
+   elemento absoluto, não muda a altura da nav. */
+nav::after{
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--up-grad);opacity:.9;pointer-events:none;
+}
+.nav-logo{
+  font-family:var(--serif);font-weight:700;font-size:19px;
+  letter-spacing:-.01em;text-transform:none;color:#fff;gap:12px;
+}
+.nav-logo::before{
+  content:'';flex:none;width:38px;height:38px;border-radius:50%;
+  background:var(--up-logo) center/cover no-repeat;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12),0 6px 18px rgba(217,71,43,.28);
+  transition:transform .4s var(--up-ease);
+}
+.nav-logo:hover::before{transform:rotate(-8deg) scale(1.06)}
+.nav-btn{
+  border-color:rgba(255,255,255,.14);color:#F4F2F7;background:rgba(255,255,255,.03);
+}
+.nav-btn:hover{background:var(--up-grad);color:var(--up-on-grad);border-color:transparent}
+.nav-dot{background:var(--up-amber);border-color:var(--up-ink)}
+.nav-hamburger{border-color:rgba(255,255,255,.14);color:#F4F2F7}
+
+/* Links do topo: claros só no desktop — no mobile .nav-links vira gaveta
+   de fundo claro (var(--bg)) e os links precisam continuar escuros. */
+@media(min-width:769px){
+  .nav-links > li > a,
+  .nav-links > li > .nav-link-cats{
+    color:rgba(244,242,247,.72);font-family:var(--sans);font-weight:700;letter-spacing:.12em;
+    position:relative;
+  }
+  .nav-links > li > a:hover{color:#fff}
+  .nav-links > li > a::after{
+    content:'';position:absolute;left:0;right:0;bottom:-8px;height:2px;border-radius:2px;
+    background:var(--up-grad);transform:scaleX(0);transform-origin:left;
+    transition:transform .28s var(--up-ease);
+  }
+  .nav-links > li > a:hover::after{transform:scaleX(1)}
+}
+/* Menu simples das views secundárias fica na própria barra, também no mobile */
+.nav-links-simple a{color:rgba(244,242,247,.78)}
+.nav-links-simple a:hover{color:#fff}
+
+/* Gaveta mobile (fundo claro). :not(.nav-links-simple): o menu simples das
+   telas internas NÃO vira gaveta — fica dentro da barra grafite e mantém
+   fundo transparente e texto claro. */
+@media(max-width:768px){
+  .nav-links:not(.nav-links-simple){background:var(--up-card)}
+  .nav-links:not(.nav-links-simple) > li > a{color:var(--ink);font-weight:700;border-radius:10px}
+  .nav-links:not(.nav-links-simple) > li > a:hover{background:var(--bg2)}
+}
+
+/* Mega menu (painel branco) */
+.megamenu{border-radius:var(--up-radius);border:1px solid rgba(14,14,20,.06);box-shadow:0 24px 60px rgba(14,14,20,.18)}
+
+/* Busca (faixa que abre embaixo da nav) */
+.search-wrap{background:var(--up-ink-2);border-color:var(--up-line-dark)}
+.search-inp{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;
+  border-radius:12px;font-family:var(--sans);
+}
+.search-inp::placeholder{color:rgba(244,242,247,.5)}
+.search-inp:focus{border-color:var(--up-amber)}
+.search-close{border-color:rgba(255,255,255,.14);color:rgba(244,242,247,.8);border-radius:12px}
+.search-close:hover{background:var(--up-grad);color:var(--up-on-grad);border-color:transparent}
+.search-results{border-radius:0 0 var(--up-radius) var(--up-radius)}
+.sr-item{border-radius:12px;border-color:var(--border)}
+.sr-img{border-radius:8px;overflow:hidden}
+
+/* ─── HERO CARROSSEL ─── */
+.hero-carousel{background:var(--up-ink)}
+.hero-car-scrim{
+  background:
+    linear-gradient(to top, rgba(14,14,20,.88) 0%, rgba(14,14,20,.45) 42%, rgba(14,14,20,0) 72%),
+    linear-gradient(100deg, rgba(14,14,20,.55) 0%, rgba(14,14,20,0) 55%);
+}
+.hero-car-eyebrow{
+  font-family:var(--sans);font-weight:800;letter-spacing:.18em;font-size:11px;
+  color:var(--up-on-grad);background:var(--up-grad);
+  width:fit-content;padding:7px 12px 7px 10px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.hero-car-eyebrow::before{content:'\2191';font-weight:900}
+.hero-car-title{
+  font-family:var(--serif);font-weight:800;letter-spacing:-.035em;line-height:1.02;
+  font-size:clamp(30px,4.4vw,60px);
+}
+/* Afasta o texto das setas do carrossel no desktop (só respiro interno —
+   a caixa continua ancorada embaixo, mesma regra de antes). */
+@media(min-width:769px){
+  .hero-car-text{padding-left:max(96px,calc((100vw - 1240px) / 2 + 36px));max-width:min(820px,100%)}
+}
+.hero-car-subtitle{font-family:var(--sans);font-weight:500;color:rgba(255,255,255,.86)}
+.hero-car-cta,
+.hero-car-cta.hero-car-cta-dynamic{
+  background:var(--up-grad);border:0;color:var(--up-on-grad);
+  font-family:var(--sans);font-weight:800;letter-spacing:.1em;border-radius:14px;
+  padding:16px 28px;box-shadow:0 14px 34px rgba(217,71,43,.35);
+  transition:transform .22s var(--up-ease),box-shadow .22s ease,filter .2s ease;
+}
+.hero-car-cta::after{content:'\2197';font-size:1.15em;line-height:1;transition:transform .22s var(--up-ease)}
+.hero-car-cta:hover,
+.hero-car-cta.hero-car-cta-dynamic:hover{
+  background:var(--up-grad);filter:none;transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(217,71,43,.45);
+}
+.hero-car-cta:hover::after{transform:translate(2px,-2px)}
+.hero-car-arrow,
+.hero-car-pause{
+  background:rgba(14,14,20,.45);border-color:rgba(255,255,255,.18);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.hero-car-arrow:hover,
+.hero-car-pause:hover{background:var(--up-grad);color:var(--up-on-grad);border-color:transparent}
+.hero-car-dot{width:8px;height:8px;background:rgba(255,255,255,.35);transition:width .3s var(--up-ease),background .2s}
+.hero-car-dot[aria-current="true"]{width:28px;border-radius:999px;background:var(--up-amber);transform:none}
+
+/* ─── TÍTULOS DE SEÇÃO ─── */
+.sec-eye{
+  font-family:var(--sans);font-size:11px;font-weight:800;letter-spacing:.18em;
+  color:var(--accent);gap:10px;
+}
+.sec-eye::before{
+  content:'\2191';width:24px;height:24px;border-radius:8px;
+  background:var(--up-grad);color:var(--up-on-grad);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;letter-spacing:0;
+}
+.sec-title{font-family:var(--serif);font-weight:700;letter-spacing:-.035em;line-height:1.02}
+.sec-title em{
+  font-style:normal;
+  background:var(--up-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sec-more{font-weight:800;color:var(--ink)}
+.sec-more:hover{color:var(--accent)}
+.prod-count{font-family:var(--sans);font-weight:700;color:var(--up-text-soft)}
+.prod-breadcrumb{color:var(--up-text-soft)}
+
+/* ─── CATEGORIAS (cards escuros) ─── */
+.cats-wrap{background:var(--bg);border:0}
+.cats-grid{background:transparent;gap:16px}
+/* Quantas categorias couberem numa linha (4, 5, 6…) em vez de deixar uma
+   sozinha embaixo; abaixo de 900px continua a regra de 2 colunas. */
+@media(min-width:901px){.cats-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}
+.cat-card{
+  border-radius:var(--up-radius);background-color:var(--up-ink-2);
+  min-height:260px;isolation:isolate;
+  box-shadow:0 1px 2px rgba(14,14,20,.08);
+  transition:background-size .6s var(--up-ease),transform .35s var(--up-ease),box-shadow .35s ease;
+}
+.cat-card:hover{transform:translateY(-4px);box-shadow:0 22px 44px rgba(14,14,20,.22)}
+.cat-card-overlay{
+  background:
+    linear-gradient(180deg,rgba(14,14,20,0) 30%,rgba(14,14,20,.88) 100%),
+    linear-gradient(120deg,rgba(217,71,43,0) 55%,rgba(217,71,43,.18) 100%);
+}
+.cat-card:not(.has-img){background:var(--up-ink-2)}
+.cat-card:not(.has-img)::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 80% 15%,rgba(240,161,94,.35),transparent 60%);
+}
+.cat-card-body{padding:24px 22px;gap:6px}
+.cat-name{font-family:var(--serif);font-weight:700;font-size:24px;letter-spacing:-.02em}
+.cat-sub{font-family:var(--sans);font-weight:800;letter-spacing:.14em;font-size:10.5px}
+.cat-card.has-img .cat-sub,.cat-card:not(.has-img) .cat-sub{color:rgba(247,244,240,.78)}
+.cat-arr{
+  position:absolute;right:22px;bottom:24px;margin:0;
+  width:44px;height:44px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  font-size:0;transition:background .25s ease,transform .3s var(--up-ease);
+}
+.cat-arr::before{content:'\2197';font-size:18px;color:#fff;transition:color .2s}
+.cat-card:hover .cat-arr{background:var(--up-grad);border-color:transparent;transform:rotate(0deg) scale(1.05)}
+.cat-card:hover .cat-arr::before{color:var(--up-on-grad)}
+
+/* ─── UTILIDADES (ordenar / filtros) ─── */
+.filters-toggle-btn,.sort-select{border-radius:12px;font-family:var(--sans);font-weight:700}
+.filters-toggle-btn[aria-pressed="true"]{background:var(--up-ink);border-color:var(--up-ink);color:#fff}
+.filters-toggle-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filters-toggle-btn[aria-pressed="true"]:hover{color:#fff;border-color:var(--up-ink)}
+.sort-listbox{border-radius:14px;overflow:hidden}
+.sort-option[aria-selected="true"]{color:var(--accent)}
+.filters-title{font-family:var(--serif);font-weight:700;letter-spacing:-.01em}
+.fblk-title{font-family:var(--sans);font-weight:800}
+.fblk-plus{color:var(--accent)}
+.flt:hover,.flt.on{background:var(--up-ink)}
+.filters-mobile-btn{border-radius:12px;font-weight:800}
+
+/* ─── CARD DE PRODUTO ─── */
+.prod-grid{gap:20px}
+.prod-card,.prod-card:hover{background:transparent}
+.prod-card-frame{
+  background:var(--up-card);border-radius:var(--up-radius);
+  border:1px solid rgba(14,14,20,.06);
+  box-shadow:0 1px 2px rgba(14,14,20,.05);
+  height:100%;display:flex;flex-direction:column;
+  transition:transform .35s var(--up-ease),box-shadow .35s ease,border-color .35s ease;
+}
+.prod-card:hover .prod-card-frame{
+  transform:translateY(-6px);
+  border-color:rgba(232,119,74,.45);
+  box-shadow:0 22px 44px rgba(14,14,20,.12),0 2px 0 rgba(232,119,74,.0);
+}
+.prod-card-media{
+  margin:8px 8px 0;width:auto;border-radius:12px;
+  background:radial-gradient(circle at 50% 38%,#FAFAFB 0%,var(--up-tile) 72%);
+  aspect-ratio:1/1;
+}
+.prod-card-media img{
+  object-fit:contain;padding:4%;
+  /* Foto de produto com fundo branco (o normal em loja de eletrônicos) se
+     funde ao fundo cinza do card em vez de virar um quadrado branco. */
+  mix-blend-mode:multiply;
+  transition:transform .6s var(--up-ease);
+}
+.prod-card:hover .prod-card-media img{transform:scale(1.06)}
+.prod-badge-esgotado{
+  background:var(--up-ink);font-family:var(--sans);letter-spacing:.12em;border-radius:8px;
+  top:12px;left:12px;
+}
+.prod-badge-new{
+  background:var(--up-grad);color:var(--up-on-grad);font-family:var(--sans);font-weight:800;
+  border-radius:8px;top:12px;left:12px;
+}
+.prod-wish-btn{
+  top:10px;right:10px;width:40px;height:40px;
+  background:rgba(255,255,255,.9);border-color:rgba(14,14,20,.06);
+  box-shadow:0 6px 16px rgba(14,14,20,.10);
+  opacity:.92;
+}
+.prod-wish-btn.on{color:var(--up-coral);opacity:1}
+@media(hover:hover){
+  .prod-card .prod-wish-btn{transform:translateY(-4px);opacity:0}
+  .prod-card:hover .prod-wish-btn,.prod-card .prod-wish-btn.on,.prod-card .prod-wish-btn:focus-visible{transform:none;opacity:1}
+  .prod-card .prod-wish-btn:hover{transform:scale(1.08)}
+}
+.prod-thumbs{padding:10px 14px 0;gap:6px}
+.prod-thumb{width:30px;height:30px;border-radius:8px;border-color:rgba(14,14,20,.1)}
+.prod-thumb.on,.prod-thumb:hover{border-color:var(--up-coral)}
+.prod-card-body{
+  padding:14px 16px 16px;display:flex;flex-direction:column;flex:1;
+}
+.prod-card-sub{
+  font-family:var(--sans);font-size:10.5px;font-weight:800;letter-spacing:.16em;
+  color:var(--accent);
+}
+.prod-card-name{
+  font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:-.005em;
+  line-height:1.3;color:var(--ink);margin-top:6px;
+}
+.prod-card-price-row{
+  margin-top:12px;gap:2px;
+  /* Altura fixa = preço com desconto (linha riscada + preço). Assim o
+     preço e o botão ficam na mesma altura em cards vizinhos, com ou sem
+     promoção. */
+  min-height:48px;justify-content:flex-end;
+}
+.prod-old-price{font-size:12.5px;color:var(--up-text-soft)}
+/* Selo de desconto em forma de etiqueta com seta — assinatura da marca */
+.prod-off{
+  background:var(--up-grad);color:var(--up-on-grad);
+  font-family:var(--sans);font-weight:800;font-size:10.5px;letter-spacing:.04em;
+  border-radius:6px;padding:2px 7px 2px 6px;
+}
+.prod-off::before{content:'\2193 ';font-weight:900}
+.prod-card-price-row .prod-price,
+.prod-card-price-row .prod-price.prod-price-deal{
+  font-family:var(--serif);font-weight:700;letter-spacing:-.02em;font-size:20px;color:var(--ink);
+}
+/* Botão de adicionar: grafite, vira degradê no hover. Mantém a animação
+   do ícone que já existia (.cart-add-fx-*) — só muda cor/forma. */
+.prod-add-btn,.cart-add-fx{
+  border-radius:12px;font-family:var(--sans);font-weight:800;
+  /* Sem caixa-alta e com tracking curto: "Adicionar ao carrinho" cabe
+     inteiro no card (antes cortava em "ADICIONAR AO …"). */
+  text-transform:none;letter-spacing:.01em;font-size:13.5px;
+  padding-left:14px;padding-right:14px;
+  background:var(--up-ink);border:0;color:#fff;
+  box-shadow:0 10px 22px -10px rgba(14,14,20,.55);
+}
+/* Botão (ou o bloco de tamanhos) sempre colado no rodapé do card. */
+.prod-card-body > .prod-add-btn,
+.prod-card-body > .qa-wrap{margin-top:auto}
+.prod-card-price-row{margin-bottom:14px}
+@media(hover:hover){
+  .cart-add-fx:hover,.prod-add-btn:hover{
+    background:var(--up-grad);color:var(--up-on-grad);transform:none;
+    box-shadow:0 14px 28px -10px rgba(217,71,43,.65);
+  }
+  .cart-add-fx:hover .cart-add-fx-fly{color:rgba(22,16,12,.55)}
+}
+.cart-add-fx.cart-add-fx-touch{background:var(--up-grad);color:var(--up-on-grad);transform:none}
+.prod-add-btn:disabled,.prod-add-btn:disabled:hover{
+  background:#E4E3E9;color:#6B6976;box-shadow:none;opacity:1;
+}
+.qa-size-chip{border-radius:10px;border-color:var(--border)}
+.qa-size-chip:hover,.qa-size-chip:active{background:var(--up-ink);border-color:var(--up-ink)}
+
+/* Skeleton de carregamento com o mesmo formato do card */
+.sk-grid{background:transparent;gap:20px}
+.sk-card{background:var(--up-card);border-radius:var(--up-radius)}
+.sk-card .sk-media{margin:8px;border-radius:12px;background:var(--up-tile)}
+
+/* ─── BOTÕES GERAIS ─── */
+.btn-fill{
+  background:var(--up-ink);border-color:var(--up-ink);color:#fff;border-radius:12px;
+  font-family:var(--sans);font-weight:800;
+}
+.btn-fill:hover{background:var(--up-grad);border-color:transparent;color:var(--up-on-grad)}
+.btn-line{border-radius:12px;font-family:var(--sans);font-weight:800;border-color:#CFCED6}
+.btn-line:hover{border-color:var(--up-ink);background:transparent}
+
+/* ─── PÁGINA DE PRODUTO ─── */
+.pv-back{font-family:var(--sans);font-weight:800;color:var(--up-text-soft)}
+.pv-back:hover{color:var(--accent)}
+.pv-gallery-img{
+  border-radius:var(--up-radius);
+  background:radial-gradient(circle at 50% 38%,#FFFFFF 0%,var(--up-tile) 75%);
+  border:1px solid rgba(14,14,20,.05);
+  transition:transform .35s var(--up-ease),box-shadow .35s ease;
+}
+@media(hover:hover){.pv-gallery-img:hover{box-shadow:0 18px 40px rgba(14,14,20,.12)}}
+@media(max-width:760px){.pv-gallery-img{border-radius:0;border:0}}
+.pv-gallery-dot.on{background:var(--up-coral)}
+.pv-brand{
+  font-family:var(--sans);font-weight:800;letter-spacing:.16em;color:var(--accent);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.pv-brand:not(:empty)::before{
+  content:'\2191';width:20px;height:20px;border-radius:6px;
+  background:var(--up-grad);color:var(--up-on-grad);
+  display:inline-flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:0;
+}
+.pv-name{font-family:var(--serif);font-weight:700;letter-spacing:-.03em;line-height:1.08;font-size:clamp(26px,3vw,38px)}
+.pv-price{font-family:var(--serif);font-weight:700;letter-spacing:-.03em;font-size:clamp(30px,3.4vw,40px)}
+.pv-price span{font-family:var(--sans);font-weight:600;letter-spacing:0;color:var(--up-text-soft);white-space:nowrap}
+.pv-inst b{color:var(--ink)}
+.pv-div{border-top-color:#DCDBE2}
+.pv-desc{font-weight:500;color:var(--up-text-soft)}
+.pv-size{border-radius:10px;font-family:var(--sans);font-weight:700}
+.pv-size:hover,.pv-size.on{background:var(--up-ink);border-color:var(--up-ink);box-shadow:none}
+.pv-wish-btn{
+  border-radius:12px;font-family:var(--sans);font-weight:700;
+  border:1.5px solid #CFCED6;background:transparent;box-shadow:none;color:var(--ink);
+}
+.pv-wish-btn:hover{border-color:var(--up-ink);background:#fff}
+.pv-badge-esgotado{border-radius:8px}
+.pv-feat{color:var(--up-text-soft);font-weight:600}
+.pv-lightbox{background:rgba(14,14,20,.96)}
+.pv-lightbox-close:hover,.pv-lightbox-nav:hover{background:var(--up-grad);color:var(--up-on-grad);border-color:transparent}
+
+/* ─── AVALIAÇÕES / SOBRE ─── */
+.pv-stars i,.rev-avg-stars i,.rc-stars i,.rbar-row .ui-ico{color:var(--up-amber)}
+.rbar-fill{background:var(--up-grad)}
+
+/* ─── GAVETA DO CARRINHO ─── */
+.cart-drawer{border-radius:var(--up-radius) 0 0 var(--up-radius)}
+
+/* ─── TOAST ─── */
+.toast{border-radius:14px;background:var(--up-ink);color:#fff}
+
+/* ─── RODAPÉ ─── */
+footer{background:var(--up-ink);position:relative}
+footer::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--up-grad)}
+.foot-trust{border-bottom-color:var(--up-line-dark)}
+.foot-trust-item{color:rgba(244,242,247,.82)}
+.foot-trust-item svg{color:var(--up-amber)}
+.foot-top{border-bottom-color:var(--up-line-dark)}
+.foot-logo{
+  font-family:var(--serif);letter-spacing:-.01em;color:#fff;font-size:22px;
+  display:flex;align-items:center;gap:12px;
+}
+.foot-logo::before{
+  content:'';flex:none;width:44px;height:44px;border-radius:50%;
+  background:var(--up-logo) center/cover no-repeat;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12);
+}
+.foot-desc{color:rgba(244,242,247,.68);font-weight:500}
+.foot-col h5{color:var(--up-amber);font-family:var(--sans);font-weight:800;font-size:10px}
+.foot-col a{color:rgba(244,242,247,.72);font-weight:500}
+.foot-col a:hover{color:#fff}
+.fsoc{border-radius:12px;border-color:rgba(255,255,255,.14);color:rgba(244,242,247,.8)}
+.fsoc:hover{background:var(--up-grad);border-color:transparent;color:var(--up-on-grad)}
+.foot-bottom{color:rgba(244,242,247,.58)}
+.fpay{border-radius:6px;border-color:rgba(255,255,255,.16);color:rgba(244,242,247,.75)}
+
+/* ─── VOLTAR AO TOPO ─── */
+.btop{border-radius:14px}
+.btop:hover{background:var(--up-grad);color:var(--up-on-grad)}
+.btop:hover i{color:var(--up-on-grad)}
+
+/* ─── PÁGINAS INTERNAS (favoritos, contato, sobre, avaliações) ─── */
+.page-h1,.cinfo h1{font-family:var(--serif);font-weight:700;letter-spacing:-.035em;line-height:1.04}
+/* O <em> desses títulos tem font-family inline (var(--serif)) — aqui só
+   tiramos o itálico e aplicamos o degradê da marca, igual a .sec-title. */
+.page-h1 em,.cinfo h1 em{
+  font-style:normal;
+  background:var(--up-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.cinfo p,.foot-desc{font-weight:500}
+.cform{background:var(--up-card);border:1px solid rgba(14,14,20,.07);border-radius:var(--up-radius);box-shadow:var(--sh)}
+.rev-card{border-radius:var(--up-radius);border:1px solid rgba(14,14,20,.07);background:var(--up-card)}
+.reviews-form{border-radius:var(--up-radius)}
+.reviews-form-title{font-family:var(--serif);font-weight:700;letter-spacing:-.02em}
+.rev-avg-num{font-family:var(--serif);font-weight:800;letter-spacing:-.04em}
+.rev-inp{border-radius:10px}
+.rev-inp:focus{border-color:var(--up-coral)}
+.feat{border-color:var(--border)}
+.finput,.ftextarea,.fselect{border-radius:10px;background:#fff}
+.finput:focus,.ftextarea:focus,.fselect:focus{border-color:var(--up-coral)}
+
+/* ─── AJUSTES DE CELULAR ─── */
+@media(max-width:768px){
+  /* Telas internas (produto, sobre, contato…) têm "Voltar à loja" na
+     própria barra: no celular o nome por extenso não cabia junto (a barra
+     passava da largura da tela — já acontecia em 360px antes desta camada).
+     Fica só o selo redondo da logo, que continua levando pra home. */
+  nav:has(.nav-links-simple) .nav-logo [data-loja="nome"]{display:none}
+}
+@media(max-width:420px){
+  /* A barra da busca tem um botão a mais: selo e nome um pouco menores
+     pra caber em 375px sem rolagem lateral. */
+  .nav-logo{font-size:16px;gap:8px}
+  .nav-logo::before{width:30px;height:30px}
+}
+@media(max-width:360px){
+  /* Celulares bem estreitos: mesmo tratamento em todas as barras. */
+  .nav-logo [data-loja="nome"]{display:none}
+}
+@media(max-width:768px){
+  .nav-logo::before{width:34px;height:34px}
+  /* Setas do carrossel descem pro canto inferior direito, ao lado das
+     bolinhas — no meio da tela elas cobriam o título do banner. */
+  .hero-car-prev,.hero-car-next{top:auto;bottom:10px;transform:none;width:40px;height:40px}
+  .hero-car-prev{left:auto;right:62px}
+  .hero-car-next{right:16px}
+  .hero-car-dots{left:24px;transform:none;bottom:24px}
+  .cat-card{min-height:200px}
+  .cat-card-body{padding:18px 16px;padding-right:60px}
+  .cat-name{font-size:17px}
+  .cat-arr{right:14px;bottom:16px;width:36px;height:36px;border-radius:12px}
+  .cat-arr::before{font-size:15px}
+}
+@media(max-width:600px){
+  /* Mais largura pros cards: menos recuo lateral e espaço entre eles. */
+  .sec{padding-left:14px;padding-right:14px}
+  .prod-area{padding:0}
+  .prod-grid,.sk-grid{gap:10px}
+  .prod-card-media{margin:6px 6px 0;border-radius:10px}
+  .prod-thumbs{padding:8px 10px 0}
+  .prod-card-body{padding:10px 10px 12px}
+  .prod-card-name{font-size:13.5px}
+  .prod-card-price-row{min-height:42px;margin-bottom:10px}
+  .prod-old-price{font-size:11px}
+  .prod-off{font-size:9.5px;padding:1px 5px}
+  .prod-price-was-row{flex-wrap:wrap;gap:4px}
+  .prod-card-price-row .prod-price,
+  .prod-card-price-row .prod-price.prod-price-deal{font-size:16px;white-space:nowrap}
+  .prod-add-btn,.cart-add-fx{font-size:12.5px;padding:12px 8px;gap:6px;border-radius:10px}
+  /* "Adicionar ao Carrinho" não cabe num card de meia tela: mostra só
+     "Adicionar" visualmente. O texto original continua no HTML (é ele que
+     o leitor de tela anuncia) — o "/ ''" tira o texto curto da leitura. */
+  .prod-card .cart-add-fx-label{font-size:0;letter-spacing:0}
+  .prod-card .cart-add-fx-label::after{content:'Adicionar';content:'Adicionar' / '';font-size:12.5px}
+  .prod-wish-btn{width:36px;height:36px;top:8px;right:8px}
+}
+
+/* ─── MOVIMENTO REDUZIDO ─── */
+@media(prefers-reduced-motion:reduce){
+  .cat-card,.cat-arr,.nav-logo::before,.prod-card-frame,.prod-card-media img,
+  .hero-car-cta,.hero-car-dot,.pv-gallery-img{transition:none !important}
+  .cat-card:hover,.prod-card:hover .prod-card-frame{transform:none}
+}

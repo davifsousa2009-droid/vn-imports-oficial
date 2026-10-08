@@ -1993,6 +1993,12 @@ textarea.ep-i{resize:vertical;min-height:80px;line-height:1.6}
 .search-loading{padding:60px;text-align:center;color:var(--muted);grid-column:1/-1;font-size:13px}
 
   </style>
+<!-- Identidade visual UpSmart: fontes da marca + camada de aparência
+     (css/upsmart.css). Fica por ÚLTIMO no <head> pra vencer o CSS
+     acima; a cor da loja injetada pelo servidor entra depois disto. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/upsmart.css">
 </head>
 <body>
 <div class="announce" id="announceHome" style="display:none">Frete <em>GRÁTIS</em> acima de R$<span id="anFrete">299</span> &nbsp;·&nbsp; Parcele em até <em id="anParc">12</em>x sem juros</div>

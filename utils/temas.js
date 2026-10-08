@@ -12,7 +12,11 @@ const TEMAS_FUNDO = {
   gelo: { nome: 'Branco Gelo', bg: '#E8ECF1', bg2: '#DCE3EB', border: '#B8C4D4' },
   rose: { nome: 'Rosé Suave', bg: '#F3E1DD', bg2: '#EDD3CD', border: '#D1A79C' },
   salvia: { nome: 'Verde Sálvia', bg: '#E5EADC', bg2: '#DAE1CB', border: '#AFBE96' },
-  neblina: { nome: 'Azul Névoa', bg: '#E1E8EF', bg2: '#D4DEE9', border: '#A8BDD1' }
+  neblina: { nome: 'Azul Névoa', bg: '#E1E8EF', bg2: '#D4DEE9', border: '#A8BDD1' },
+  // Cinza neutro (UpSmart): calibrado pra conviver com grafite + laranja da
+  // marca sem puxar pra azul/creme. Continua um tema CLARO, então --bg
+  // segue servindo de texto claro sobre superfície escura como os outros.
+  neutro: { nome: 'Cinza Neutro', bg: '#F3F3F5', bg2: '#E9E9ED', border: '#D3D2DA' }
 };
 
 // Catálogo pré-calibrado pra cor do painel de texto do hero (o bloco

@@ -48,7 +48,7 @@ function mergePublicConfig(doc) {
   const alturaCmPadrao = numeroPositivoOuNull(doc?.alturaCmPadrao);
   const comprimentoCmPadrao = numeroPositivoOuNull(doc?.comprimentoCmPadrao);
   // Só aceita chave conhecida do catálogo — nunca um valor arbitrário vindo do banco.
-  const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'neblina';
+  const temaFundoKey = TEMAS_FUNDO[doc?.temaFundo] ? doc.temaFundo : 'neutro';
   const temaFundo = TEMAS_FUNDO[temaFundoKey];
   const corPainelHeroFallback = TEMAS_HERO[configPadrao.corPainelHero] ? configPadrao.corPainelHero : 'preto';
   const corPainelHeroKey = TEMAS_HERO[doc?.corPainelHero] ? doc.corPainelHero : corPainelHeroFallback;

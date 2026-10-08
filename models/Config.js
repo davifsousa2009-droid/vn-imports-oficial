@@ -10,7 +10,7 @@ const ConfigSchema = new mongoose.Schema({
   corSecundaria: { type: String, default: configPadrao.corSecundaria },
   // Chave de um tema pré-calibrado em TEMAS_FUNDO — nunca um hex livre (ver
   // comentário acima do catálogo).
-  temaFundo: { type: String, default: 'neblina' },
+  temaFundo: { type: String, default: 'neutro' },
   // Chave de um tom pré-calibrado em TEMAS_HERO (cor do painel de texto do
   // hero) — mesmo princípio do temaFundo acima, nunca hex livre. Default vem
   // de configPadrao (config.js), mesmo padrão de usaTamanhosPadrao: cada
